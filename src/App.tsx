@@ -7,7 +7,6 @@ import { Header } from './components/Header';
 import { ActivityCard } from './components/ActivityCard';
 import { TaskCard } from './components/TaskCard';
 import { CompanionHUD } from './components/CompanionHUD';
-import { ConfirmDialog } from './components/ConfirmDialog';
 import { AttributeBadges } from './components/AttributeBadges';
 import { Toaster } from './components/ui/sonner';
 import { GamePopups } from './components/GamePopups';
@@ -46,6 +45,7 @@ const SettingsPage = lazy(() => import('./components/SettingsPage').then(m => ({
 const ActivitiesPage = lazy(() => import('./components/ActivitiesPage').then(m => ({ default: m.ActivitiesPage })));
 const OnboardingScreen = lazy(() => import('./components/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })));
 const SettingsModal = lazy(() => import('./components/SettingsModal').then(m => ({ default: m.SettingsModal })));
+const ProfileHubModal = lazy(() => import('./components/ProfileHubModal').then(m => ({ default: m.ProfileHubModal })));
 const EditModal = lazy(() => import('./components/EditModal').then(m => ({ default: m.EditModal })));
 const TaskEditModal = lazy(() => import('./components/TaskEditModal').then(m => ({ default: m.TaskEditModal })));
 
@@ -62,7 +62,7 @@ export default function App() {
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
-  const [resetOnboardingOpen, setResetOnboardingOpen] = useState(false);
+  const [hubOpen, setHubOpen] = useState(false);
   const [hpBannerDismissed, setHpBannerDismissed] = useState(false);
   const [messageTrigger, setMessageTrigger] = useState(0);
   const [feedAnim, setFeedAnim] = useState<{ emoji: string; n: number } | null>(null);
@@ -1332,14 +1332,7 @@ export default function App() {
 
 
 
-  // Handle reset onboarding (DEBUG ONLY)
-  const handleResetOnboarding = () => setResetOnboardingOpen(true);
-  const handleConfirmResetOnboarding = () => {
-    localStorage.removeItem(STORAGE_KEYS.ONBOARDING_COMPLETE);
-    localStorage.removeItem(STORAGE_KEYS.USER_NAME);
-    localStorage.removeItem(STORAGE_KEYS.EGG_TYPE);
-    window.location.reload();
-  };
+  const handleOpenHub = () => setHubOpen(true);
 
   // Handle toggle notifications
   const handleToggleNotifications = async () => {
@@ -1401,7 +1394,7 @@ export default function App() {
             currentView={currentView}
             onNavigate={setCurrentView}
             theme={theme}
-            onResetOnboarding={handleResetOnboarding}
+            onOpenHub={handleOpenHub}
           />
         </div>
 
@@ -1569,23 +1562,25 @@ export default function App() {
                 const { cloudLoad } = await import('./utils/cloudSave');
                 const state = await cloudLoad(id);
                 if (!state) return false;
+                const { applyHubCloudPayload } = await import('./utils/profiles');
                 localStorage.setItem(STORAGE_KEYS.SAVE_ID, id);
-                localStorage.setItem(STORAGE_KEYS.GAME_STATE, JSON.stringify(state));
+                applyHubCloudPayload(state);
                 window.location.reload();
                 return true;
               }}
               onLoginWithEmail={async (email) => {
                 const { emailToSaveId, cloudLoad, cloudSave } = await import('./utils/cloudSave');
+                const { applyHubCloudPayload, buildHubCloudPayload } = await import('./utils/profiles');
                 const id = await emailToSaveId(email);
                 const state = await cloudLoad(id);
                 localStorage.setItem(STORAGE_KEYS.SAVE_ID, id);
                 localStorage.setItem(STORAGE_KEYS.USER_EMAIL, email.trim().toLowerCase());
                 if (state) {
-                  // Existing account on this email — adopt its cloud progress
-                  localStorage.setItem(STORAGE_KEYS.GAME_STATE, JSON.stringify(state));
+                  // Existing account on this email — adopt its cloud hub (all 3 profiles)
+                  applyHubCloudPayload(state);
                 } else {
-                  // First login for this email — claim it with the current progress
-                  await cloudSave(id, gameState);
+                  // First login for this email — claim it with the current hub
+                  await cloudSave(id, buildHubCloudPayload());
                 }
                 window.location.reload();
                 return state ? 'loaded' : 'created';
@@ -1780,13 +1775,16 @@ export default function App() {
         /></Suspense>
       )}
 
-      <ConfirmDialog
-        isOpen={resetOnboardingOpen}
-        onClose={() => setResetOnboardingOpen(false)}
-        onConfirm={handleConfirmResetOnboarding}
-        title="Reset Onboarding"
-        message="This will clear your name and egg choice. Continue?"
-      />
+      {hubOpen && (
+        <Suspense fallback={null}>
+          <ProfileHubModal
+            isOpen={hubOpen}
+            onClose={() => setHubOpen(false)}
+            theme={theme}
+            language={language}
+          />
+        </Suspense>
+      )}
 
       {settingsOpen && (
         <Suspense fallback={null}>

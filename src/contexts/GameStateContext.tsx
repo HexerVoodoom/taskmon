@@ -3,6 +3,7 @@ import { type ActivityCategory } from '../types/attributes';
 import { MAX_HP_BY_FORM, getStageLevel, FORM_REQUIREMENTS } from '../types/progression';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import { cloudSave } from '../utils/cloudSave';
+import { buildHubCloudPayload } from '../utils/profiles';
 
 export interface Step {
   id: string;
@@ -245,7 +246,10 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.SAVE_ID, saveId);
     }
 
-    const timer = setTimeout(() => cloudSave(saveId!, gameState), 3000);
+    // Bundles ALL 3 profiles (read fresh from localStorage, which the
+    // localStorage.setItem above already synced for this profile) — the
+    // hub's cloud save always carries every profile together.
+    const timer = setTimeout(() => cloudSave(saveId!, buildHubCloudPayload()), 3000);
     return () => clearTimeout(timer);
   }, [gameState]);
 

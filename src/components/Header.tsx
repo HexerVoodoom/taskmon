@@ -1,6 +1,6 @@
 import React from 'react';
 import svgPaths from '../imports/svg-hfvoappsgk';
-import { TestTube2 } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 type ViewType = 'main' | 'evolution' | 'stats' | 'settings' | 'games';
 
@@ -8,7 +8,7 @@ interface HeaderProps {
   currentView: ViewType;
   onNavigate: (view: ViewType) => void;
   theme?: 'default' | 'win98' | 'glitch';
-  onResetOnboarding?: () => void;
+  onOpenHub?: () => void;
 }
 
 // Home Icon
@@ -179,7 +179,7 @@ function SettingsIcon({ isActive }: { isActive: boolean }) {
   );
 }
 
-export function Header({ currentView, onNavigate, theme = 'default', onResetOnboarding }: HeaderProps) {
+export function Header({ currentView, onNavigate, theme = 'default', onOpenHub }: HeaderProps) {
   // Win98 theme - mantém o layout antigo
   if (theme === 'win98') {
     return (
@@ -200,10 +200,10 @@ export function Header({ currentView, onNavigate, theme = 'default', onResetOnbo
           <button className={`win98-menu-item ${currentView === 'settings' ? 'active' : ''}`} onClick={() => onNavigate('settings')}>
             Settings
           </button>
-          {onResetOnboarding && (
-            <button className="win98-menu-item" onClick={onResetOnboarding}>
-              <TestTube2 size={14} />
-              Debug
+          {onOpenHub && (
+            <button className="win98-menu-item" onClick={onOpenHub}>
+              <Users size={14} />
+              Hub
             </button>
           )}
         </div>
@@ -240,16 +240,16 @@ export function Header({ currentView, onNavigate, theme = 'default', onResetOnbo
               </div>
             </div>
 
-            {/* Center: Debug Button (purple when active, shows evolution icon) */}
-            {onResetOnboarding && (
+            {/* Center: Profile Hub Button */}
+            {onOpenHub && (
               <button
-                onClick={onResetOnboarding}
-                aria-label="Modo Debug"
+                onClick={onOpenHub}
+                aria-label="Hub de perfis"
                 className="bg-[#f3e8ff] relative rounded-[14px] shrink-0 size-[39.993px] transition-all"
-                title="Debug Mode"
+                title="Profile Hub"
               >
                 <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-center justify-center pb-0 pt-[9.998px] px-[9.998px] relative size-full">
-                  <TestTube2 size={20} className="text-[#9810FA]" strokeWidth={1.5} />
+                  <Users size={20} className="text-[#9810FA]" strokeWidth={1.5} />
                 </div>
               </button>
             )}
