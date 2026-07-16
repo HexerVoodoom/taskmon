@@ -1,63 +1,62 @@
 import { describe, it, expect } from 'vitest';
-import { getStageLevel, canSelectWeekdays, FORM_REQUIREMENTS, MAX_HP_BY_FORM } from './progression';
+import {
+  getStageLevel, canSelectWeekdays, getPetOfStage, stageForLevel,
+  getMaxEnergyForStage, FORM_REQUIREMENTS, MAX_HP_BY_FORM, PETS,
+} from './progression';
 
 describe('getStageLevel', () => {
-  it('maps digiegg to digiegg', () => {
-    expect(getStageLevel('digiegg')).toBe('digiegg');
+  it('maps egg to egg', () => {
+    expect(getStageLevel('egg')).toBe('egg');
   });
 
-  it('maps baby-i stages correctly', () => {
-    expect(getStageLevel('pichimon')).toBe('baby-i');
+  it('maps each phase of each pet', () => {
+    expect(getStageLevel('vix-1')).toBe('fase-1');
+    expect(getStageLevel('momo-2')).toBe('fase-2');
+    expect(getStageLevel('kiwi-3')).toBe('fase-3');
   });
 
-  it('maps baby-ii stages correctly', () => {
-    expect(getStageLevel('pukamon')).toBe('baby-ii');
+  it('maps legacy DigiApp stages to the equivalent level', () => {
+    expect(getStageLevel('digiegg')).toBe('egg');
+    expect(getStageLevel('pichimon')).toBe('fase-1');   // baby-i
+    expect(getStageLevel('nyaromon')).toBe('fase-1');   // baby-ii
+    expect(getStageLevel('tapirmon')).toBe('fase-2');   // rookie
+    expect(getStageLevel('greymon')).toBe('fase-2');    // champion (item)
+    expect(getStageLevel('angewomon')).toBe('fase-3');  // ultimate
+    expect(getStageLevel('gaioumon-itto')).toBe('fase-3'); // ultra
   });
 
-  it('maps rookie stages correctly', () => {
-    expect(getStageLevel('tapirmon')).toBe('rookie');
+  it('falls back to egg for unknown stages', () => {
+    expect(getStageLevel('unknown-pet')).toBe('egg');
+  });
+});
+
+describe('getPetOfStage / stageForLevel', () => {
+  it('extracts the pet from a form id', () => {
+    expect(getPetOfStage('vix-2')).toBe('vix');
+    expect(getPetOfStage('kiwi-1')).toBe('kiwi');
   });
 
-  it('maps champion variants', () => {
-    expect(getStageLevel('monochromon')).toBe('champion');
-    expect(getStageLevel('tuskmon')).toBe('champion');
-    expect(getStageLevel('bakemon')).toBe('champion');
+  it('uses the fallback for egg/unknown', () => {
+    expect(getPetOfStage('egg', 'momo')).toBe('momo');
+    expect(getPetOfStage('whatever', 'kiwi')).toBe('kiwi');
   });
 
-  it('maps ultimate variants', () => {
-    expect(getStageLevel('gigadramon')).toBe('ultimate');
-    expect(getStageLevel('triceramon')).toBe('ultimate');
-    expect(getStageLevel('digitamamon')).toBe('ultimate');
-  });
-
-  it('maps mega variants', () => {
-    expect(getStageLevel('gaioumon')).toBe('mega');
-    expect(getStageLevel('ultimatebrachiomon')).toBe('mega');
-    expect(getStageLevel('titamon')).toBe('mega');
-  });
-
-  it('maps ultra', () => {
-    expect(getStageLevel('gaioumon-itto')).toBe('ultra');
-  });
-
-  it('falls back to digiegg for unknown stages', () => {
-    expect(getStageLevel('unknown-digimon')).toBe('digiegg');
+  it('builds the form id for a pet at a level', () => {
+    expect(stageForLevel('vix', 'egg')).toBe('egg');
+    expect(stageForLevel('momo', 'fase-1')).toBe('momo-1');
+    expect(stageForLevel('kiwi', 'fase-3')).toBe('kiwi-3');
   });
 });
 
 describe('canSelectWeekdays', () => {
-  it('returns false for pre-rookie stages', () => {
-    expect(canSelectWeekdays('digiegg')).toBe(false);
-    expect(canSelectWeekdays('pichimon')).toBe(false);
-    expect(canSelectWeekdays('pukamon')).toBe(false);
+  it('returns false before fase 2', () => {
+    expect(canSelectWeekdays('egg')).toBe(false);
+    expect(canSelectWeekdays('vix-1')).toBe(false);
   });
 
-  it('returns true for rookie and above', () => {
-    expect(canSelectWeekdays('tapirmon')).toBe(true);
-    expect(canSelectWeekdays('monochromon')).toBe(true);
-    expect(canSelectWeekdays('gigadramon')).toBe(true);
-    expect(canSelectWeekdays('gaioumon')).toBe(true);
-    expect(canSelectWeekdays('gaioumon-itto')).toBe(true);
+  it('returns true from fase 2 on', () => {
+    expect(canSelectWeekdays('vix-2')).toBe(true);
+    expect(canSelectWeekdays('momo-3')).toBe(true);
   });
 
   it('returns false for unknown stages', () => {
@@ -65,35 +64,41 @@ describe('canSelectWeekdays', () => {
   });
 });
 
-describe('FORM_REQUIREMENTS consistency', () => {
-  it('required increases monotonically across stages', () => {
-    const order = ['digiegg', 'baby-i', 'baby-ii', 'rookie', 'champion', 'ultimate', 'mega', 'ultra'] as const;
+describe('requirements & HP scale with the level', () => {
+  const order = ['egg', 'fase-1', 'fase-2', 'fase-3'] as const;
+
+  it('required tasks grow monotonically', () => {
     for (let i = 1; i < order.length; i++) {
-      expect(FORM_REQUIREMENTS[order[i]].required).toBeGreaterThan(
-        FORM_REQUIREMENTS[order[i - 1]].required,
-      );
+      expect(FORM_REQUIREMENTS[order[i]].required).toBeGreaterThan(FORM_REQUIREMENTS[order[i - 1]].required);
     }
   });
 
-  it('cap increases monotonically across stages', () => {
-    const order = ['digiegg', 'baby-i', 'baby-ii', 'rookie', 'champion', 'ultimate', 'mega', 'ultra'] as const;
+  it('activity cap grows monotonically', () => {
     for (let i = 1; i < order.length; i++) {
-      expect(FORM_REQUIREMENTS[order[i]].cap).toBeGreaterThan(
-        FORM_REQUIREMENTS[order[i - 1]].cap,
-      );
+      expect(FORM_REQUIREMENTS[order[i]].cap).toBeGreaterThan(FORM_REQUIREMENTS[order[i - 1]].cap);
     }
+  });
+
+  it('max HP grows monotonically', () => {
+    for (let i = 1; i < order.length; i++) {
+      expect(MAX_HP_BY_FORM[order[i]]).toBeGreaterThan(MAX_HP_BY_FORM[order[i - 1]]);
+    }
+  });
+
+  it('energy bars = the stage task requirement', () => {
+    expect(getMaxEnergyForStage('vix-2')).toBe(FORM_REQUIREMENTS['fase-2'].required);
+    expect(getMaxEnergyForStage('egg')).toBe(FORM_REQUIREMENTS.egg.required);
   });
 });
 
-describe('MAX_HP_BY_FORM', () => {
-  it('all stages have positive HP', () => {
-    const stages = Object.keys(MAX_HP_BY_FORM) as (keyof typeof MAX_HP_BY_FORM)[];
-    stages.forEach(stage => {
-      expect(MAX_HP_BY_FORM[stage]).toBeGreaterThan(0);
-    });
-  });
-
-  it('ultra has highest HP', () => {
-    expect(MAX_HP_BY_FORM['ultra']).toBeGreaterThan(MAX_HP_BY_FORM['mega']);
+describe('PETS metadata', () => {
+  it('every pet has 3 phases and 3 names, tiered correctly', () => {
+    for (const pet of Object.values(PETS)) {
+      expect(pet.phases).toHaveLength(3);
+      expect(pet.phaseNames).toHaveLength(3);
+      pet.phases.forEach((formId, i) => {
+        expect(getStageLevel(formId)).toBe(`fase-${i + 1}`);
+      });
+    }
   });
 });

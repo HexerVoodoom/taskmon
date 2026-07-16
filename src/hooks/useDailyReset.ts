@@ -1,8 +1,7 @@
 import { useEffect, useCallback } from 'react';
-import { FORM_REQUIREMENTS, MAX_HP_BY_FORM, getStageLevel, canSelectWeekdays } from '../types/progression';
+import { FORM_REQUIREMENTS, MAX_HP_BY_FORM, getStageLevel, canSelectWeekdays, type PetType } from '../types/progression';
 import { STORAGE_KEYS } from '../utils/storageKeys';
-import { getNextEvolution } from '../utils/dailyReset';
-import { EVO_ITEMS } from '../utils/shop';
+import { getNextEvolution, getPreviousForm } from '../utils/dailyReset';
 
 interface Step { id: string; label: string; completed: boolean; }
 interface Activity {
@@ -23,75 +22,13 @@ interface ResetGameState {
   energyPoints: number;
   perfectDays: number;
   totalXP: number;
-  virusPoints: number;
-  dataPoints: number;
-  vaccinePoints: number;
   evolutionStage: string;
-  eggType?: 'tapirmon' | 'veemon' | 'salamon';
+  eggType?: PetType;
   unlockedEvolutions: string[];
-  currentBranch: 'virus' | 'data' | 'vaccine';
   maxActivityCap: number;
   lastResetDate: string;
-  attributesSinceLastEvolution: { virus: number; data: number; vaccine: number };
   poopEventsShown: number[];
   poopEventsCompleted: number[];
-  equippedEvoItem?: string | null;
-}
-
-type Attr = 'virus' | 'data' | 'vaccine';
-type EggLine = 'tapirmon' | 'veemon' | 'salamon';
-
-// Estágios por linha, agrupados por tier e atributo — usados na degeneração
-const LINE_STAGES: Record<EggLine, {
-  babyI: string; babyII: string; rookie: string;
-  champion: Record<Attr, string>;
-  ultimate: Record<Attr, string>;
-  mega: Record<Attr, string>;
-  ultra: string;
-}> = {
-  tapirmon: {
-    babyI: 'pichimon', babyII: 'pukamon', rookie: 'tapirmon',
-    champion: { virus: 'tuskmon', data: 'monochromon', vaccine: 'bakemon' },
-    ultimate: { virus: 'gigadramon', data: 'triceramon', vaccine: 'digitamamon' },
-    mega: { virus: 'gaioumon', data: 'ultimatebrachiomon', vaccine: 'titamon' },
-    ultra: 'gaioumon-itto',
-  },
-  veemon: {
-    babyI: 'chicomon', babyII: 'chibimon', rookie: 'veemon',
-    champion: { data: 'exveemon', virus: 'veedramon', vaccine: 'flamedramon' },
-    ultimate: { data: 'paildramon', virus: 'aeroveedramon', vaccine: 'raidramon' },
-    mega: { data: 'imperialdramon', virus: 'ulforceveedramon', vaccine: 'magnamon' },
-    ultra: 'imperialdramon-paladin',
-  },
-  salamon: {
-    babyI: 'yukimibotamon', babyII: 'nyaromon', rookie: 'plotmon',
-    champion: { vaccine: 'gatomon', virus: 'gatomon-black', data: 'mikemon' },
-    ultimate: { vaccine: 'angewomon', virus: 'ladydevimon', data: 'nefertimon' },
-    mega: { vaccine: 'ophanimon', virus: 'lilithmon', data: 'holydramon' },
-    ultra: 'mastemon',
-  },
-};
-
-// Degeneração: retorna a forma anterior, ciente da linha (eggType) e do atributo da forma atual
-function getDegeneratedStage(stage: string, eggType: EggLine | undefined, currentBranch: Attr): string {
-  const line = LINE_STAGES[eggType ?? 'tapirmon'] ?? LINE_STAGES.tapirmon;
-  const level = getStageLevel(stage);
-  const attrOf = (s: string): Attr => {
-    for (const a of ['virus', 'data', 'vaccine'] as Attr[]) {
-      if (line.champion[a] === s || line.ultimate[a] === s || line.mega[a] === s) return a;
-    }
-    return currentBranch;
-  };
-  switch (level) {
-    case 'ultra':     return line.mega[currentBranch];
-    case 'mega':      return line.ultimate[attrOf(stage)];
-    case 'ultimate':  return line.champion[attrOf(stage)];
-    case 'champion':  return line.rookie;
-    case 'rookie':    return line.babyII;
-    case 'baby-ii':   return line.babyI;
-    case 'baby-i':    return 'digiegg';
-    default:          return 'digiegg';
-  }
 }
 
 interface UseDailyResetProps {
@@ -152,16 +89,9 @@ export function useDailyReset({
       let newHP = prev.healthPoints;
       let newPerfectDays = prev.perfectDays;
       let newEvolutionStage = prev.evolutionStage;
-      let finalUnlockedEvolutions = [...prev.unlockedEvolutions];
+      const finalUnlockedEvolutions = [...prev.unlockedEvolutions];
       let wasDegeneratedByHP = false;
-      let usedEvoItem = false;
       let newMaxActivityCap = prev.maxActivityCap;
-      let newCurrentBranch = prev.currentBranch as 'virus' | 'data' | 'vaccine';
-      let newRecentAttrs = {
-        virus: prev.attributesSinceLastEvolution?.virus ?? 0,
-        data: prev.attributesSinceLastEvolution?.data ?? 0,
-        vaccine: prev.attributesSinceLastEvolution?.vaccine ?? 0,
-      };
 
       // HP penalty: proportional to the tasks NOT done, measured against the
       // same daily goal. Meeting it = safe; registering MORE than required
@@ -172,64 +102,24 @@ export function useDailyReset({
         newHP = Math.max(0, prev.healthPoints - heartsLost);
       }
 
-      // (Poop no longer penalizes at the day turn — uncleaned poop drains 1 heart
-      // every 6 hours while it's on screen; handled live in App.tsx.)
-
       if (dayWasPerfect) {
         newPerfectDays++;
-        // Version B: attribute points come from feeding, not from daily reset.
-        // newRecentAttrs carries whatever was accumulated via handleFeed during the day.
       } else {
         // Streak break: any non-perfect day loses one day of accumulated progress
         newPerfectDays = Math.max(0, prev.perfectDays - 1);
       }
 
-      // Evolution check. The padlock on the Evolution page blocks it entirely:
-      // perfect days keep accumulating, and unlocking makes the pet evolve on
-      // the NEXT day turn (this same check passes then).
-      let returnedDigimentalEmoji: string | null = null;
+      // Evolution check (linear per pet). The padlock on the Evolution page
+      // blocks it entirely: perfect days keep accumulating, and unlocking makes
+      // the pet evolve on the NEXT day turn (this same check passes then).
       if (!prev.evolutionLocked && newPerfectDays >= requirements.required) {
         newPerfectDays = 0;
 
-        // Use attributes accumulated since the last evolution for branch — not the
-        // cumulative all-time total, so the player's current habits still matter.
-        const recentV = newRecentAttrs.virus;
-        const recentD = newRecentAttrs.data;
-        const recentVac = newRecentAttrs.vaccine;
-        const dominantAttr = Math.max(recentV, recentD, recentVac);
-        let branch = prev.currentBranch as 'virus' | 'data' | 'vaccine';
-        if (dominantAttr > 0) {
-          if (recentV === dominantAttr) branch = 'virus';
-          else if (recentD === dominantAttr) branch = 'data';
-          else branch = 'vaccine';
-        }
-        newCurrentBranch = branch;
+        const wasPhase1 = currentLevel === 'fase-1';
+        newEvolutionStage = getNextEvolution(prev.evolutionStage, prev.eggType ?? 'vix');
 
-        // Reset the recent window after each evolution
-        newRecentAttrs = { virus: 0, data: 0, vaccine: 0 };
-
-        const isBabyII = ['pukamon', 'chibimon', 'nyaromon'].includes(prev.evolutionStage);
-        newEvolutionStage = getNextEvolution(
-          prev.evolutionStage,
-          prev.eggType ?? 'tapirmon',
-          branch,
-          prev.unlockedEvolutions,
-        );
-        // Item digivolution (shop): when criteria are met AND an item is
-        // equipped for this level, the item form REPLACES the branch form.
-        // The natural form is still unlocked (tree/mega logic stays coherent);
-        // degeneration later returns to the branch form, never the item form.
-        const naturalNext = newEvolutionStage;
-        const evoItem = prev.equippedEvoItem ? EVO_ITEMS[prev.equippedEvoItem] : null;
-        if (evoItem?.evoTarget && getStageLevel(naturalNext) === evoItem.evoLevel && naturalNext !== prev.evolutionStage) {
-          newEvolutionStage = evoItem.evoTarget;
-          usedEvoItem = true;
-          // Digimentals are never consumed — return them to the Items folder.
-          if (evoItem.consumedOnEvolve === false && evoItem.inventoryEmoji) {
-            returnedDigimentalEmoji = evoItem.inventoryEmoji;
-          }
-        }
-        if (isBabyII && !hasShownRookiePopup) {
+        // Ao chegar na fase 2 libera a seleção de dias da semana — popup 1×.
+        if (wasPhase1 && !hasShownRookiePopup) {
           setShowRookieUnlockPopup(true);
           setHasShownRookiePopup(true);
           localStorage.setItem(STORAGE_KEYS.ROOKIE_POPUP_SHOWN, 'true');
@@ -240,15 +130,15 @@ export function useDailyReset({
         const newCap = FORM_REQUIREMENTS[newStageLevel].cap;
         if (newCap > newMaxActivityCap) newMaxActivityCap = newCap;
 
-        if (!finalUnlockedEvolutions.includes(naturalNext)) {
-          finalUnlockedEvolutions.push(naturalNext);
+        if (!finalUnlockedEvolutions.includes(newEvolutionStage)) {
+          finalUnlockedEvolutions.push(newEvolutionStage);
         }
       }
 
       // Degeneration by HP
       if (newHP === 0) {
         wasDegeneratedByHP = true;
-        newEvolutionStage = getDegeneratedStage(prev.evolutionStage, prev.eggType, newCurrentBranch);
+        newEvolutionStage = getPreviousForm(prev.evolutionStage, prev.eggType ?? 'vix');
 
         const degeneratedLevel = getStageLevel(newEvolutionStage);
         newHP = MAX_HP_BY_FORM[degeneratedLevel];
@@ -257,8 +147,6 @@ export function useDailyReset({
         // always half of the *new* (lower) stage's requirement, so a second
         // degeneration gets the same discount again, never a smaller one.
         newPerfectDays = Math.floor(FORM_REQUIREMENTS[degeneratedLevel].required / 2);
-        // Also reset recent branch window after forced degen
-        newRecentAttrs = { virus: 0, data: 0, vaccine: 0 };
       }
 
       const resetActivities = prev.activities.map((activity: Activity) => ({
@@ -287,21 +175,12 @@ export function useDailyReset({
         poopEventsCompleted: [],
         poopEventsShown: [],
         poopPenaltyClockAt: 0,
-        currentBranch: newCurrentBranch,
         unlockedEvolutions: finalUnlockedEvolutions,
         degeneratedByHP: wasDegeneratedByHP,
         lastDayWasPerfect: dayWasPerfect,
         // Lifetime perfect-day counter (missions) — never resets on evolution
         totalPerfectDays: (prev.totalPerfectDays ?? 0) + (dayWasPerfect ? 1 : 0),
         maxActivityCap: newMaxActivityCap,
-        attributesSinceLastEvolution: newRecentAttrs,
-        equippedEvoItem: usedEvoItem ? null : (prev.equippedEvoItem ?? null),
-        ...(returnedDigimentalEmoji && {
-          foodInventory: {
-            ...prev.foodInventory,
-            [returnedDigimentalEmoji]: (prev.foodInventory?.[returnedDigimentalEmoji] ?? 0) + 1,
-          },
-        }),
         energyPoints: 0, // Energy resets daily (refills by feeding)
         // Summary of yesterday, shown once as a "daily report" on next open.
         lastDayReport: {

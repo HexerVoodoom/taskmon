@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Clock, Bell } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { CATEGORY_ATTRIBUTES, ActivityCategory } from '../types/attributes';
+import { ActivityCategory } from '../types/attributes';
 import { CATEGORY_ICONS } from '../types/category-icons';
 
 interface Step {
@@ -69,8 +69,6 @@ export function EditModal({ isOpen, onClose, onSave, onDelete, initialData, them
       setAlarmTime(initialData.alarm?.time || '');
     }
   }, [isOpen, initialData]);
-
-  const attributes = CATEGORY_ATTRIBUTES[category];
   const currentEmoji = CATEGORY_ICONS[category];
 
   if (!isOpen) return null;
@@ -200,66 +198,6 @@ export function EditModal({ isOpen, onClose, onSave, onDelete, initialData, them
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Attribute Preview */}
-          <div className={`p-4 rounded-lg ${
-            isWin98 
-              ? 'bg-white border-2 border-gray-400' 
-              : 'bg-gray-50 border border-gray-200'
-          }`}>
-            <div className={`mb-2 ${
-              isWin98 ? 'text-black' : 'text-gray-700'
-            }`} style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: '500' }}>
-              Attributes per completed activity:
-            </div>
-            <div className="flex gap-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: '#22A900' }} />
-                <span 
-                  style={{ 
-                    fontFamily: 'monospace', 
-                    fontSize: '0.75rem',
-                    background: '#22A900',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  +{attributes.virus}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: '#009ED8' }} />
-                <span 
-                  style={{ 
-                    fontFamily: 'monospace', 
-                    fontSize: '0.75rem',
-                    background: '#009ED8',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  +{attributes.data}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: '#E69600' }} />
-                <span 
-                  style={{ 
-                    fontFamily: 'monospace', 
-                    fontSize: '0.75rem',
-                    background: '#E69600',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  +{attributes.vaccine}
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Steps */}

@@ -556,7 +556,7 @@ export function SettingsPage({
               }`}
               style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
             >
-              <strong>DigiApp</strong> v1.0.2
+              <strong>Taskmon</strong> v2.0.0
             </p>
             <p
               className={`${

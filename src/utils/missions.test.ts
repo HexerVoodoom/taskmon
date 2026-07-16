@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { MISSIONS, getMissionProgress, isMissionComplete, isShopItemUnlocked, type MissionState } from './missions';
-import { SHOP_ITEMS, DROP_EVO_ITEMS } from './shop';
+import { SHOP_ITEMS } from './shop';
 import { PET_BACKGROUNDS } from './backgrounds';
 
 const base: MissionState = {
-  evolutionStage: 'veemon',
-  unlockedEvolutions: ['veemon'],
+  evolutionStage: 'kiwi-1',
+  unlockedEvolutions: ['egg', 'kiwi-1'],
   dungeonKills: 0,
   dungeonRunsCompleted: 0,
   dinoBest: 0,
@@ -15,18 +15,18 @@ const base: MissionState = {
 describe('missions — progress', () => {
   it('stage missions trigger on reaching the level (current OR unlocked forms)', () => {
     const p0 = getMissionProgress(base);
-    expect(p0['mission-champion']).toBe(0);
-    expect(p0['mission-mega']).toBe(0);
+    expect(p0['mission-fase2']).toBe(0);
+    expect(p0['mission-fase3']).toBe(0);
 
-    // Current form at champion (item form counts too)
-    const champ = getMissionProgress({ ...base, evolutionStage: 'greymon' });
-    expect(champ['mission-champion']).toBe(1);
-    expect(champ['mission-mega']).toBe(0);
+    // Current form at fase 2 (legacy champion forms count too)
+    const f2 = getMissionProgress({ ...base, evolutionStage: 'kiwi-2' });
+    expect(f2['mission-fase2']).toBe(1);
+    expect(f2['mission-fase3']).toBe(0);
 
-    // Ever-unlocked mega counts even after degeneration back to rookie
-    const mega = getMissionProgress({ ...base, evolutionStage: 'veemon', unlockedEvolutions: ['imperialdramon'] });
-    expect(mega['mission-champion']).toBe(1);
-    expect(mega['mission-mega']).toBe(1);
+    // Ever-unlocked fase 3 counts even after degeneration back to fase 1
+    const f3 = getMissionProgress({ ...base, evolutionStage: 'kiwi-1', unlockedEvolutions: ['kiwi-3'] });
+    expect(f3['mission-fase2']).toBe(1);
+    expect(f3['mission-fase3']).toBe(1);
   });
 
   it('counter missions clamp at the target', () => {
@@ -51,23 +51,18 @@ describe('missions — shop unlock gating', () => {
   });
 
   it('mission-gated item unlocks only when the mission completes', () => {
-    const item = SHOP_ITEMS.find(i => i.id === 'bg-mission-kills-100') ?? SHOP_ITEMS.find(i => i.id === 'bg-mission-coliseum')!;
+    const item = SHOP_ITEMS.find(i => i.id === 'bg-mission-coliseum')!;
     const at = (kills: number) => getMissionProgress({ ...base, dungeonKills: kills });
     expect(isMissionComplete('mission-kills-100', at(99))).toBe(false);
     expect(isMissionComplete('mission-kills-100', at(100))).toBe(true);
-    expect(isShopItemUnlocked(item, [], at(99))).toBe(false);
-    expect(isShopItemUnlocked(item, [], at(100))).toBe(true);
+    expect(isShopItemUnlocked(item, at(99))).toBe(false);
+    expect(isShopItemUnlocked(item, at(100))).toBe(true);
   });
 
-  it('drop-gated items unlock after their first drop; plain items are always unlocked', () => {
-    const digimental = DROP_EVO_ITEMS.find(i => i.id === 'digimental-courage')!;
+  it('plain items are always unlocked; Glitchtama is never sold', () => {
     const progress = getMissionProgress(base);
-    expect(isShopItemUnlocked(digimental, [], progress)).toBe(false);
-    expect(isShopItemUnlocked(digimental, ['digimental-courage'], progress)).toBe(true);
-
-    const chip = SHOP_ITEMS.find(i => i.id === 'chip-virus')!;
-    expect(isShopItemUnlocked(chip, [], progress)).toBe(true);
-    // Glitchtama must NOT be sold at all
-    expect([...SHOP_ITEMS, ...DROP_EVO_ITEMS].some(i => i.id === 'glitchtama')).toBe(false);
+    const heart = SHOP_ITEMS.find(i => i.id === 'heart-item')!;
+    expect(isShopItemUnlocked(heart, progress)).toBe(true);
+    expect(SHOP_ITEMS.some(i => i.id === 'glitchtama')).toBe(false);
   });
 });

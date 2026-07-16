@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { getSpriteForStage } from '../utils/sprites';
 import { playTaskComplete, playDegenerate, playFeed } from '../utils/sounds';
-import { RPS_ROOKIE_DROPS } from '../utils/shop';
 import type { Language } from '../utils/i18n';
 
 /**
@@ -13,12 +12,11 @@ const HANDS = ['✊', '✋', '✌️'];
 const MATCH_POINTS = 5;
 const WINS_NEEDED = 3;
 
-export function RPSGame({ evolutionStage, language, onEarnPoints, onItemDrop, onExit }: {
+export function RPSGame({ evolutionStage, eggType, language, onEarnPoints, onExit }: {
   evolutionStage: string;
+  eggType?: string;
   language: Language;
   onEarnPoints: (pts: number) => void;
-  /** Adds a rookie evolution item to the Items folder; returns its display name. */
-  onItemDrop: (emoji: string) => string;
   onExit: () => void;
 }) {
   const isPt = language === 'pt-BR';
@@ -29,7 +27,6 @@ export function RPSGame({ evolutionStage, language, onEarnPoints, onItemDrop, on
   const [thinking, setThinking] = useState(false);
   const [roundMsg, setRoundMsg] = useState('');
   const [matchOver, setMatchOver] = useState<'won' | 'lost' | null>(null);
-  const [drop, setDrop] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
   const mono = { fontFamily: 'monospace' as const };
@@ -57,17 +54,12 @@ export function RPSGame({ evolutionStage, language, onEarnPoints, onItemDrop, on
         if (w >= WINS_NEEDED) {
           playTaskComplete();
           onEarnPoints(MATCH_POINTS);
-          // Rookie item drop: 1% per match win (Tentomon/Patamon/Palmon items).
-          if (Math.random() < 0.01) {
-            const emoji = RPS_ROOKIE_DROPS[Math.floor(Math.random() * RPS_ROOKIE_DROPS.length)];
-            setDrop(`${emoji} ${onItemDrop(emoji)}`);
-          }
           setMatchOver('won');
         }
       } else {
         const w = petWins + 1;
         setPetWins(w);
-        setRoundMsg(isPt ? 'Seu Digimon venceu a rodada!' : 'Your Digimon won the round!');
+        setRoundMsg(isPt ? 'Seu pet venceu a rodada!' : 'Your pet won the round!');
         if (w >= WINS_NEEDED) {
           playDegenerate();
           setMatchOver('lost');
@@ -81,11 +73,10 @@ export function RPSGame({ evolutionStage, language, onEarnPoints, onItemDrop, on
     setPlayerWins(0); setPetWins(0);
     setPlayerHand(null); setPetHand(null);
     setRoundMsg(''); setMatchOver(null);
-    setDrop(null);
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'linear-gradient(180deg, #0b0f17 0%, #1a1426 100%)', display: 'flex', flexDirection: 'column', color: '#e8eefc' }}>
+    <div className="tk-keep-mono" style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'linear-gradient(180deg, #0b0f17 0%, #1a1426 100%)', display: 'flex', flexDirection: 'column', color: '#e8eefc' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
         <span style={{ ...mono, fontWeight: 800, fontSize: '0.95rem', letterSpacing: 1 }}>
           ✊ {isPt ? 'PEDRA · PAPEL · TESOURA' : 'ROCK · PAPER · SCISSORS'}
@@ -97,27 +88,22 @@ export function RPSGame({ evolutionStage, language, onEarnPoints, onItemDrop, on
 
       {/* Scoreboard */}
       <p style={{ ...mono, textAlign: 'center', fontSize: '1rem', fontWeight: 800 }}>
-        {isPt ? 'Você' : 'You'} {playerWins} × {petWins} Digimon
+        {isPt ? 'Você' : 'You'} {playerWins} × {petWins} Pet
         <span style={{ color: '#5d729c', fontSize: '0.7rem' }}> ({isPt ? 'melhor de 5' : 'first to 3'})</span>
       </p>
 
       {/* Arena */}
       <div style={{ flex: 1, margin: 16, borderRadius: 12, border: '1px solid #2c3a52', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-        <img src={getSpriteForStage(evolutionStage)} alt="pet"
+        <img src={getSpriteForStage(evolutionStage, eggType)} alt="pet"
              style={{ width: 88, height: 88, objectFit: 'contain', imageRendering: 'pixelated', animation: 'dungeon-idle 1.4s ease-in-out infinite' }} />
         <div style={{ fontSize: '2.6rem', minHeight: 52, lineHeight: 1 }}>
           {thinking ? '💭' : petHand !== null ? HANDS[petHand] : ''}
         </div>
         <p style={{ ...mono, fontSize: '0.9rem', fontWeight: 700, minHeight: 22 }}>
           {matchOver === 'won' ? (isPt ? `🏆 Você venceu! +${MATCH_POINTS} Bits` : `🏆 You won! +${MATCH_POINTS} Bits`)
-            : matchOver === 'lost' ? (isPt ? '💀 Seu Digimon venceu a partida!' : '💀 Your Digimon won the match!')
+            : matchOver === 'lost' ? (isPt ? '💀 Seu pet venceu a partida!' : '💀 Your pet won the match!')
             : roundMsg}
         </p>
-        {drop && (
-          <p style={{ ...mono, fontSize: '0.8rem', fontWeight: 800, color: '#facc15' }}>
-            ✨ {isPt ? 'Item raro:' : 'Rare item:'} {drop}
-          </p>
-        )}
         <div style={{ fontSize: '2.2rem', minHeight: 44, lineHeight: 1 }}>
           {playerHand !== null ? HANDS[playerHand] : ''}
         </div>

@@ -1,479 +1,235 @@
-import React, { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { DigivolutionProgress } from './DigivolutionProgress';
-import { getEvolutionLine, type EggType } from '../types/evolution-lines';
-import { getStageLevel } from '../types/progression';
-
-// Numeric tier for each stage level (matches the card `level` field: egg=-3 …
-// rookie=0 … ultra=4) so we can tell which forms are "future" for the pet.
-const TIER_LEVEL: Record<string, number> = {
-  digiegg: -3, 'baby-i': -2, 'baby-ii': -1, rookie: 0,
-  champion: 1, ultimate: 2, mega: 3, ultra: 4,
-};
+import { PETS, FORM_REQUIREMENTS, getStageLevel, stageForLevel, type PetType, type EvolutionStage } from '../types/progression';
+import { getSpriteForStage } from '../utils/sprites';
 
 interface EvolutionPathProps {
-  currentStage: string;
-  currentBranch: 'virus' | 'data' | 'vaccine';
-  currentXP: number;
-  virusPoints: number;
-  dataPoints: number;
-  vaccinePoints: number;
-  digivolutionSegments: number;
-  digivolutionSegmentsNeeded: number;
-  onDegenerate?: (targetStage: string) => void;
-  theme?: 'default' | 'win98' | 'glitch';
-  dailyDone?: number;
-  dailyTotal?: number;
-  activitiesCount?: number;
-  evolutionStage?: string;
+  /** Forma atual (id, ex.: 'vix-2' ou 'egg'). */
+  evolutionStage: string;
+  eggType?: PetType;
   perfectDays?: number;
-  dailyRequired?: number;
   unlockedEvolutions?: string[];
-  eggType?: EggType;
-  /** Evolution padlock: tapping the CURRENT Digimon toggles it. */
+  /** Cadeado de evolução: tocar na forma ATUAL alterna. */
   evolutionLocked?: boolean;
   onToggleEvolutionLock?: () => void;
+  /** Regressão manual para uma forma anterior (recebe o id da forma). */
+  onDegenerate?: (targetStage: string) => void;
+  theme?: 'default' | 'win98' | 'glitch';
   language?: 'pt-BR' | 'en-US';
 }
 
-interface Evolution {
-  level: number;
-  name: string;
-  xpRequired: number;
-  sprite?: string;
-}
+const LEVELS: EvolutionStage[] = ['egg', 'fase-1', 'fase-2', 'fase-3'];
 
-export function EvolutionPath({ 
-  currentStage, 
-  currentBranch, 
-  currentXP, 
-  virusPoints, 
-  dataPoints, 
-  vaccinePoints, 
-  digivolutionSegments,
-  digivolutionSegmentsNeeded,
-  onDegenerate,
-  theme,
-  unlockedEvolutions = [],
+export function EvolutionPath({
   evolutionStage,
-  eggType = 'tapirmon',
+  eggType = 'vix',
+  perfectDays = 0,
+  unlockedEvolutions = [],
   evolutionLocked = false,
   onToggleEvolutionLock,
+  onDegenerate,
   language = 'en-US',
 }: EvolutionPathProps) {
   const isPt = language === 'pt-BR';
-  const unlockedSet = useMemo(() => new Set(unlockedEvolutions.map(s => s.toLowerCase())), [unlockedEvolutions]);
-  // The pet's real current tier (independent of accumulated XP).
-  const currentLevel = TIER_LEVEL[getStageLevel(evolutionStage ?? currentStage.toLowerCase())] ?? 0;
-  const [selectedBranch, setSelectedBranch] = useState<'virus' | 'data' | 'vaccine'>(currentBranch);
-  const [confirmDegenerate, setConfirmDegenerate] = useState<{ stage: string; isSecondConfirm: boolean } | null>(null);
-  // Locked evolutions are hidden behind a pixelated "?" (spoiler guard). The
-  // user can reveal one (shown darkened) after confirming; this local set resets
-  // when they leave the screen (the component unmounts on navigation).
-  const [revealed, setRevealed] = useState<Set<string>>(new Set());
-  const [confirmReveal, setConfirmReveal] = useState<string | null>(null);
+  const pet = PETS[eggType] ?? PETS.vix;
+  const accent = pet.accent;
+  const currentLevel = getStageLevel(evolutionStage);
+  const currentIdx = LEVELS.indexOf(currentLevel);
+  const unlockedSet = useMemo(() => new Set(unlockedEvolutions), [unlockedEvolutions]);
+  const [confirmDegenerate, setConfirmDegenerate] = useState<{ stage: string; name: string; isSecondConfirm: boolean } | null>(null);
 
-  const handleRevealConfirm = () => {
-    if (confirmReveal) setRevealed(prev => new Set(prev).add(confirmReveal));
-    setConfirmReveal(null);
-  };
-
-  // Get the correct evolution line based on egg type
-  const evolutionLine = useMemo(() => getEvolutionLine(eggType), [eggType]);
-
-  // Build evolution paths from the evolution line
-  const COMMON_PATH: Evolution[] = useMemo(() => [
-    { level: -3, name: evolutionLine.digiegg.name, xpRequired: evolutionLine.digiegg.xpRequired, sprite: evolutionLine.digiegg.sprite },
-    { level: -2, name: evolutionLine.inTraining1.name, xpRequired: evolutionLine.inTraining1.xpRequired, sprite: evolutionLine.inTraining1.sprite },
-    { level: -1, name: evolutionLine.inTraining2.name, xpRequired: evolutionLine.inTraining2.xpRequired, sprite: evolutionLine.inTraining2.sprite },
-  ], [evolutionLine]);
-
-  const ROOKIE: Evolution = useMemo(() => ({ 
-    level: 0, 
-    name: evolutionLine.rookie.name, 
-    xpRequired: evolutionLine.rookie.xpRequired, 
-    sprite: evolutionLine.rookie.sprite 
-  }), [evolutionLine]);
-
-  const ULTRA: Evolution = useMemo(() => ({
-    level: 4,
-    name: evolutionLine.ultra.name,
-    xpRequired: evolutionLine.ultra.xpRequired,
-    sprite: evolutionLine.ultra.sprite,
-  }), [evolutionLine]);
-
-  const getBranchPath = (branch: 'virus' | 'data' | 'vaccine'): Evolution[] => {
-    const branchData = evolutionLine.branches.find(b => b.type === branch);
-    if (!branchData) return [ULTRA];
-    
-    const branchStages = branchData.stages.map((stage, index) => ({
-      level: index + 1,
-      name: stage.name,
-      xpRequired: stage.xpRequired,
-      sprite: stage.sprite,
-    }));
-
-    return [...branchStages, ULTRA];
-  };
-
-  const getBranchColor = (branch: 'virus' | 'data' | 'vaccine') => {
-    switch (branch) {
-      case 'virus': return { bg: 'bg-[#22A900]', text: 'text-[#22A900]', border: 'border-[#22A900]', aura: 'shadow-[#22A900]/50' };
-      case 'data': return { bg: 'bg-[#009ED8]', text: 'text-[#009ED8]', border: 'border-[#009ED8]', aura: 'shadow-[#009ED8]/50' };
-      case 'vaccine': return { bg: 'bg-[#E69600]', text: 'text-[#E69600]', border: 'border-[#E69600]', aura: 'shadow-[#E69600]/50' };
-    }
-  };
-
-  // The 3 Mega forms (one per branch) for this egg line — Ultra unlocks only
-  // once all three are actually unlocked.
-  const megaKeys = useMemo(
-    () => evolutionLine.branches
-      .map(b => b.stages[b.stages.length - 1]?.name.toLowerCase())
-      .filter(Boolean) as string[],
-    [evolutionLine],
-  );
-  const areAllMegasUnlocked = () => megaKeys.length > 0 && megaKeys.every(k => unlockedSet.has(k));
-
-  const branchPath = getBranchPath(selectedBranch);
-  const colors = getBranchColor(selectedBranch);
-  
-  // Constrói a linha evolutiva ATUAL do Digimon (do início até o estágio atual)
-  const getCurrentEvolutionLine = (): Evolution[] => {
-    const currentBranchPath = getBranchPath(currentBranch);
-    const fullPath = [...COMMON_PATH, ROOKIE, ...currentBranchPath];
-    
-    // Encontra o índice do estágio atual
-    const currentIndex = fullPath.findIndex(e => e.name.toLowerCase() === currentStage.toLowerCase());
-    
-    // Retorna apenas os estágios até o atual (inclusive)
-    return currentIndex >= 0 ? fullPath.slice(0, currentIndex + 1) : fullPath;
-  };
-  
-  const currentEvolutionLine = getCurrentEvolutionLine();
-
-  const handleDegenerateClick = (stage: string) => {
-    setConfirmDegenerate({ stage, isSecondConfirm: false });
-  };
+  const required = FORM_REQUIREMENTS[currentLevel].required;
+  const isFinal = currentLevel === 'fase-3';
 
   const handleDegenerateConfirm = () => {
-    if (confirmDegenerate?.isSecondConfirm) {
-      // Second confirmation - execute degeneration
-      if (onDegenerate) {
-        onDegenerate(confirmDegenerate.stage);
-      }
+    if (!confirmDegenerate) return;
+    if (confirmDegenerate.isSecondConfirm) {
+      onDegenerate?.(confirmDegenerate.stage);
       setConfirmDegenerate(null);
     } else {
-      // First confirmation - show second confirmation
-      setConfirmDegenerate({ stage: confirmDegenerate!.stage, isSecondConfirm: true });
+      setConfirmDegenerate({ ...confirmDegenerate, isSecondConfirm: true });
     }
   };
 
-  const handleDegenerateCancel = () => {
-    setConfirmDegenerate(null);
-  };
+  const steps = LEVELS.map((level, idx) => {
+    const stageId = stageForLevel(pet.id, level);
+    const name = level === 'egg'
+      ? (isPt ? 'Ovo' : 'Egg')
+      : pet.phaseNames[Number(level.slice(-1)) - 1];
+    const subtitle = level === 'egg'
+      ? (isPt ? 'Onde tudo começa' : 'Where it all begins')
+      : (isPt ? `Fase ${level.slice(-1)}` : `Phase ${level.slice(-1)}`);
+    return {
+      level, stageId, name, subtitle,
+      isCurrent: idx === currentIdx,
+      isPast: idx < currentIdx,
+      isFuture: idx > currentIdx && !unlockedSet.has(stageId),
+    };
+  });
 
-  const renderEvolutionCard = (evolution: Evolution, colors: any, index: number, pathLength: number) => {
-    const isUnlocked = currentXP >= evolution.xpRequired;
-    const isCurrent = evolution.name.toLowerCase() === currentStage.toLowerCase();
-    const isUltraMode = evolution.level === 4 && !areAllMegasUnlocked();
-    
-    // Verifica se este estágio está na linha evolutiva ATUAL do Digimon E se está ANTES do estágio atual
-    const isInCurrentLine = currentEvolutionLine.some(e => e.name.toLowerCase() === evolution.name.toLowerCase());
-    const isPreviousStage = isInCurrentLine && isUnlocked && !isCurrent;
-
-    const isRevealed = revealed.has(evolution.name);
-    const stageKey = evolution.name.toLowerCase();
-    const isUltra = evolution.level === 4;
-    // "Reached" (shown) = the current form, an already-unlocked form, a shared
-    // trunk stage the pet has passed (egg → rookie), or — for Ultra — once all 3
-    // megas are unlocked. Everything else is a spoiler-hidden future form,
-    // regardless of accumulated XP.
-    const isReached =
-      isCurrent
-      || unlockedSet.has(stageKey)
-      || (evolution.level <= 0 && currentLevel >= evolution.level)
-      || (isUltra && areAllMegasUnlocked());
-    const hidden = !isReached && !isRevealed;
-
-    return (
-      <div key={`${evolution.name}-${index}`}>
-        <div className={`bg-white rounded-xl p-5 border transition-all ${
-          isCurrent
-            ? `${colors.border} shadow-md ${colors.aura}`
-            : isReached
-            ? 'border-gray-200'
-            : 'border-gray-100 opacity-50'
-        }`}>
-          <div className="flex items-center gap-3">
-            {/* Sprite — locked evolutions are hidden behind a pixelated "?".
-                Tapping the CURRENT Digimon toggles the evolution padlock. */}
-            <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
-              isReached ? 'bg-gray-100' : 'bg-gray-200'
-            }`}>
-              {hidden ? (
-                <button
-                  onClick={() => setConfirmReveal(evolution.name)}
-                  aria-label="Reveal evolution (spoiler)"
-                  title="Reveal (spoiler)"
-                  className="w-12 h-12 flex items-center justify-center rounded-md hover:bg-gray-300 transition-colors"
-                  style={{
-                    fontFamily: 'monospace', fontWeight: 900, fontSize: '1.7rem',
-                    color: '#6b7280', lineHeight: 1, cursor: 'pointer',
-                    imageRendering: 'pixelated',
-                    textShadow: '2px 2px 0 #cbd5e1, 3px 3px 0 #e5e7eb',
-                  }}
-                >
-                  ?
-                </button>
-              ) : isCurrent && onToggleEvolutionLock ? (
-                <button
-                  onClick={onToggleEvolutionLock}
-                  aria-label={isPt ? 'Alternar cadeado de digievolução' : 'Toggle digivolution padlock'}
-                  title={evolutionLocked
-                    ? (isPt ? 'Destravar digievolução' : 'Unlock digivolution')
-                    : (isPt ? 'Travar digievolução' : 'Lock digivolution')}
-                  className="relative w-12 h-12 flex items-center justify-center rounded-md cursor-pointer"
-                >
-                  <img
-                    src={evolution.sprite}
-                    alt={evolution.name}
-                    className="w-12 h-12 object-contain"
-                    style={{ imageRendering: 'pixelated', filter: evolutionLocked ? 'grayscale(0.7) brightness(0.75)' : 'none' }}
-                  />
-                  {evolutionLocked && (
-                    <span
-                      className="absolute inset-0 flex items-center justify-center"
-                      style={{ fontSize: '1.5rem', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}
-                    >
-                      🔒
-                    </span>
-                  )}
-                </button>
-              ) : evolution.sprite ? (
-                <img
-                  src={evolution.sprite}
-                  alt={isUnlocked ? evolution.name : 'revealed evolution'}
-                  className="w-12 h-12 object-contain"
-                  style={{ imageRendering: 'pixelated', filter: isReached ? 'none' : 'brightness(0.35) grayscale(0.35)' }}
-                />
-              ) : null}
+  return (
+    <div className="max-w-md mx-auto">
+      {/* Confirmação de regressão */}
+      {confirmDegenerate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-2xl p-6 max-w-sm w-full shadow-xl" style={{ backgroundColor: 'var(--tk-card, #fff)' }}>
+            <h3 className="text-lg mb-4 font-bold" style={{ color: 'var(--tk-text, #111)' }}>
+              {confirmDegenerate.isSecondConfirm
+                ? (isPt ? '⚠️ ÚLTIMO AVISO!' : '⚠️ FINAL WARNING!')
+                : (isPt ? '⚠️ Confirmar regressão' : '⚠️ Confirm regression')}
+            </h3>
+            <p className="mb-6 text-sm" style={{ color: 'var(--tk-muted, #555)' }}>
+              {confirmDegenerate.isSecondConfirm
+                ? (isPt
+                    ? `Tem CERTEZA ABSOLUTA que quer voltar para ${confirmDegenerate.name}? Isso NÃO pode ser desfeito!`
+                    : `Are you ABSOLUTELY SURE you want to go back to ${confirmDegenerate.name}? This CANNOT be undone!`)
+                : (isPt
+                    ? `Quer voltar para ${confirmDegenerate.name}? Você perde o progresso além dessa fase.`
+                    : `Go back to ${confirmDegenerate.name}? You'll lose progress beyond this phase.`)}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDegenerate(null)}
+                className="flex-1 py-2.5 rounded-xl transition-colors text-sm font-bold"
+                style={{ backgroundColor: 'var(--tk-soft, #eee)', color: 'var(--tk-text, #333)' }}
+              >
+                {isPt ? 'Cancelar' : 'Cancel'}
+              </button>
+              <button
+                onClick={handleDegenerateConfirm}
+                className={`flex-1 py-2.5 text-white rounded-xl transition-colors text-sm font-bold ${
+                  confirmDegenerate.isSecondConfirm ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-800 hover:bg-gray-900'
+                }`}
+              >
+                {confirmDegenerate.isSecondConfirm ? (isPt ? 'SIM, VOLTAR!' : 'YES, GO BACK!') : (isPt ? 'Confirmar' : 'Confirm')}
+              </button>
             </div>
+          </div>
+        </div>
+      )}
 
-            {/* Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className={`${isReached ? 'text-gray-900' : 'text-gray-500'}`} style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-                  {hidden ? '???' : evolution.name}
-                </h3>
-                {isCurrent && (
-                  <span className={`${colors.bg} text-white text-xs px-2 py-0.5 rounded`} style={{ fontFamily: 'monospace' }}>
-                    CURRENT
-                  </span>
-                )}
-                {isCurrent && evolutionLocked && (
-                  <span className="bg-gray-800 text-white text-xs px-2 py-0.5 rounded" style={{ fontFamily: 'monospace' }}>
-                    🔒 {isPt ? 'EVOLUÇÃO TRAVADA' : 'EVOLUTION LOCKED'}
-                  </span>
-                )}
-                {isUltraMode && (
-                  <span className="bg-gradient-to-r from-yellow-400 to-amber-500 text-white text-xs px-2 py-0.5 rounded" style={{ fontFamily: 'monospace' }}>
-                    ULTRA
-                  </span>
+      {/* Progresso de dias perfeitos até a próxima fase */}
+      <div className="rounded-2xl p-5 mb-4" style={{ backgroundColor: 'var(--tk-card, #fff)', border: '2px solid var(--tk-border, #e5e7eb)' }}>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-bold" style={{ color: 'var(--tk-text, #333)' }}>
+            {isFinal
+              ? (isPt ? '🏆 Forma final alcançada!' : '🏆 Final form reached!')
+              : (isPt ? '⭐ Dias perfeitos para evoluir' : '⭐ Perfect days to evolve')}
+          </p>
+          {!isFinal && (
+            <span className="text-sm font-extrabold" style={{ color: accent }}>
+              {Math.min(perfectDays, required)}/{required}
+            </span>
+          )}
+        </div>
+        {!isFinal && (
+          <div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--tk-soft, #f3f4f6)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${Math.min(100, (perfectDays / required) * 100)}%`, backgroundColor: accent }}
+            />
+          </div>
+        )}
+        <p className="text-xs mt-2" style={{ color: 'var(--tk-muted, #888)' }}>
+          {isFinal
+            ? (isPt ? `${pet.phaseNames[2]} é a última fase do ${pet.name}. Continue cuidando bem!` : `${pet.phaseNames[2]} is ${pet.name}'s last phase. Keep up the good care!`)
+            : (isPt
+                ? `Dia perfeito = meta de tarefas batida + energia cheia no fim do dia.`
+                : `Perfect day = task goal met + full energy at the end of the day.`)}
+        </p>
+      </div>
+
+      {/* Linha evolutiva linear */}
+      <div className="space-y-1">
+        {steps.map((step, idx) => (
+          <div key={step.stageId + idx}>
+            <div
+              className="rounded-2xl p-4 transition-all"
+              style={{
+                backgroundColor: 'var(--tk-card, #fff)',
+                border: step.isCurrent ? `2.5px solid ${accent}` : '2px solid var(--tk-border, #e5e7eb)',
+                boxShadow: step.isCurrent ? `0 4px 14px ${accent}33` : 'none',
+                opacity: step.isFuture ? 0.6 : 1,
+              }}
+            >
+              <div className="flex items-center gap-3">
+                {/* Sprite — a forma atual alterna o cadeado; futuras aparecem em silhueta */}
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: step.isCurrent ? `${accent}18` : 'var(--tk-soft, #f3f4f6)' }}
+                >
+                  {step.isCurrent && onToggleEvolutionLock ? (
+                    <button
+                      onClick={onToggleEvolutionLock}
+                      aria-label={isPt ? 'Alternar cadeado de evolução' : 'Toggle evolution padlock'}
+                      title={evolutionLocked
+                        ? (isPt ? 'Destravar evolução' : 'Unlock evolution')
+                        : (isPt ? 'Travar evolução' : 'Lock evolution')}
+                      className="relative w-14 h-14 flex items-center justify-center rounded-xl cursor-pointer"
+                    >
+                      <img
+                        src={getSpriteForStage(step.stageId, pet.id)}
+                        alt={step.name}
+                        className="w-14 h-14 object-contain"
+                        style={{ filter: evolutionLocked ? 'grayscale(0.7) brightness(0.75)' : 'none' }}
+                      />
+                      {evolutionLocked && (
+                        <span className="absolute inset-0 flex items-center justify-center" style={{ fontSize: '1.5rem', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
+                          🔒
+                        </span>
+                      )}
+                    </button>
+                  ) : (
+                    <img
+                      src={getSpriteForStage(step.stageId, pet.id)}
+                      alt={step.isFuture ? '???' : step.name}
+                      className="w-14 h-14 object-contain"
+                      style={{ filter: step.isFuture ? 'brightness(0) opacity(0.25)' : 'none' }}
+                    />
+                  )}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-extrabold" style={{ color: step.isFuture ? 'var(--tk-muted, #999)' : 'var(--tk-text, #111)', fontSize: '1rem' }}>
+                      {step.isFuture ? '???' : step.name}
+                    </h3>
+                    {step.isCurrent && (
+                      <span className="text-white text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: accent }}>
+                        {isPt ? 'ATUAL' : 'CURRENT'}
+                      </span>
+                    )}
+                    {step.isCurrent && evolutionLocked && (
+                      <span className="bg-gray-800 text-white text-xs px-2 py-0.5 rounded-full font-bold">
+                        🔒 {isPt ? 'TRAVADA' : 'LOCKED'}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--tk-muted, #888)' }}>{step.subtitle}</p>
+                </div>
+
+                {/* Ação: voltar para fase anterior */}
+                {step.isPast && step.level !== 'egg' && onDegenerate && (
+                  <button
+                    onClick={() => setConfirmDegenerate({ stage: step.stageId, name: step.name, isSecondConfirm: false })}
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition-colors"
+                    style={{ backgroundColor: 'var(--tk-soft, #eee)', color: 'var(--tk-muted, #666)' }}
+                  >
+                    {isPt ? 'Voltar' : 'Go back'}
+                  </button>
                 )}
               </div>
             </div>
 
-            {/* Status / Action Button */}
-            <div>
-              {!isReached ? (
-                <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 text-xs">
-                  🔒
-                </div>
-              ) : isPreviousStage ? (
-                <button
-                  onClick={() => handleDegenerateClick(evolution.name)}
-                  className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs transition-colors"
-                  style={{ fontFamily: 'monospace' }}
-                >
-                  Degenerate
-                </button>
-              ) : null}
-            </div>
+            {idx < steps.length - 1 && (
+              <div className="flex justify-center py-0.5">
+                <ChevronDown size={20} style={{ color: idx < currentIdx ? accent : 'var(--tk-muted, #bbb)' }} />
+              </div>
+            )}
           </div>
-        </div>
-
-        {/* Arrow */}
-        {index < pathLength - 1 && (
-          <div className="flex justify-center py-1">
-            <ChevronDown size={20} className={isUnlocked ? colors.text : 'text-gray-400'} />
-          </div>
-        )}
+        ))}
       </div>
-    );
-  };
-
-  return (
-    <div>
-      {/* Confirmation Dialog */}
-      {confirmDegenerate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg mb-4" style={{ fontFamily: 'monospace' }}>
-              {confirmDegenerate.isSecondConfirm ? '⚠️ FINAL WARNING!' : '⚠️ Confirm Degeneration'}
-            </h3>
-            <p className="text-gray-700 mb-6" style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-              {confirmDegenerate.isSecondConfirm 
-                ? `Are you ABSOLUTELY SURE you want to degenerate to ${confirmDegenerate.stage}? This action CANNOT be undone!`
-                : `Do you want to degenerate to ${confirmDegenerate.stage}? You will lose all progress beyond this stage.`
-              }
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={handleDegenerateCancel}
-                className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl transition-colors"
-                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDegenerateConfirm}
-                className={`flex-1 py-2.5 ${
-                  confirmDegenerate.isSecondConfirm 
-                    ? 'bg-red-500 hover:bg-red-600' 
-                    : 'bg-gray-800 hover:bg-gray-900'
-                } text-white rounded-xl transition-colors`}
-                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
-              >
-                {confirmDegenerate.isSecondConfirm ? 'YES, DEGENERATE!' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Reveal (spoiler) confirmation */}
-      {confirmReveal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-            <h3 className="text-lg mb-4" style={{ fontFamily: 'monospace' }}>
-              👁️ Reveal this evolution?
-            </h3>
-            <p className="text-gray-700 mb-6" style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-              This is a future evolution you haven't unlocked yet — peeking is a spoiler!
-              It'll show up darkened, and hide again once you leave this screen.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmReveal(null)}
-                className="flex-1 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl transition-colors"
-                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRevealConfirm}
-                className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-900 text-white rounded-xl transition-colors"
-                style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}
-              >
-                Yes, reveal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Attribute Balance */}
-      <div className="bg-white rounded-xl p-5 mb-4 border border-gray-200 shadow-sm">
-        <p className="text-gray-700 mb-2" style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
-          CURRENT ATTRIBUTES
-        </p>
-        <div className="flex justify-between text-sm" style={{ fontFamily: 'monospace' }}>
-          <span className="text-[#22A900]" style={{ fontWeight: '600' }}>
-            🦠 Virus: {virusPoints}
-          </span>
-          <span className="text-[#009ED8]" style={{ fontWeight: '600' }}>
-            💾 Data: {dataPoints}
-          </span>
-          <span className="text-[#E69600]" style={{ fontWeight: '600' }}>
-            💉 Vaccine: {vaccinePoints}
-          </span>
-        </div>
-      </div>
-
-      {/* Digivolution Progress */}
-      <div className="mb-4">
-        <DigivolutionProgress
-          currentDays={digivolutionSegments}
-          daysRequired={digivolutionSegmentsNeeded}
-          theme={theme}
-        />
-      </div>
-
-      {/* Common Evolution Path (Egg to In-Training 2) */}
-      <div className="mb-4 space-y-3">
-        {COMMON_PATH.map((evolution, index) => 
-          renderEvolutionCard(evolution, { bg: 'bg-teal-500', text: 'text-teal-600', border: 'border-teal-500', aura: 'shadow-teal-500/50' }, index, COMMON_PATH.length)
-        )}
-      </div>
-
-      {/* Rookie - Branching Point */}
-      <div className="mb-4">
-        {renderEvolutionCard(ROOKIE, { bg: 'bg-teal-500', text: 'text-teal-600', border: 'border-teal-500', aura: 'shadow-teal-500/50' }, 0, 1)}
-      </div>
-
-      {/* Branch Selector Divider */}
-      <div className="my-4 flex items-center gap-3">
-        <div className="h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent flex-1" />
-        <span className="text-gray-500 text-xs" style={{ fontFamily: 'monospace' }}>
-          EVOLUTION BRANCHES
-        </span>
-        <div className="h-px bg-gradient-to-r from-transparent via-gray-400 to-transparent flex-1" />
-      </div>
-
-      {/* Branch Selector Buttons - Always visible and unlocked */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={() => setSelectedBranch('virus')}
-          className={`flex-1 py-3 rounded-xl border transition-all ${
-            selectedBranch === 'virus'
-              ? 'bg-[#22A900] border-[#22A900] text-white shadow-sm'
-              : 'bg-white border-gray-200 text-[#22A900] hover:bg-[#22A900]/10'
-          }`}
-          style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
-        >
-          🦠 VIRUS
-        </button>
-        <button
-          onClick={() => setSelectedBranch('data')}
-          className={`flex-1 py-3 rounded-xl border transition-all ${
-            selectedBranch === 'data'
-              ? 'bg-[#009ED8] border-[#009ED8] text-white shadow-sm'
-              : 'bg-white border-gray-200 text-[#009ED8] hover:bg-[#009ED8]/10'
-          }`}
-          style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
-        >
-          💾 DATA
-        </button>
-        <button
-          onClick={() => setSelectedBranch('vaccine')}
-          className={`flex-1 py-3 rounded-xl border transition-all ${
-            selectedBranch === 'vaccine'
-              ? 'bg-[#E69600] border-[#E69600] text-white shadow-sm'
-              : 'bg-white border-gray-200 text-[#E69600] hover:bg-[#E69600]/10'
-          }`}
-          style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}
-        >
-          💉 VACCINE
-        </button>
-      </div>
-
-      {/* Branch-Specific Evolution Path - Always visible */}
-      <div className="space-y-3">
-        {branchPath.map((evolution, index) => 
-          renderEvolutionCard(evolution, colors, index, branchPath.length)
-        )}
-      </div>
-
     </div>
   );
 }

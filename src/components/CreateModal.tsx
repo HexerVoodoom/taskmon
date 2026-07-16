@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { X, Plus, Trash2, Clock, Bell } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { CATEGORY_ATTRIBUTES, ActivityCategory } from '../types/attributes';
+import { ActivityCategory } from '../types/attributes';
 import { CATEGORY_ICONS } from '../types/category-icons';
 import { canSelectWeekdays } from '../types/progression';
 import { Language, useTranslation } from '../utils/i18n';
@@ -50,7 +50,7 @@ const CATEGORIES: ActivityCategory[] = [
 const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const WEEKDAY_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export function CreateModal({ isOpen, onClose, onSaveTask, onSaveActivity, theme = 'default', language = 'en-US', isOnboarding = false, evolutionStage = 'digiegg', activitiesCount = 0, activitiesCap = 2 }: CreateModalProps) {
+export function CreateModal({ isOpen, onClose, onSaveTask, onSaveActivity, theme = 'default', language = 'en-US', isOnboarding = false, evolutionStage = 'egg', activitiesCount = 0, activitiesCap = 2 }: CreateModalProps) {
   const isWin98 = theme === 'win98';
   const showWeekdayGrid = canSelectWeekdays(evolutionStage);
   const t = useTranslation(language);
@@ -78,8 +78,6 @@ export function CreateModal({ isOpen, onClose, onSaveTask, onSaveActivity, theme
   } = useItemForm({ isOpen });
 
   const isAtCap = !isSingleExecution && activitiesCount >= activitiesCap;
-
-  const attributes = CATEGORY_ATTRIBUTES[category];
   const currentEmoji = CATEGORY_ICONS[category];
 
   if (!isOpen) return null;
@@ -225,66 +223,6 @@ export function CreateModal({ isOpen, onClose, onSaveTask, onSaveActivity, theme
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Attribute Preview - POR ATIVIDADE TODA */}
-          <div className={`p-4 rounded-lg ${
-            isWin98 
-              ? 'bg-white border-2 border-gray-400' 
-              : 'bg-gray-50 border border-gray-200'
-          }`}>
-            <div className={`mb-2 ${
-              isWin98 ? 'text-black' : 'text-gray-700'
-            }`} style={{ fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: '500' }}>
-              {txt.attributesLabel}
-            </div>
-            <div className="flex gap-3">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: '#22A900' }} />
-                <span 
-                  style={{ 
-                    fontFamily: 'monospace', 
-                    fontSize: '0.75rem',
-                    background: '#22A900',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  +{attributes.virus}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: '#009ED8' }} />
-                <span 
-                  style={{ 
-                    fontFamily: 'monospace', 
-                    fontSize: '0.75rem',
-                    background: '#009ED8',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  +{attributes.data}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full" style={{ background: '#E69600' }} />
-                <span 
-                  style={{ 
-                    fontFamily: 'monospace', 
-                    fontSize: '0.75rem',
-                    background: '#E69600',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  +{attributes.vaccine}
-                </span>
-              </div>
-            </div>
           </div>
 
           {/* Steps - LOGO ABAIXO DOS ATRIBUTOS */}

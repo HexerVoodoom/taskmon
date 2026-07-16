@@ -13,10 +13,10 @@ import type { Language } from '../utils/i18n';
 /**
  * Dungeon minigame — timing-bar battle across up to 5 FLOORS.
  *
- * A run is up to 5 floors; each floor is a fixed ladder of 6 RANDOM Digimon
- * climbing the tiers (baby-i → baby-ii → rookie → champion → ultimate → mega).
- * Floor difficulty = base level + (floor-1), so floor 1 suits a rookie, floor 2
- * a champion, floor 3 an ultimate… — a couple floors above the pet is brutal.
+ * A run is up to 5 floors; each floor is a fixed ladder of 6 RANDOM shadow
+ * monsters climbing the tiers (fase 1 → fase 3, two per phase).
+ * Floor difficulty = base level + (floor-1), so floor 1 suits fase 1, floor 2
+ * fase 2… — a couple floors above the pet is brutal.
  * Each floor has its own retro scene (Tamagotchi/VHS/synthwave/CRT/glitch).
  * Clearing all 5 floors COMPLETES the run and raises the base level (next run is
  * harder); the base level resets WEEKLY. Player HP carries between floors with a
@@ -29,14 +29,10 @@ import type { Language } from '../utils/i18n';
  */
 
 const PLAYER_STATS: Record<string, { hp: number; dmg: number }> = {
-  digiegg:  { hp: 10, dmg: 3 },
-  'baby-i': { hp: 10, dmg: 3 },
-  'baby-ii':{ hp: 11, dmg: 3 },
-  rookie:   { hp: 12, dmg: 4 },
-  champion: { hp: 14, dmg: 5 },
-  ultimate: { hp: 16, dmg: 6 },
-  mega:     { hp: 18, dmg: 7 },
-  ultra:    { hp: 20, dmg: 8 },
+  egg:      { hp: 10, dmg: 3 },
+  'fase-1': { hp: 12, dmg: 4 },
+  'fase-2': { hp: 15, dmg: 5 },
+  'fase-3': { hp: 18, dmg: 7 },
 };
 const MAX_FLOORS = 5;
 const PERFECT = 0.92;
@@ -102,8 +98,9 @@ function TimingBar({ speed, color, label, onStop }: {
 }
 
 // ── Game ───────────────────────────────────────────────────────────────────
-export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeartDrop, onDigimentalDrop, onGlitchtama, onEnemyDefeated, onEarnPoints, onExit }: {
+export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose, onHeartDrop, onGlitchtama, onEnemyDefeated, onEarnPoints, onExit }: {
   evolutionStage: string;
+  eggType?: string;
   language: Language;
   /** Start a run: gates on HP only. Returns the base level (floor 1's level). */
   onEnter: () => { ok: true; level: number; best: number } | { ok: false; reason: 'hp' };
@@ -111,8 +108,6 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
   onLose: () => void;
   /** Rolls for a heart drop (added to Items); returns whether one dropped. */
   onHeartDrop: () => boolean;
-  /** Rolls for a digimental drop (added to Items); returns its display name or null. */
-  onDigimentalDrop: () => string | null;
   /** Completing all 5 floors grants a Glitchtama (added to Items). */
   onGlitchtama: () => void;
   /** Mission counter: called once per defeated enemy. */
@@ -122,7 +117,7 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
   onExit: () => void;
 }) {
   const isPt = language === 'pt-BR';
-  const playerStats = PLAYER_STATS[getStageLevel(evolutionStage)] ?? PLAYER_STATS.rookie;
+  const playerStats = PLAYER_STATS[getStageLevel(evolutionStage)] ?? PLAYER_STATS['fase-1'];
 
   const [enemies, setEnemies] = useState<DungeonEnemy[]>([]);
   const [enemyIdx, setEnemyIdx] = useState(0);
@@ -145,7 +140,7 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
   const runScoreRef = useRef(0);
 
   const enemy = enemies[enemyIdx];
-  const petSprite = getSpriteForStage(evolutionStage);
+  const petSprite = getSpriteForStage(evolutionStage, eggType);
   const mono = { fontFamily: 'monospace' as const };
   const ladderLen = LADDER_TIERS.length;
   const scene = runScenes[floor - 1] ?? DUNGEON_SCENES[0];
@@ -205,11 +200,9 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
     onEnemyDefeated();
     addPoints(enemy.points);
     const gotHeart = onHeartDrop();
-    const digimental = onDigimentalDrop();
     setRewardMsg(
       `+${enemy.points} Bits` +
-      (gotHeart ? ` · 💗 +1 ${isPt ? 'coração' : 'heart'}` : '') +
-      (digimental ? ` · ✨ ${digimental}!` : ''),
+      (gotHeart ? ` · 💗 +1 ${isPt ? 'coração' : 'heart'}` : ''),
     );
     setPopup(finalMsg);
     setPhase('result');
@@ -229,7 +222,7 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
     const title = crit ? (isPt ? 'PERFEITO!' : 'PERFECT!')
       : acc >= 0.6 ? (isPt ? 'Bom golpe!' : 'Good hit!')
       : (isPt ? 'Raspão...' : 'Graze...');
-    const atkPopup: Popup = { icon: '⚔️', title, detail: isPt ? `${dmg} de dano no ${enemy.name}` : `${dmg} damage to ${enemy.name}`, color: '#4ade80' };
+    const atkPopup: Popup = { icon: '⚔️', title, detail: isPt ? `${dmg} de dano no ${(isPt ? enemy.namePt : enemy.nameEn)}` : `${dmg} damage to ${(isPt ? enemy.namePt : enemy.nameEn)}`, color: '#4ade80' };
 
     if (newHp <= 0) { defeatEnemy(atkPopup); return; }
 
@@ -356,7 +349,7 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
   const sceneName = isPt ? scene.namePt : scene.nameEn;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#07090f', display: 'flex', flexDirection: 'column', color: '#e8eefc' }}>
+    <div className="tk-keep-mono" style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#07090f', display: 'flex', flexDirection: 'column', color: '#e8eefc' }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
         <span style={{ ...mono, fontWeight: 800, fontSize: '0.95rem', letterSpacing: 1 }}>
@@ -380,12 +373,12 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
 
           {/* Enemy (top-right) */}
           <div style={{ position: 'absolute', top: 14, right: 16, textAlign: 'right' }}>
-            <p style={{ ...mono, ...sceneLabel, fontSize: '0.8rem', marginBottom: 4 }}>{enemy.name}</p>
+            <p style={{ ...mono, ...sceneLabel, fontSize: '0.8rem', marginBottom: 4 }}>{(isPt ? enemy.namePt : enemy.nameEn)}</p>
             {hpBar(enemyHp, enemy.hp, '#f87171')}
           </div>
           <img
             src={getSpriteForStage(enemy.stage)}
-            alt={enemy.name}
+            alt={(isPt ? enemy.namePt : enemy.nameEn)}
             style={{
               position: 'absolute', top: '18%', right: '10%', width: 96, height: 96, objectFit: 'contain',
               imageRendering: 'pixelated',
@@ -441,8 +434,8 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
           ) : (
             <p style={{ ...mono, fontSize: '0.76rem', color: '#9fb2d8', maxWidth: 330 }}>
               {isPt
-                ? '5 andares, cada um com 6 inimigos e mais forte que o anterior. Andar 1 serve pra um rookie; alguns andares acima ficam brutais. Concluir a run inteira sobe a dificuldade (reset semanal). Perder custa 1 coração real!'
-                : '5 floors, each with 6 enemies and tougher than the last. Floor 1 suits a rookie; a few floors up gets brutal. Completing the whole run raises the difficulty (weekly reset). Losing costs 1 real heart!'}
+                ? '5 andares, cada um com 6 monstrinhos sombrios e mais forte que o anterior. Andar 1 serve pra fase 1; alguns andares acima ficam brutais. Concluir a run inteira sobe a dificuldade (reset semanal). Perder custa 1 coração real!'
+                : '5 floors, each with 6 shadow monsters and tougher than the last. Floor 1 suits phase 1; a few floors up gets brutal. Completing the whole run raises the difficulty (weekly reset). Losing costs 1 real heart!'}
             </p>
           )}
           <button
@@ -473,7 +466,7 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
           {phase === 'defend' && (
             <div>
               <p style={{ ...mono, textAlign: 'center', fontSize: '0.82rem', fontWeight: 800, color: defendTimeLeft <= 1 ? '#f87171' : '#facc15', marginBottom: 6 }}>
-                {isPt ? `${enemy.name} atacando — DESVIE!` : `${enemy.name} attacking — DODGE!`} ⏱ {defendTimeLeft.toFixed(1)}s
+                {isPt ? `${(isPt ? enemy.namePt : enemy.nameEn)} atacando — DESVIE!` : `${(isPt ? enemy.namePt : enemy.nameEn)} attacking — DODGE!`} ⏱ {defendTimeLeft.toFixed(1)}s
               </p>
               <TimingBar key={`def-${floor}-${enemyIdx}-${enemyHp}-${playerHp}`} speed={enemy.speed * 1.2} color="#60a5fa" label={isPt ? 'DESVIAR!' : 'DODGE!'} onStop={a => handleDefend(a)} />
             </div>
@@ -484,7 +477,7 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
           {phase === 'enemy-down' && (
             <div style={{ textAlign: 'center' }}>
               <p style={{ ...mono, fontWeight: 800, marginBottom: 4 }}>
-                ✅ {isPt ? `${enemy.name} derrotado!` : `${enemy.name} defeated!`}
+                ✅ {isPt ? `${(isPt ? enemy.namePt : enemy.nameEn)} derrotado!` : `${(isPt ? enemy.namePt : enemy.nameEn)} defeated!`}
               </p>
               <p style={{ ...mono, fontSize: '0.82rem', color: '#facc15', marginBottom: 10 }}>{rewardMsg}</p>
               <button onClick={nextEnemy}
@@ -493,7 +486,7 @@ export function DungeonGame({ evolutionStage, language, onEnter, onLose, onHeart
                   ? (floor >= MAX_FLOORS
                       ? (isPt ? `CONCLUIR RUN (+${clearBonus(floor)} Bits + 🌀)` : `FINISH RUN (+${clearBonus(floor)} Bits + 🌀)`)
                       : (isPt ? `LIMPAR ANDAR (+${clearBonus(floor)} Bits)` : `CLEAR FLOOR (+${clearBonus(floor)} Bits)`))
-                  : (isPt ? `DESAFIAR ${enemies[enemyIdx + 1].name.toUpperCase()} →` : `CHALLENGE ${enemies[enemyIdx + 1].name.toUpperCase()} →`)}
+                  : (isPt ? `DESAFIAR ${(isPt ? enemies[enemyIdx + 1].namePt : enemies[enemyIdx + 1].nameEn).toUpperCase()} →` : `CHALLENGE ${(isPt ? enemies[enemyIdx + 1].namePt : enemies[enemyIdx + 1].nameEn).toUpperCase()} →`)}
               </button>
             </div>
           )}

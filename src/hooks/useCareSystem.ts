@@ -38,7 +38,7 @@ export function useCareSystem({
   // The second poop is scheduled only once the first actually appears (see the
   // polling loop below), so the ≥8h gap counts from the first poop's appearance.
   useEffect(() => {
-    if (['digiegg', 'baby-i'].includes(getStageLevel(gameState.evolutionStage))) return;
+    if (getStageLevel(gameState.evolutionStage) === 'egg') return;
     if (gameState.lastResetDate !== new Date().toDateString()) return;
 
     if (!gameState.poopEventsScheduled || gameState.poopEventsScheduled.length === 0) {
@@ -67,7 +67,7 @@ export function useCareSystem({
       // below, which would otherwise block poop when there are no pending tasks.
       if (
         !isSleeping &&
-        !['digiegg', 'baby-i'].includes(getStageLevel(gameState.evolutionStage)) &&
+        getStageLevel(gameState.evolutionStage) !== 'egg' &&
         !careEvent
       ) {
         const scheduled = gameState.poopEventsScheduled || [];
@@ -82,8 +82,8 @@ export function useCareSystem({
               ispt ? '🚽 Hora de limpar!' : '🚽 Bathroom time!',
               {
                 body: ispt
-                  ? 'Seu Digimon fez cocô! Dê um banho para limpar. 🚿'
-                  : 'Your Digimon pooped! Give it a shower to clean up. 🚿',
+                  ? 'Seu Taskmon fez cocô! Dê um banho para limpar. 🚿'
+                  : 'Your Taskmon pooped! Give it a shower to clean up. 🚿',
                 tag: `poop-event-${index}`,
               },
             );
