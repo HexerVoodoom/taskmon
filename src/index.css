@@ -4900,3 +4900,106 @@ html {
   70%  { opacity: 1; transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(0.95); }
   100% { opacity: 0; transform: translate(calc(-50% + var(--tx, 0px) * 1.15), calc(-50% + var(--ty, 0px) * 1.15)) scale(0.5); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TASKMON — tema por perfil (0 preto+roxo · 1 rosa · 2 verde)
+   Aplicado quando o tema "default" está ativo: <html class="tk-theme"
+   data-profile="N">. Os componentes novos consomem as vars diretamente;
+   os antigos (utilitários bg-white/text-gray-*) são re-mapeados abaixo,
+   o que dá o modo escuro inteiro do perfil 0 sem tocar em cada componente.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --tk-accent: #22c55e;
+  --tk-accent-dark: #15803d;
+  --tk-bg: #f7fdf7;
+  --tk-card: #ffffff;
+  --tk-soft: #ecfdf3;
+  --tk-border: #d9f2e3;
+  --tk-text: #14261b;
+  --tk-muted: #6b8577;
+  --tk-frame: #dcfce7;
+  --tk-font: 'Nunito', 'Quicksand', ui-rounded, 'SF Pro Rounded', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+:root[data-profile='0'] {
+  --tk-accent: #a855f7;
+  --tk-accent-dark: #6b21a8;
+  --tk-bg: #120e1c;
+  --tk-card: #1e1730;
+  --tk-soft: #2a2140;
+  --tk-border: #372a52;
+  --tk-text: #f1e9ff;
+  --tk-muted: #a795c9;
+  --tk-frame: #241b38;
+}
+:root[data-profile='1'] {
+  --tk-accent: #ec4899;
+  --tk-accent-dark: #be185d;
+  --tk-bg: #fff6fb;
+  --tk-card: #ffffff;
+  --tk-soft: #ffe9f4;
+  --tk-border: #fbd3e8;
+  --tk-text: #33111f;
+  --tk-muted: #a56f8c;
+  --tk-frame: #fde0ef;
+}
+:root[data-profile='2'] {
+  --tk-accent: #22c55e;
+  --tk-accent-dark: #15803d;
+  --tk-bg: #f6fdf7;
+  --tk-card: #ffffff;
+  --tk-soft: #e6f9ec;
+  --tk-border: #cdeeda;
+  --tk-text: #122619;
+  --tk-muted: #679478;
+  --tk-frame: #dcf5e5;
+}
+
+/* Tipografia arredondada em todo o app (tema default). Zonas retrô mantêm o
+   monospace com .tk-keep-mono (loja/masmorra/minijogos/janela de itens). */
+html.tk-theme body { background: var(--tk-bg); }
+html.tk-theme, html.tk-theme * { font-family: var(--tk-font) !important; }
+html.tk-theme .tk-keep-mono, html.tk-theme .tk-keep-mono * {
+  font-family: 'Courier New', ui-monospace, monospace !important;
+}
+
+/* Re-mapeamento dos utilitários usados pelos componentes antigos → vars do
+   perfil. Escopado ao tema default; win98/glitch ficam intocados. */
+html.tk-theme .bg-white { background-color: var(--tk-card) !important; }
+html.tk-theme .bg-gray-50 { background-color: var(--tk-soft) !important; }
+html.tk-theme .bg-gray-100 { background-color: var(--tk-soft) !important; }
+html.tk-theme .bg-gray-200 { background-color: var(--tk-border) !important; }
+html.tk-theme .hover\:bg-gray-100:hover { background-color: var(--tk-soft) !important; }
+html.tk-theme .hover\:bg-gray-200:hover { background-color: var(--tk-border) !important; }
+html.tk-theme .hover\:bg-gray-300:hover { background-color: var(--tk-border) !important; }
+html.tk-theme .text-gray-900, html.tk-theme .text-gray-800 { color: var(--tk-text) !important; }
+html.tk-theme .text-gray-700, html.tk-theme .text-gray-600 { color: var(--tk-text) !important; opacity: 0.9; }
+html.tk-theme .text-gray-500, html.tk-theme .text-gray-400 { color: var(--tk-muted) !important; }
+html.tk-theme .border-gray-200, html.tk-theme .border-gray-100 { border-color: var(--tk-border) !important; }
+html.tk-theme .border-\[\#e5e6e7\] { border-color: var(--tk-border) !important; }
+html.tk-theme .ring-1 { --tw-ring-color: var(--tk-border) !important; }
+html.tk-theme .shadow-sm { box-shadow: 0 2px 0 var(--tk-border) !important; }
+/* Botões/acentos teal do tema antigo → cor do perfil */
+html.tk-theme .bg-teal-500 { background-color: var(--tk-accent) !important; }
+html.tk-theme .bg-teal-50 { background-color: var(--tk-soft) !important; }
+html.tk-theme .text-teal-600, html.tk-theme .text-teal-500 { color: var(--tk-accent) !important; }
+html.tk-theme .border-teal-200, html.tk-theme .border-teal-300 { border-color: var(--tk-accent) !important; }
+html.tk-theme .hover\:bg-teal-50:hover { background-color: var(--tk-soft) !important; }
+html.tk-theme .bg-gray-900 { background-color: var(--tk-accent) !important; }
+html.tk-theme .hover\:bg-gray-800:hover { background-color: var(--tk-accent-dark) !important; }
+html.tk-theme .bg-gray-800 { background-color: var(--tk-accent-dark) !important; }
+html.tk-theme .hover\:bg-gray-900:hover { background-color: var(--tk-accent-dark) !important; }
+/* Cartões Duolingo: cantos generosos por padrão no tema novo */
+html.tk-theme .rounded-2xl { border-radius: 20px !important; }
+/* Inputs dos formulários antigos */
+html.tk-theme input.bg-gray-50, html.tk-theme .bg-gray-50 input { color: var(--tk-text); }
+/* Cores arbitrárias usadas pelos cards antigos → vars do perfil */
+html.tk-theme .text-\[\#101828\] { color: var(--tk-text) !important; }
+html.tk-theme .text-\[\#1e2939\] { color: var(--tk-text) !important; }
+html.tk-theme .text-\[\#2d2d2d\] { color: var(--tk-text) !important; }
+html.tk-theme .text-\[\#4a5565\], html.tk-theme .text-\[\#4d5461\] { color: var(--tk-text) !important; opacity: 0.85; }
+html.tk-theme .text-\[\#6a7282\], html.tk-theme .text-\[\#686868\] { color: var(--tk-muted) !important; }
+html.tk-theme .text-\[\#a1a1a1\], html.tk-theme .text-\[\#8f8f8f\], html.tk-theme .text-\[\#9ca3af\], html.tk-theme .text-\[\#6b7280\] { color: var(--tk-muted) !important; }
+html.tk-theme .bg-\[\#f3f4f6\] { background-color: var(--tk-soft) !important; }
+html.tk-theme .bg-\[\#e5e7eb\] { background-color: var(--tk-border) !important; }
+html.tk-theme .border-\[\#c0c0c0\] { border-color: var(--tk-border) !important; }
+html.tk-theme .bg-\[\#101828\] { background-color: var(--tk-accent) !important; }

@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Language } from '../utils/i18n';
-import { FOOD_BY_CATEGORY } from '../constants/labels';
-import { CATEGORY_ATTRIBUTES } from '../types/attributes';
-import { SPECIAL_ITEMS, CHIP_BOOST, HEART_HEAL } from '../utils/shop';
+import { SPECIAL_ITEMS, HEART_HEAL } from '../utils/shop';
 
 interface ItemsWindowProps {
   foodInventory: Record<string, number>;
@@ -50,23 +48,11 @@ function getFoodDesc(emoji: string, lang: Language): string {
   return lang === 'pt-BR' ? entry.descPt : entry.descEn;
 }
 
-function getFoodAttrs(emoji: string) {
-  const foodDef = Object.values(FOOD_BY_CATEGORY).find(f => f.emoji === emoji);
-  if (!foodDef) return null;
-  return CATEGORY_ATTRIBUTES[foodDef.category];
-}
-
 interface Popover {
   emoji: string;
   x: number;
   y: number;
 }
-
-const ATTR_COLORS = {
-  vaccine: '#22c55e',
-  data: '#4F80E9',
-  virus: '#E94F4F',
-};
 
 export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US' }: ItemsWindowProps) {
   const [pos, setPos] = useState({ x: 40, y: -320 });
@@ -134,7 +120,7 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
     <>
       <div
         ref={windowRef}
-        className="fixed z-[200] select-none"
+        className="fixed z-[200] select-none tk-keep-mono"
         style={{ bottom: `calc(0px + ${-pos.y}px)`, left: pos.x, width: 260 }}
       >
         <div
@@ -294,10 +280,6 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
         const name = getFoodName(popover.emoji, language);
         const desc = getFoodDesc(popover.emoji, language);
         const special = SPECIAL_ITEMS[popover.emoji];
-        const attrs = special ? null : getFoodAttrs(popover.emoji);
-        const attrEntries = attrs
-          ? (['vaccine', 'data', 'virus'] as const).filter(k => attrs[k] > 0)
-          : [];
 
         return (
           <div
@@ -330,48 +312,23 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
                 </div>
               </div>
 
-              {/* Attribute points (food) */}
-              {attrEntries.length > 0 && (
-                <div style={{ padding: '4px 8px', display: 'flex', gap: 6, borderBottom: '1px solid #808080' }}>
-                  {attrEntries.map(k => (
-                    <span
-                      key={k}
-                      style={{
-                        fontFamily: 'monospace',
-                        fontSize: '0.6rem',
-                        color: ATTR_COLORS[k],
-                        fontWeight: 'bold',
-                      }}
-                    >
-                      {k === 'vaccine' ? '💉' : k === 'data' ? '💾' : '🦠'}+{attrs![k]}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Special item effect (chip = attribute; heart = heal;
-                  glitchtama = perfect day; evo-equip = equips as evo item) */}
-              {special && (
-                <div style={{ padding: '4px 8px', display: 'flex', gap: 6, borderBottom: '1px solid #808080' }}>
-                  {special.kind === 'chip' && special.attr ? (
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: ATTR_COLORS[special.attr], fontWeight: 'bold' }}>
-                      {special.attr === 'vaccine' ? '💉' : special.attr === 'data' ? '💾' : '🦠'}+{CHIP_BOOST}
-                    </span>
-                  ) : special.kind === 'glitchtama' ? (
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#8b5cf6', fontWeight: 'bold' }}>
-                      ⭐+1 {isPt ? 'dia perfeito' : 'perfect day'}
-                    </span>
-                  ) : special.kind === 'evo-equip' ? (
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#0e7490', fontWeight: 'bold' }}>
-                      ⚙ {isPt ? 'Usar = equipar p/ digievolução' : 'Use = equip for digivolution'}
-                    </span>
-                  ) : (
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#E94F4F', fontWeight: 'bold' }}>
-                      ❤️+{HEART_HEAL}
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* Special item effect (heart = heal; glitchtama = perfect day).
+                  Comida comum: +1 energia. */}
+              <div style={{ padding: '4px 8px', display: 'flex', gap: 6, borderBottom: '1px solid #808080' }}>
+                {special?.kind === 'glitchtama' ? (
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#8b5cf6', fontWeight: 'bold' }}>
+                    ⭐+1 {isPt ? 'dia perfeito' : 'perfect day'}
+                  </span>
+                ) : special?.kind === 'heart' ? (
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#E94F4F', fontWeight: 'bold' }}>
+                    ❤️+{HEART_HEAL}
+                  </span>
+                ) : (
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#d97706', fontWeight: 'bold' }}>
+                    ⚡+1 {isPt ? 'energia' : 'energy'}
+                  </span>
+                )}
+              </div>
 
               {/* Buttons */}
               <div style={{ padding: '4px 6px', display: 'flex', justifyContent: 'flex-end', gap: 4 }}>

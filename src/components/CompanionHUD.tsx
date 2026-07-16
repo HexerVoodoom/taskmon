@@ -1,26 +1,22 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
-import imgHeartSprite from "figma:asset/7e77e9ec45ca6381843c93b205d4f8cdd7ddf568.png";
-import bgCyberpunk from "figma:asset/7342065b1193c2befe599eb2d86ef8641f1a596c.png";
-import { getSpriteForStage, LEFT_FACING_STAGES } from '../utils/sprites';
+import { getSpriteForStage } from '../utils/sprites';
 import { PET_BACKGROUNDS } from '../utils/backgrounds';
 import { EnergyBar } from './EnergyBar';
 import { CareSystem, CareEvent } from './CareSystem';
 import { ChatBox } from './ChatBox';
 import { Language } from '../utils/i18n';
 import { playShower } from '../utils/sounds';
-import { getStageLevel } from '../types/progression';
+import { getStageLevel, getPetOfStage, PETS, type PetType } from '../types/progression';
 
 interface CompanionHUDProps {
   companionMood: 'idle' | 'happy' | 'tired';
   energyLevel: number;
   message: string;
   currentStage: string;
-  evolutionStage: 'digiegg' | 'pichimon' | 'pukamon' | 'tapirmon' | 'tuskmon' | 'monochromon' | 'bakemon' | 'gigadramon' | 'triceramon' | 'digitamamon' | 'gaioumon' | 'ultimatebrachiomon' | 'titamon' | 'gaioumon-itto' | string;
+  evolutionStage: string;
+  eggType?: PetType;
   healthPoints: number;
   maxHealthPoints: number;
-  dominantBranch: 'virus' | 'data' | 'vaccine' | 'balanced';
-  currentXP: number;
-  nextLevelXP: number;
   triggerMessage?: number; // Prop to trigger message from outside
   energyPoints?: number; // Version B: energy gauge, fills only via feeding
   maxEnergyPoints?: number; // energy bars = the stage's daily task requirement
@@ -62,11 +58,9 @@ export const CompanionHUD = memo(function CompanionHUD({
   message, 
   currentStage, 
   evolutionStage, 
+  eggType,
   healthPoints, 
   maxHealthPoints, 
-  dominantBranch, 
-  currentXP, 
-  nextLevelXP,
   triggerMessage = 0,
   energyPoints = 0,
   maxEnergyPoints,
@@ -127,8 +121,8 @@ export const CompanionHUD = memo(function CompanionHUD({
   const [hugBalloon, setHugBalloon] = useState(false);
 
   // Always-current snapshot of props for stable intervals
-  const propsRef = useRef({ useAI, language, currentStage, companionMood, evolutionStage, dominantBranch, aiSettings, healthPoints, energyPoints, maxEnergy, maxHealthPoints, careEvent, isSleeping });
-  propsRef.current = { useAI, language, currentStage, companionMood, evolutionStage, dominantBranch, aiSettings, healthPoints, energyPoints, maxEnergy, maxHealthPoints, careEvent, isSleeping };
+  const propsRef = useRef({ useAI, language, currentStage, companionMood, evolutionStage, aiSettings, healthPoints, energyPoints, maxEnergy, maxHealthPoints, careEvent, isSleeping });
+  propsRef.current = { useAI, language, currentStage, companionMood, evolutionStage, aiSettings, healthPoints, energyPoints, maxEnergy, maxHealthPoints, careEvent, isSleeping };
 
   // speak: strips all emojis, shows bubble, auto-hides after durationMs
   const speak = useCallback((text: string, durationMs = 4000) => {
@@ -218,7 +212,7 @@ export const CompanionHUD = memo(function CompanionHUD({
   }, [healthPoints, maxHealthPoints]);
 
 
-  const isEarlyStage = ['digiegg', 'baby-i'].includes(getStageLevel(evolutionStage));
+  const isEarlyStage = getStageLevel(evolutionStage) === 'egg';
 
   // Walking animation
   useEffect(() => {
@@ -300,7 +294,7 @@ export const CompanionHUD = memo(function CompanionHUD({
       fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: contextMsg, digimonName: p.currentStage, mood: p.companionMood, evolutionStage: p.evolutionStage, dominantBranch: p.dominantBranch, language: p.language, aiSettings: p.aiSettings }),
+        body: JSON.stringify({ message: contextMsg, digimonName: p.currentStage, mood: p.companionMood, evolutionStage: p.evolutionStage, language: p.language, aiSettings: p.aiSettings }),
       })
         .then(r => r.ok ? r.json() : null)
         .then(data => { if (data?.response) speak(data.response, 5000); })
@@ -344,42 +338,19 @@ export const CompanionHUD = memo(function CompanionHUD({
     fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: contextMsg, digimonName: currentStage, mood: companionMood, evolutionStage, dominantBranch, language, aiSettings }),
+      body: JSON.stringify({ message: contextMsg, digimonName: currentStage, mood: companionMood, evolutionStage, language, aiSettings }),
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data?.response) speak(data.response, 5000); })
       .catch(() => {});
   };
 
-  const sprite = getSpriteForStage(evolutionStage);
+  const sprite = getSpriteForStage(evolutionStage, eggType);
 
 
-  // Check if sprite should be flipped when walking left
-  const shouldFlipOnLeft = () => {
-    const noFlipStages = ['digiegg']; // Stages that look wrong when flipped
-    return !noFlipStages.includes(evolutionStage.toLowerCase());
-  };
-
-  // Check if sprite is flipped by default and needs correction
-  const isFlippedByDefault = () => {
-    return LEFT_FACING_STAGES.includes(evolutionStage.toLowerCase());
-  };
-
-  // Get the correct horizontal flip for the sprite
+  // Ovo nunca vira; as demais formas viram quando andam para a esquerda.
   const getHorizontalFlip = () => {
-    const stage = evolutionStage.toLowerCase();
-    
-    // Pichimon is flipped by default, so we need to invert the logic
-    if (isFlippedByDefault()) {
-      return direction === 'right' ? 'scaleX(-1)' : 'scaleX(1)';
-    }
-    
-    // DigiEgg never flips
-    if (stage === 'digiegg') {
-      return 'scaleX(1)';
-    }
-    
-    // All other sprites flip when going left
+    if (getStageLevel(evolutionStage) === 'egg') return 'scaleX(1)';
     return direction === 'left' ? 'scaleX(-1)' : 'scaleX(1)';
   };
 
@@ -388,18 +359,10 @@ export const CompanionHUD = memo(function CompanionHUD({
     return squashFrame === 0 ? 0.9 : 1.0; // 90% or 100% of original height
   };
 
-  // Get branch aura color
-  const getBranchAuraColor = () => {
-    switch (dominantBranch) {
-      case 'virus':
-        return 'rgba(233, 79, 79, 0.6)'; // Red
-      case 'data':
-        return 'rgba(79, 128, 233, 0.6)'; // Blue
-      case 'vaccine':
-        return 'rgba(102, 233, 79, 0.6)'; // Green
-      default:
-        return 'rgba(156, 163, 175, 0.6)'; // Gray
-    }
+  // Aura na cor do pet
+  const getPetAuraColor = () => {
+    const pet = PETS[getPetOfStage(evolutionStage, eggType ?? 'vix')];
+    return `${pet.accent}99`;
   };
 
   // Apply filters based on companion mood (without saturation reduction)
@@ -502,7 +465,7 @@ export const CompanionHUD = memo(function CompanionHUD({
   };
 
   const getCompanionFilter = () => {
-    const auraColor = getBranchAuraColor();
+    const auraColor = getPetAuraColor();
     switch (companionMood) {
       case 'happy':
         return `brightness-110 drop-shadow-[0_0_12px_${auraColor}]`;
@@ -520,31 +483,21 @@ export const CompanionHUD = memo(function CompanionHUD({
     const fullHearts = Math.floor(healthPoints);
     const hasHalf = healthPoints - fullHearts >= 0.5;
 
+    const heartPath = 'M12 21s-7.5-4.8-10-9.3C.5 8 2.6 4.5 6.2 4.5c2.2 0 3.9 1.2 4.8 3 .9-1.8 2.6-3 4.8-3 3.6 0 5.7 3.5 4.2 7.2-2.5 4.5-10 9.3-10 9.3Z';
     for (let i = 0; i < totalHearts; i++) {
       const isFull = i < fullHearts;
       const isHalf = i === fullHearts && hasHalf;
 
       hearts.push(
         <div key={i} className="relative h-[22px] w-[23px] flex-shrink-0">
-          {/* Base heart: red when full, dark when empty/half */}
-          <img
-            alt=""
-            className="absolute inset-0 max-w-none object-cover pointer-events-none size-full"
-            src={imgHeartSprite}
-            style={{
-              imageRendering: 'pixelated',
-              filter: isFull ? 'none' : 'brightness(0.2) saturate(0)',
-            }}
-          />
-          {/* Half overlay: red left 50% over the dark base */}
+          <svg viewBox="0 0 24 24" className="absolute inset-0 size-full pointer-events-none">
+            <path d={heartPath} fill={isFull ? '#ef4444' : 'rgba(0,0,0,0.45)'} stroke="rgba(0,0,0,0.55)" strokeWidth="1.4" />
+          </svg>
           {isHalf && (
             <div className="absolute inset-0 overflow-hidden pointer-events-none" style={{ width: '50%' }}>
-              <img
-                alt=""
-                className="max-w-none"
-                src={imgHeartSprite}
-                style={{ imageRendering: 'pixelated', width: '23px', height: '22px' }}
-              />
+              <svg viewBox="0 0 24 24" style={{ width: '23px', height: '22px' }}>
+                <path d={heartPath} fill="#ef4444" stroke="rgba(0,0,0,0.55)" strokeWidth="1.4" />
+              </svg>
             </div>
           )}
         </div>
@@ -561,7 +514,7 @@ export const CompanionHUD = memo(function CompanionHUD({
     const isPt = language === 'pt-BR';
 
     return (
-      <div title={isPt ? `${filledSegments}/${totalSegments} dias perfeitos para digivolução` : `${filledSegments}/${totalSegments} perfect days to digivolve`}>
+      <div title={isPt ? `${filledSegments}/${totalSegments} dias perfeitos para evoluir` : `${filledSegments}/${totalSegments} perfect days to evolve`}>
         <div className="flex gap-[2px]">
           {Array.from({ length: totalSegments }, (_, i) => (
             <div
@@ -602,9 +555,9 @@ export const CompanionHUD = memo(function CompanionHUD({
     style={
       !isGlitch && !isWin98 
         ? { 
-            backgroundColor: '#6A7282', 
-            border: '1.1px solid #1F2A39',
-            boxShadow: '0px 10px 15px -3px rgba(0,0,0,0.1), 0px 4px 6px -4px rgba(0,0,0,0.1)'
+            backgroundColor: 'var(--tk-frame, #6A7282)', 
+            border: '2px solid var(--tk-border, #1F2A39)',
+            boxShadow: '0px 10px 15px -3px rgba(0,0,0,0.12), 0px 4px 6px -4px rgba(0,0,0,0.1)'
           }
         : undefined
     }>
@@ -629,13 +582,14 @@ export const CompanionHUD = memo(function CompanionHUD({
               ? 'border-2 border-[#00ffff]' 
               : isWin98 
                 ? 'win98-lcd-screen crt-effect' 
-                : 'border-[#596980]'
+                : 'border-transparent'
           }`}
           style={{ 
             height: '185px',
             backgroundImage: isWin98
               ? 'none'
-              : (equippedBackground && PET_BACKGROUNDS[equippedBackground]?.css) || `url(${bgCyberpunk})`,
+              : (equippedBackground && PET_BACKGROUNDS[equippedBackground]?.css)
+                || 'linear-gradient(180deg, #7dd3fc 0%, #a7f3d0 70%, #86efac 70%, #4ade80 100%)',
             backgroundColor: isWin98 ? '#9cbd90' : undefined,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -657,7 +611,7 @@ export const CompanionHUD = memo(function CompanionHUD({
             <div className="absolute inset-0 z-40 flex flex-col items-center justify-center pointer-events-none animate-in fade-in duration-200">
               <div className="absolute inset-0 bg-white/70 animate-pulse" />
               <span className="relative text-[#2bff95] font-bold drop-shadow-lg text-center" style={{ fontFamily: 'monospace', fontSize: '1rem', textShadow: '0 0 12px #2bff95' }}>
-                {language === 'pt-BR' ? '✨ DIGIVOLUÇÃO! ✨' : '✨ DIGIVOLVE! ✨'}
+                {language === 'pt-BR' ? '✨ EVOLUIU! ✨' : '✨ EVOLVED! ✨'}
               </span>
             </div>
           )}
@@ -737,7 +691,6 @@ export const CompanionHUD = memo(function CompanionHUD({
                   alt={currentStage}
                   className={`w-20 h-20 object-contain ${getCompanionFilter()}`}
                   style={{
-                    imageRendering: 'pixelated',
                     transform: `scaleY(${getSquashScale()})`,
                     transformOrigin: 'bottom',
                     animation: isRubbing
@@ -929,7 +882,6 @@ export const CompanionHUD = memo(function CompanionHUD({
           digimonName={currentStage}
           mood={companionMood}
           evolutionStage={evolutionStage}
-          dominantBranch={dominantBranch}
           useAI={useAI}
           onSendMessage={handleChatMessage}
           theme={theme}

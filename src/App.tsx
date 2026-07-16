@@ -7,7 +7,7 @@ import { Header } from './components/Header';
 import { ActivityCard } from './components/ActivityCard';
 import { TaskCard } from './components/TaskCard';
 import { CompanionHUD } from './components/CompanionHUD';
-import { AttributeBadges } from './components/AttributeBadges';
+import { NewActivityBar } from './components/NewActivityBar';
 import { Toaster } from './components/ui/sonner';
 import { GamePopups } from './components/GamePopups';
 import { DigivolveTaskModal } from './components/DigivolveTaskModal';
@@ -17,25 +17,24 @@ import { DailyReportModal } from './components/DailyReportModal';
 import { ItemsWindow } from './components/ItemsWindow';
 import { HelpModal } from './components/HelpModal';
 import { Plus, Edit2 } from 'lucide-react';
-import { CATEGORY_ATTRIBUTES, type ActivityCategory, XP_THRESHOLDS } from './types/attributes';
+import { type ActivityCategory } from './types/attributes';
 import { type CareEvent } from './components/CareSystem';
-import { FORM_REQUIREMENTS, getStageLevel, canSelectWeekdays, getMaxEnergyForStage } from './types/progression';
+import { FORM_REQUIREMENTS, getStageLevel, canSelectWeekdays, getMaxEnergyForStage, type PetType } from './types/progression';
 import { type Language, useTranslation } from './utils/i18n';
 import { DigiWidget } from './plugins/DigiWidgetPlugin';
 import { useGameState, getMaxHPForStage, type GameState, type Activity, type Task, type Step } from './contexts/GameStateContext';
-import { STORAGE_KEYS } from './utils/storageKeys';
+import { STORAGE_KEYS, getActiveProfile } from './utils/storageKeys';
 import { getNextEvolution } from './utils/dailyReset';
 import { isMuted, setMuted, playTaskComplete, playFeed, playPoopClean, playDigivolve, playDegenerate, playSleep } from './utils/sounds';
 import { requestNotificationPermission, showNotification } from './utils/notifications';
-import { SHOP_ITEMS, DROP_EVO_ITEMS, CHIP_BOOST, HEART_HEAL, EVO_ITEMS, SPECIAL_ITEMS, HEART_ITEM_EMOJI, GLITCHTAMA_EMOJI } from './utils/shop';
-import { getDungeonDifficulty, getDungeonBest, rollDungeonHeartDrop, rollDungeonDigimental } from './utils/dungeon';
+import { SHOP_ITEMS, HEART_HEAL, SPECIAL_ITEMS, HEART_ITEM_EMOJI, GLITCHTAMA_EMOJI } from './utils/shop';
+import { getDungeonDifficulty, getDungeonBest, rollDungeonHeartDrop } from './utils/dungeon';
 import { getMissionProgress, isShopItemUnlocked } from './utils/missions';
 
 const DIGIVOLVE_SEGMENTS: Record<string, number> = {
-  'digiegg': 1, 'baby-i': 2, 'baby-ii': 4,
-  rookie: 7, champion: 9, ultimate: 11, mega: 14, ultra: 999,
+  egg: 1, 'fase-1': 3, 'fase-2': 5, 'fase-3': 999,
 };
-import { CATEGORY_EMOJIS, AI_CATEGORY_MAP, DIGIMON_STAGE_NAMES, DEGENERATION_STAGE_MAP, FOOD_BY_CATEGORY } from './constants/labels';
+import { CATEGORY_EMOJIS, AI_CATEGORY_MAP, STAGE_NAMES, FOOD_BY_CATEGORY } from './constants/labels';
 import type { AISettings } from './components/AISettingsModal';
 
 const EvolutionPath = lazy(() => import('./components/EvolutionPath').then(m => ({ default: m.EvolutionPath })));
@@ -45,7 +44,6 @@ const SettingsPage = lazy(() => import('./components/SettingsPage').then(m => ({
 const ActivitiesPage = lazy(() => import('./components/ActivitiesPage').then(m => ({ default: m.ActivitiesPage })));
 const OnboardingScreen = lazy(() => import('./components/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })));
 const SettingsModal = lazy(() => import('./components/SettingsModal').then(m => ({ default: m.SettingsModal })));
-const ProfileHubModal = lazy(() => import('./components/ProfileHubModal').then(m => ({ default: m.ProfileHubModal })));
 const EditModal = lazy(() => import('./components/EditModal').then(m => ({ default: m.EditModal })));
 const TaskEditModal = lazy(() => import('./components/TaskEditModal').then(m => ({ default: m.TaskEditModal })));
 
@@ -62,12 +60,10 @@ export default function App() {
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<string | null>(null);
-  const [hubOpen, setHubOpen] = useState(false);
   const [hpBannerDismissed, setHpBannerDismissed] = useState(false);
   const [messageTrigger, setMessageTrigger] = useState(0);
   const [feedAnim, setFeedAnim] = useState<{ emoji: string; n: number } | null>(null);
   const [careEvent, setCareEvent] = useState<CareEvent | null>(null);
-  const [showEvolutionChoice, setShowEvolutionChoice] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [useAI, setUseAI] = useState(true);
   const [soundMuted, setSoundMuted] = useState(() => isMuted());
@@ -132,8 +128,8 @@ export default function App() {
       const raw = localStorage.getItem(STORAGE_KEYS.GAME_STATE);
       if (raw) {
         const s = JSON.parse(raw);
-        const babyStages = new Set(['digiegg', 'pichimon', 'pukamon', 'chicomon', 'chibimon', 'yukimibotamon', 'nyaromon']);
-        if (!babyStages.has(s.evolutionStage ?? 'digiegg')) {
+        const level = getStageLevel(s.evolutionStage ?? 'egg');
+        if (level === 'fase-2' || level === 'fase-3') {
           localStorage.setItem(STORAGE_KEYS.ROOKIE_POPUP_SHOWN, 'true');
           return true;
         }
@@ -148,6 +144,10 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.THEME, theme);
+    // Tema por perfil: vars CSS no <html> (0 preto+roxo · 1 rosa · 2 verde);
+    // .tk-theme ativa o visual novo só no tema default.
+    document.documentElement.dataset.profile = String(getActiveProfile());
+    document.documentElement.classList.toggle('tk-theme', theme === 'default');
   }, [theme]);
 
   useEffect(() => {
@@ -208,12 +208,11 @@ export default function App() {
 
   // Sync game state to Android home screen widget
   useEffect(() => {
-    const digimonName = gameState.evolutionStage.charAt(0).toUpperCase() + gameState.evolutionStage.slice(1);
     DigiWidget.updateWidgetData({
-      digimonName,
+      digimonName: STAGE_NAMES[gameState.evolutionStage] ?? 'Ovo',
       currentStage: gameState.evolutionStage,
-      eggType: gameState.eggType ?? 'tapirmon',
-      branchType: gameState.currentBranch,
+      eggType: gameState.eggType ?? 'vix',
+      branchType: gameState.eggType ?? 'vix',
       completedTasks: dailyDone,
       totalTasks: dailyTotal,
       hp: Math.round((gameState.healthPoints / gameState.maxHealthPoints) * 100),
@@ -222,7 +221,7 @@ export default function App() {
       energyPoints: gameState.energyPoints ?? 0,
       hasPoop: (gameState.poopEventsShown || []).some(i => !(gameState.poopEventsCompleted || []).includes(i)),
     }).catch(() => {});
-  }, [gameState.evolutionStage, gameState.currentBranch, gameState.eggType,
+  }, [gameState.evolutionStage, gameState.eggType,
       gameState.healthPoints, gameState.maxHealthPoints, gameState.energyPoints,
       gameState.poopEventsShown, gameState.poopEventsCompleted, dailyDone, dailyTotal]);
 
@@ -259,49 +258,7 @@ export default function App() {
   };
 
   const getCurrentStageName = (): string =>
-    DIGIMON_STAGE_NAMES[gameState.evolutionStage] ?? 'DigiEgg';
-
-  const getDominantBranch = (): 'virus' | 'data' | 'vaccine' | 'balanced' => {
-    const { virusPoints, dataPoints, vaccinePoints } = gameState;
-    const total = virusPoints + dataPoints + vaccinePoints;
-
-    if (total === 0) return 'balanced';
-
-    const max = Math.max(virusPoints, dataPoints, vaccinePoints);
-    if (virusPoints === max && virusPoints > dataPoints && virusPoints > vaccinePoints) return 'virus';
-    if (dataPoints === max && dataPoints > virusPoints && dataPoints > vaccinePoints) return 'data';
-    if (vaccinePoints === max && vaccinePoints > virusPoints && vaccinePoints > dataPoints) return 'vaccine';
-    return 'balanced';
-  };
-
-  const getNextLevelXP = (): number => {
-    switch (gameState.evolutionStage) {
-      case 'digiegg':
-        return XP_THRESHOLDS.pichimon;
-      case 'pichimon':
-        return XP_THRESHOLDS.pukamon;
-      case 'pukamon':
-        return XP_THRESHOLDS.tapirmon;
-      case 'tapirmon':
-        return XP_THRESHOLDS.champion;
-      case 'tuskmon':
-      case 'monochromon':
-      case 'bakemon':
-        return XP_THRESHOLDS.ultimate;
-      case 'gigadramon':
-      case 'triceramon':
-      case 'digitamamon':
-        return XP_THRESHOLDS.mega;
-      case 'gaioumon':
-      case 'ultimatebrachiomon':
-      case 'titamon':
-        return XP_THRESHOLDS.itto;
-      case 'gaioumon-itto':
-        return XP_THRESHOLDS.itto;
-      default:
-        return XP_THRESHOLDS.tapirmon;
-    }
-  };
+    STAGE_NAMES[gameState.evolutionStage] ?? (language === 'pt-BR' ? 'Ovo' : 'Egg');
 
   const handleUpdateStep = (activityId: string, stepId: string) => {
     const activity = gameState.activities.find(a => a.id === activityId);
@@ -351,7 +308,7 @@ export default function App() {
         let newFoodInventory = prev.foodInventory;
         let energyGain = 0;
         if (isFullyCompleted && updatedActivity) {
-          if (['digiegg', 'baby-i'].includes(getStageLevel(prev.evolutionStage))) {
+          if (getStageLevel(prev.evolutionStage) === 'egg') {
             energyGain = 1;
           } else {
             const food = FOOD_BY_CATEGORY[updatedActivity.category as keyof typeof FOOD_BY_CATEGORY];
@@ -443,7 +400,7 @@ export default function App() {
       let newFoodInventory = prev.foodInventory;
       let energyGain = 0;
       if (newCompletedState && activity) {
-        if (['digiegg', 'baby-i'].includes(getStageLevel(prev.evolutionStage))) {
+        if (getStageLevel(prev.evolutionStage) === 'egg') {
           energyGain = 1;
         } else {
           const food = FOOD_BY_CATEGORY[activity.category as keyof typeof FOOD_BY_CATEGORY];
@@ -642,7 +599,7 @@ export default function App() {
             completionCount: 0,
           };
 
-          const isEarlyStage = ['digiegg', 'baby-i'].includes(getStageLevel(prev.evolutionStage));
+          const isEarlyStage = getStageLevel(prev.evolutionStage) === 'egg';
           let newFoodInventory = prev.foodInventory;
           let energyGain = 0;
           if (isEarlyStage) {
@@ -702,54 +659,21 @@ export default function App() {
     setGameState(prev => {
       // Evolution padlock (Evolution page): while locked, never evolve.
       if (prev.evolutionLocked) return prev;
-      let newEvolutionStage = prev.evolutionStage;
-      let newHP = prev.healthPoints;
-      let newSegmentsNeeded = prev.digivolutionSegmentsNeeded;
-
-      // Determine evolution based on current stage and dominant attribute
-      const dominantAttr = Math.max(prev.virusPoints, prev.dataPoints, prev.vaccinePoints);
-      const isVirus = prev.virusPoints === dominantAttr && prev.virusPoints > 0;
-      const isData = prev.dataPoints === dominantAttr && prev.dataPoints > 0;
-      const isVaccine = prev.vaccinePoints === dominantAttr && prev.vaccinePoints > 0;
-
-      // Determine new branch for state persistence
-      let newCurrentBranch: 'virus' | 'data' | 'vaccine' = prev.currentBranch;
-      if (isVirus) newCurrentBranch = 'virus';
-      else if (isVaccine) newCurrentBranch = 'vaccine';
-      else if (isData) newCurrentBranch = 'data';
-
-      newEvolutionStage = getNextEvolution(
-        prev.evolutionStage,
-        prev.eggType ?? 'tapirmon',
-        newCurrentBranch,
-        prev.unlockedEvolutions,
-      ) as typeof newEvolutionStage;
-      // Item digivolution (shop): replaces the branch form at the item's level.
-      let usedEvoItem = false;
-      const evoItem = prev.equippedEvoItem ? EVO_ITEMS[prev.equippedEvoItem] : null;
-      if (evoItem?.evoTarget && getStageLevel(newEvolutionStage) === evoItem.evoLevel && newEvolutionStage !== prev.evolutionStage) {
-        newEvolutionStage = evoItem.evoTarget as typeof newEvolutionStage;
-        usedEvoItem = true;
-      }
-      newSegmentsNeeded = DIGIVOLVE_SEGMENTS[getStageLevel(newEvolutionStage)] ?? newSegmentsNeeded;
-      newHP = getMaxHPForStage(newEvolutionStage);
-
-      // Digimentals are never consumed — after the evolution they go back to
-      // the Items folder (frees the single equip slot for other items).
-      const returnEmoji = usedEvoItem && evoItem?.consumedOnEvolve === false ? evoItem.inventoryEmoji : null;
+      const newEvolutionStage = getNextEvolution(prev.evolutionStage, prev.eggType ?? 'vix');
+      if (newEvolutionStage === prev.evolutionStage) return prev;
+      const newHP = getMaxHPForStage(newEvolutionStage);
+      const unlocked = prev.unlockedEvolutions.includes(newEvolutionStage)
+        ? prev.unlockedEvolutions
+        : [...prev.unlockedEvolutions, newEvolutionStage];
 
       return {
         ...prev,
         evolutionStage: newEvolutionStage,
-        currentBranch: newCurrentBranch,
         healthPoints: newHP,
-        maxHealthPoints: getMaxHPForStage(newEvolutionStage),
+        maxHealthPoints: newHP,
         digivolutionSegments: 0,
-        digivolutionSegmentsNeeded: newSegmentsNeeded,
-        equippedEvoItem: usedEvoItem ? null : (prev.equippedEvoItem ?? null),
-        ...(returnEmoji && {
-          foodInventory: { ...prev.foodInventory, [returnEmoji]: (prev.foodInventory[returnEmoji] ?? 0) + 1 },
-        }),
+        digivolutionSegmentsNeeded: DIGIVOLVE_SEGMENTS[getStageLevel(newEvolutionStage)] ?? prev.digivolutionSegmentsNeeded,
+        unlockedEvolutions: unlocked,
       };
     });
     playDigivolve();
@@ -786,9 +710,9 @@ export default function App() {
     // No item in stock → nothing happens (don't burn a feed slot or animate).
     if ((gameState.foodInventory[foodEmoji] ?? 0) <= 0) return;
 
-    // Special items (shop consumables) behave differently from food: chips only
-    // grant attribute points (no energy) and the heart item only heals HP.
-    // Neither counts against the 5-feeds-per-hour food limit.
+    // Special items (shop consumables) behave differently from food: the heart
+    // item only heals HP and the Glitchtama grants a perfect day. Neither
+    // counts against the 5-feeds-per-hour food limit.
     const special = SPECIAL_ITEMS[foodEmoji];
     if (special) {
       // 🌀 Glitchtama: using it grants 1 perfect day (evolution point).
@@ -808,29 +732,6 @@ export default function App() {
         });
         setFeedAnim(prev => ({ emoji: foodEmoji, n: (prev?.n ?? 0) + 1 }));
         toast(language === 'pt-BR' ? '🌀 Glitchtama! +1 dia perfeito' : '🌀 Glitchtama! +1 perfect day');
-        return;
-      }
-      // Digimentals / rookie items: USING equips it as THE evolution item (one
-      // slot, same rule as the shop). Digimentals return here after evolving.
-      if (special.kind === 'evo-equip') {
-        if (gameState.equippedEvoItem) {
-          toast(language === 'pt-BR'
-            ? 'Já há um item de digievolução equipado!'
-            : 'A digivolution item is already equipped!');
-          return;
-        }
-        playFeed();
-        setGameState(prev => {
-          if (prev.equippedEvoItem) return prev;
-          const count = prev.foodInventory[foodEmoji] ?? 0;
-          if (count <= 0) return prev;
-          const newInventory = { ...prev.foodInventory, [foodEmoji]: count - 1 };
-          if (newInventory[foodEmoji] === 0) delete newInventory[foodEmoji];
-          return { ...prev, foodInventory: newInventory, equippedEvoItem: special.evoItemId! };
-        });
-        toast(language === 'pt-BR'
-          ? `${foodEmoji} Equipado — aguardando a próxima digievolução!`
-          : `${foodEmoji} Equipped — waiting for the next digivolution!`);
         return;
       }
       if (special.kind === 'heart') {
@@ -854,27 +755,6 @@ export default function App() {
         setFeedAnim(prev => ({ emoji: foodEmoji, n: (prev?.n ?? 0) + 1 }));
         return;
       }
-      // Chip: attribute points only, no energy.
-      playFeed();
-      setGameState(prev => {
-        const count = prev.foodInventory[foodEmoji] ?? 0;
-        if (count <= 0) return prev;
-        const newInventory = { ...prev.foodInventory, [foodEmoji]: count - 1 };
-        if (newInventory[foodEmoji] === 0) delete newInventory[foodEmoji];
-        const attr = special.attr!;
-        const key = `${attr}Points` as 'virusPoints' | 'dataPoints' | 'vaccinePoints';
-        return {
-          ...prev,
-          foodInventory: newInventory,
-          [key]: prev[key] + CHIP_BOOST,
-          totalXP: prev.totalXP + CHIP_BOOST * 10,
-          attributesSinceLastEvolution: {
-            ...prev.attributesSinceLastEvolution,
-            [attr]: (prev.attributesSinceLastEvolution?.[attr] ?? 0) + CHIP_BOOST,
-          },
-        };
-      });
-      setFeedAnim(prev => ({ emoji: foodEmoji, n: (prev?.n ?? 0) + 1 }));
       return;
     }
 
@@ -896,28 +776,16 @@ export default function App() {
       const newInventory = { ...prev.foodInventory, [foodEmoji]: count - 1 };
       if (newInventory[foodEmoji] === 0) delete newInventory[foodEmoji];
 
-      // Resolve category → attribute points from the food emoji
-      const foodDef = Object.values(FOOD_BY_CATEGORY).find(f => f.emoji === foodEmoji);
-      const attrs = foodDef ? CATEGORY_ATTRIBUTES[foodDef.category] : { virus: 0, data: 0, vaccine: 0 };
-
       return {
         ...prev,
         // Energy gauge fills only by feeding, capped at the stage's energy bars
         energyPoints: Math.min(getMaxEnergyForStage(prev.evolutionStage), (prev.energyPoints ?? 0) + 1),
         foodInventory: newInventory,
-        virusPoints: prev.virusPoints + attrs.virus,
-        dataPoints: prev.dataPoints + attrs.data,
-        vaccinePoints: prev.vaccinePoints + attrs.vaccine,
-        totalXP: prev.totalXP + (attrs.virus + attrs.data + attrs.vaccine) * 10,
-        attributesSinceLastEvolution: {
-          virus: (prev.attributesSinceLastEvolution?.virus ?? 0) + attrs.virus,
-          data: (prev.attributesSinceLastEvolution?.data ?? 0) + attrs.data,
-          vaccine: (prev.attributesSinceLastEvolution?.vaccine ?? 0) + attrs.vaccine,
-        },
+        totalXP: prev.totalXP + 10,
       };
     });
     setFeedAnim(prev => ({ emoji: foodEmoji, n: (prev?.n ?? 0) + 1 }));
-  }, [gameState.foodInventory, gameState.healthPoints, gameState.maxHealthPoints, gameState.equippedEvoItem, language]);
+  }, [gameState.foodInventory, gameState.healthPoints, gameState.maxHealthPoints, language]);
 
   // Shower: cosmetic wash (no energy cost). Also properly completes an active poop event.
   const handleShower = useCallback(() => {
@@ -945,7 +813,7 @@ export default function App() {
             poopDrainWarnedAtRef.current = periodStart;
             const ispt = language === 'pt-BR';
             showNotification(
-              ispt ? '🚽 Seu Digimon está na sujeira!' : '🚽 Your Digimon is in a mess!',
+              ispt ? '🚽 Seu Taskmon está na sujeira!' : '🚽 Your Taskmon is in a mess!',
               {
                 body: ispt
                   ? 'Cocô não limpo tira 1 coração em breve. Dê um banho!'
@@ -1020,27 +888,6 @@ export default function App() {
     return true;
   }, []);
 
-  // Records a drop-gated item id so its shop purchase unlocks (idempotent).
-  const recordDrop = (prev: GameState, itemId: string): string[] => {
-    const dropped = prev.droppedItems ?? [];
-    return dropped.includes(itemId) ? dropped : [...dropped, itemId];
-  };
-
-  // ✨ Digimental drop (dungeon, 0.1%/enemy): adds it to the Items folder and
-  // returns its display name for the reward line, or null when nothing dropped.
-  const handleDungeonDigimental = useCallback((): string | null => {
-    const id = rollDungeonDigimental();
-    if (!id) return null;
-    const item = EVO_ITEMS[id];
-    const emoji = item.inventoryEmoji!;
-    setGameState(prev => ({
-      ...prev,
-      foodInventory: { ...prev.foodInventory, [emoji]: (prev.foodInventory[emoji] ?? 0) + 1 },
-      droppedItems: recordDrop(prev, id),
-    }));
-    return language === 'pt-BR' ? item.namePt : item.nameEn;
-  }, [language]);
-
   // 🌀 Glitchtama — guaranteed reward for clearing all 5 dungeon floors.
   // Also counts a completed run for the missions.
   const handleGlitchtama = useCallback(() => {
@@ -1072,18 +919,6 @@ export default function App() {
   };
   const missionProgress = getMissionProgress(missionState);
 
-  // Rookie evolution items dropped by the minigames (Dino Run / RPS). Adds the
-  // item to the Items folder and returns its display name for the drop line.
-  const handleMinigameItemDrop = useCallback((emoji: string): string => {
-    const special = SPECIAL_ITEMS[emoji];
-    setGameState(prev => ({
-      ...prev,
-      foodInventory: { ...prev.foodInventory, [emoji]: (prev.foodInventory[emoji] ?? 0) + 1 },
-      ...(special?.evoItemId && { droppedItems: recordDrop(prev, special.evoItemId) }),
-    }));
-    return special ? (language === 'pt-BR' ? special.namePt : special.nameEn) : emoji;
-  }, [language]);
-
   // 🪙 Bits — minigame currency; accumulates in GameState (cloud-synced), spent in the shop.
   const handleEarnGamePoints = useCallback((pts: number) => {
     if (pts <= 0) return;
@@ -1091,21 +926,17 @@ export default function App() {
   }, []);
 
   // 🛒 Shop purchase — charges points and applies the item's effect. Items can
-  // be locked behind a mission or a first-drop (utils/shop.ts `unlock`).
+  // be locked behind a mission (utils/shop.ts `unlock`).
   const handleShopBuy = useCallback((itemId: string): boolean => {
-    const item = [...SHOP_ITEMS, ...DROP_EVO_ITEMS].find(i => i.id === itemId);
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
     if (!item) return false;
-    if (!isShopItemUnlocked(item, gameState.droppedItems ?? [], missionProgress)) return false;
+    if (!isShopItemUnlocked(item, missionProgress)) return false;
     if ((gameState.gamePoints ?? 0) < item.price) return false;
     if (item.kind === 'bg' && (gameState.ownedBackgrounds ?? []).includes(item.id)) return false;
-    // Only one digivolution item can be EQUIPPED at a time (avoid wasted
-    // points) — inventory-based evo items (digimentals/rookie) aren't equipped
-    // on purchase, so they skip this gate.
-    if (item.kind === 'evo' && !item.inventoryEmoji && gameState.equippedEvoItem) return false;
 
     setGameState(prev => {
       const next = { ...prev, gamePoints: (prev.gamePoints ?? 0) - item.price };
-      if (item.kind === 'chip' || item.kind === 'heart') {
+      if (item.kind === 'heart') {
         // Consumables go to the Items folder; their effect is applied on USE.
         next.foodInventory = {
           ...prev.foodInventory,
@@ -1114,21 +945,12 @@ export default function App() {
       } else if (item.kind === 'bg') {
         next.ownedBackgrounds = [...(prev.ownedBackgrounds ?? []), item.id];
         next.equippedBackground = item.id; // equip right away
-      } else if (item.kind === 'evo' && item.inventoryEmoji) {
-        // Digimentals / rookie items go to the Items folder (equip via Items)
-        next.foodInventory = {
-          ...prev.foodInventory,
-          [item.inventoryEmoji]: (prev.foodInventory[item.inventoryEmoji] ?? 0) + 1,
-        };
-      } else if (item.kind === 'evo') {
-        next.equippedEvoItem = item.id;
       }
       return next;
     });
     playFeed();
     return true;
-  }, [gameState.gamePoints, gameState.ownedBackgrounds, gameState.equippedEvoItem,
-      gameState.droppedItems, missionProgress]);
+  }, [gameState.gamePoints, gameState.ownedBackgrounds, missionProgress]);
 
   const handleEquipBackground = useCallback((id: string | null) => {
     setGameState(prev => ({ ...prev, equippedBackground: id }));
@@ -1232,54 +1054,28 @@ export default function App() {
     }));
   }, [gameState.healthPoints, gameState.maxHealthPoints]);
 
+  // Regressão manual (página de Evolução) — recebe o ID da forma destino.
   const handleDegenerate = useCallback((targetStage: string) => {
     setGameState(prev => {
-      const newStage = DEGENERATION_STAGE_MAP[targetStage] as GameState['evolutionStage'];
-      if (!newStage) return prev;
+      if (!prev.unlockedEvolutions.includes(targetStage) && targetStage !== 'egg') return prev;
 
-      const newHP = getMaxHPForStage(newStage);
-      const newStageLevel = getStageLevel(newStage);
+      const newHP = getMaxHPForStage(targetStage);
+      const newStageLevel = getStageLevel(targetStage);
       // Intentional degen: head start at half the requirement (easier recovery than neglect)
       const newPerfectDays = Math.floor(FORM_REQUIREMENTS[newStageLevel].required / 2);
 
       return {
         ...prev,
-        evolutionStage: newStage,
+        evolutionStage: targetStage,
         healthPoints: newHP,
         maxHealthPoints: newHP,
         digivolutionSegments: 0,
         perfectDays: newPerfectDays,
         degeneratedByHP: false,
-        // Reset recent branch window — next evolution reflects habits going forward
-        attributesSinceLastEvolution: { virus: 0, data: 0, vaccine: 0 },
       };
     });
     playDegenerate();
     setMessageTrigger(prev => prev + 1);
-  }, []);
-
-  const handleEvolveToUnlocked = useCallback((targetStage: string) => {
-    setGameState(prev => {
-      const newStage = DEGENERATION_STAGE_MAP[targetStage] as GameState['evolutionStage'];
-      if (!newStage || !prev.unlockedEvolutions.includes(newStage)) return prev;
-
-      // Can only evolve to unlocked forms if at Rookie level or higher
-      const isRookieOrHigher = !['digiegg', 'pichimon', 'pukamon'].includes(prev.evolutionStage);
-      if (!isRookieOrHigher) return prev;
-
-      const newHP = getMaxHPForStage(newStage);
-
-      return {
-        ...prev,
-        evolutionStage: newStage,
-        healthPoints: newHP,
-        maxHealthPoints: newHP,
-        digivolutionSegments: 0,
-        degeneratedByHP: false,
-      };
-    });
-    setMessageTrigger(prev => prev + 1);
-    setShowEvolutionChoice(false);
   }, []);
 
   const handleOpenAISettings = useCallback(() => setSettingsOpen(true), []);
@@ -1304,7 +1100,7 @@ export default function App() {
 
   const handleCompleteOnboarding = (data: {
     userName: string;
-    eggType: 'tapirmon' | 'veemon' | 'salamon';
+    eggType: PetType;
     initialActivities: Array<{ name: string; category: ActivityCategory; emoji: string }>;
   }) => {
     localStorage.setItem(STORAGE_KEYS.USER_NAME, data.userName);
@@ -1331,8 +1127,6 @@ export default function App() {
   };
 
 
-
-  const handleOpenHub = () => setHubOpen(true);
 
   // Handle toggle notifications
   const handleToggleNotifications = async () => {
@@ -1368,8 +1162,10 @@ export default function App() {
   }
 
   return (
-    <div className={`fixed inset-0 overflow-hidden flex flex-col ${theme === 'default' ? 'bg-gradient-to-br from-teal-50/60 via-cyan-50/50 to-emerald-50/60' : getOuterContainerClass()} ${theme === 'default' ? 'bg-gray-50' : getContainerClass()
-      }`}>
+    <div
+      className={`fixed inset-0 overflow-hidden flex flex-col ${theme === 'default' ? '' : `${getOuterContainerClass()} ${getContainerClass()}`}`}
+      style={theme === 'default' ? { backgroundColor: 'var(--tk-bg)' } : undefined}
+    >
         {/* Help Modal */}
         <HelpModal
           isOpen={showHelpModal}
@@ -1394,7 +1190,6 @@ export default function App() {
             currentView={currentView}
             onNavigate={setCurrentView}
             theme={theme}
-            onOpenHub={handleOpenHub}
           />
         </div>
 
@@ -1402,10 +1197,7 @@ export default function App() {
         <div className={`flex-1 overflow-y-auto ${theme === 'win98' ? 'bg-[#c0c0c0] px-6 pt-3' : 'px-6 pt-3'} pb-4`}>
           {currentView === 'main' && (
             <div className="space-y-3">
-              <AttributeBadges
-                virusPoints={gameState.virusPoints}
-                dataPoints={gameState.dataPoints}
-                vaccinePoints={gameState.vaccinePoints}
+              <NewActivityBar
                 onNewActivity={() => setCreateModalOpen(true)}
                 theme={theme}
                 language={language}
@@ -1507,26 +1299,14 @@ export default function App() {
 
           {currentView === 'evolution' && (
             <Suspense fallback={null}><EvolutionPath
-              currentStage={getCurrentStageName()}
-              currentBranch={getDominantBranch() === 'balanced' ? 'data' : getDominantBranch() as 'virus' | 'data' | 'vaccine'}
-              currentXP={gameState.totalXP}
-              virusPoints={gameState.virusPoints}
-              dataPoints={gameState.dataPoints}
-              vaccinePoints={gameState.vaccinePoints}
-              digivolutionSegments={gameState.perfectDays}
-              digivolutionSegmentsNeeded={FORM_REQUIREMENTS[getStageLevel(gameState.evolutionStage)].daysToEvolve}
-              onDegenerate={handleDegenerate}
-              theme={theme}
-              dailyDone={dailyDone}
-              dailyTotal={dailyTotal}
-              dailyRequired={FORM_REQUIREMENTS[getStageLevel(gameState.evolutionStage)].required}
-              activitiesCount={gameState.activities.length}
               evolutionStage={gameState.evolutionStage}
+              eggType={gameState.eggType}
               perfectDays={gameState.perfectDays}
               unlockedEvolutions={gameState.unlockedEvolutions}
-              eggType={gameState.eggType}
               evolutionLocked={gameState.evolutionLocked ?? false}
               onToggleEvolutionLock={handleToggleEvolutionLock}
+              onDegenerate={handleDegenerate}
+              theme={theme}
               language={language}
             /></Suspense>
           )}
@@ -1592,22 +1372,19 @@ export default function App() {
             <Suspense fallback={null}>
               <ActivitiesPage
                 evolutionStage={gameState.evolutionStage}
+                eggType={gameState.eggType ?? 'vix'}
                 language={language}
                 theme={theme}
                 totalPoints={gameState.gamePoints ?? 0}
                 ownedBackgrounds={gameState.ownedBackgrounds ?? []}
                 equippedBackground={gameState.equippedBackground ?? null}
-                equippedEvoItem={gameState.equippedEvoItem ?? null}
                 onDungeonEnter={handleDungeonEnter}
                 onDungeonLose={handleDungeonLose}
                 onDungeonHeartDrop={handleDungeonHeartDrop}
-                onDungeonDigimental={handleDungeonDigimental}
                 onGlitchtama={handleGlitchtama}
                 onDungeonEnemyDefeated={handleDungeonEnemyDefeated}
                 onDinoScore={handleDinoScore}
-                onItemDrop={handleMinigameItemDrop}
                 missionProgress={missionProgress}
-                droppedItems={gameState.droppedItems ?? []}
                 onEarnPoints={handleEarnGamePoints}
                 onShopBuy={handleShopBuy}
                 onEquipBackground={handleEquipBackground}
@@ -1642,18 +1419,19 @@ export default function App() {
         )}
 
         {/* Companion HUD - fixo no rodapé como parte do flex */}
-        <div className={`flex-shrink-0 ${theme === 'win98' ? 'bg-[#c0c0c0] border-t-2 border-white px-6 pb-3 pt-3' : 'bg-gray-50 px-6 pb-3 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]'}`}>
+        <div
+          className={`flex-shrink-0 ${theme === 'win98' ? 'bg-[#c0c0c0] border-t-2 border-white px-6 pb-3 pt-3' : 'px-6 pb-3 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]'}`}
+          style={theme !== 'win98' ? { backgroundColor: 'var(--tk-bg)' } : undefined}
+        >
           <CompanionHUD
             companionMood={getCompanionMood()}
             energyLevel={progress}
             message={_careMessageFn(getCompanionMessage())}
             currentStage={getCurrentStageName()}
             evolutionStage={gameState.evolutionStage}
+            eggType={gameState.eggType}
             healthPoints={gameState.healthPoints}
             maxHealthPoints={gameState.maxHealthPoints}
-            dominantBranch={getDominantBranch()}
-            currentXP={gameState.totalXP}
-            nextLevelXP={getNextLevelXP()}
             triggerMessage={messageTrigger}
             energyPoints={gameState.energyPoints}
             maxEnergyPoints={getMaxEnergyForStage(gameState.evolutionStage)}
@@ -1775,17 +1553,6 @@ export default function App() {
         /></Suspense>
       )}
 
-      {hubOpen && (
-        <Suspense fallback={null}>
-          <ProfileHubModal
-            isOpen={hubOpen}
-            onClose={() => setHubOpen(false)}
-            theme={theme}
-            language={language}
-          />
-        </Suspense>
-      )}
-
       {settingsOpen && (
         <Suspense fallback={null}>
           <SettingsModal
@@ -1829,7 +1596,7 @@ export default function App() {
         onCreateTask={() => { setDigivolveModalStage(null); setCreateModalOpen(true); }}
         requiredTasks={FORM_REQUIREMENTS[getStageLevel(digivolveModalStage ?? gameState.evolutionStage)].required}
         registeredTasks={gameState.activities.length + gameState.tasks.length}
-        stageName={digivolveModalStage ? (DIGIMON_STAGE_NAMES[digivolveModalStage] ?? getCurrentStageName()) : ''}
+        stageName={digivolveModalStage ? (STAGE_NAMES[digivolveModalStage] ?? getCurrentStageName()) : ''}
         theme={theme}
         language={language}
       />
@@ -1839,7 +1606,7 @@ export default function App() {
         activities={gameState.activities}
         tasks={gameState.tasks}
         userName={userName}
-        digimonName={getCurrentStageName()}
+        petName={getCurrentStageName()}
         language={language}
         enabled={notificationsEnabled}
         healthPoints={gameState.healthPoints}

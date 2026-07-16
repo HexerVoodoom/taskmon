@@ -1,149 +1,165 @@
-// Stage → sprite map, shared by CompanionHUD and the dungeon minigame.
-import digiEggSprite from 'figma:asset/6479b687e03b8292ee02a4453bff2eb1a76cfecb.png';
-import pichimonSprite from 'figma:asset/99ff747d7f7ecc2424e131a43c54669bcba9a301.png';
-import pukamonSprite from 'figma:asset/104dc13e2c146bb51e00903d6eaa5f6fae7619c6.png';
-import tapirmonSprite from 'figma:asset/7d2b0a9b519f16f1d0a258d9670cfc62230e1903.png';
-import monochromonSprite from 'figma:asset/7bc96986446973a3544f57a9055e59fc87022f42.png';
-import triceramonSprite from 'figma:asset/91974d820051b34dd9e9db8f1b4f72ae1216ed98.png';
-import tuskmonSprite from 'figma:asset/4545c1113c2742541bfa287e8aaad34d540d5188.png';
-import ultimateBrachiomonSprite from 'figma:asset/cfe5f78d2ba5745cf2fab94f2ea9e70d1b5bfc0a.png';
-import gaioumonSprite from 'figma:asset/797dcc096094cec27969dafb7d0d37cddbe6a1d5.png';
-import bakemonSprite from 'figma:asset/cc04120f94ce0a4ae081b26d2359ca0dd7488f6d.png';
-import digitamamonSprite from 'figma:asset/15b86f9a6a117217f92fc8c35383b8ba7a68d995.png';
-import gigadramonSprite from 'figma:asset/61935125c675c3d79b74bdfbb783563de187250a.png';
-import titamonSprite from 'figma:asset/2289f0ba6bd5182e66b3253be305d6860dbe1148.png';
-import gaioumonIttoSprite from 'figma:asset/2f5fefb3d68da3d20ef1d5195a8f0ddc506b1149.png';
-import chicomonSprite from 'figma:asset/4d2fa6b5f39afed1e868edf4c8faf3c4888ecc84.png';
-import chibimonSprite from 'figma:asset/3b47f9d0035dbc50ffa6a78567bf904fc56834d6.png';
-import veemonSprite from 'figma:asset/17701dd96050e16b1fac593a32079ae86e5bd531.png';
-import exVeemonSprite from 'figma:asset/136cb8d464cc8d648c7de82119ca05f5c5396af5.png';
-import paildramonSprite from 'figma:asset/bfde95df2c77e342ddcf05bd6a8480711ea5a740.png';
-import imperialdramonSprite from 'figma:asset/701f6bc49c8ab4166c27d7c362af3194b202a330.png';
-import veedramonSprite from 'figma:asset/dcf2429f06e823eb567e0018e2d2de9887b5c034.png';
-import aeroVeedramonSprite from 'figma:asset/e276464f1870730b1e5cb5dfbed9d586df28d609.png';
-import ulforceVeedramonSprite from 'figma:asset/7bdcafe95cc603bba49f20349fe242e981ddf8ec.png';
-import flamedramonSprite from 'figma:asset/b75ac337773a9cbda275e4994894104282fe9943.png';
-import raidramonSprite from 'figma:asset/4fc596d119266f4125b18733231e3f326f163b28.png';
-import magnamonSprite from 'figma:asset/46ea13627a0da430619fa9e993f7d14bb613d5f8.png';
-import imperialdramonPaladinSprite from 'figma:asset/8ad9573c77b42ea0708b5b29032a7489c7616571.png';
-import yukimibotamonSprite from 'figma:asset/eb90dd429719211430c96bfff0ab33ce4263dc33.png';
-import nyaromonSprite from 'figma:asset/21c7ddc9f28cb93fb5e301b2bfb797ade7767403.png';
-import plotmonSprite from 'figma:asset/acf058298d9eb6312c16c5f296a808c2f4edc163.png';
-import gatomonSprite from 'figma:asset/cd6cdea0aaf4dea528d69cb4812333fe7980f034.png';
-import angewomonSprite from 'figma:asset/91def178d3bb589f11cf012e72a30ed12f14ed5a.png';
-import ophanimonSprite from 'figma:asset/0523e198a779637515f03904bb4baa992fdf837e.png';
-import blackGatomonSprite from 'figma:asset/6597e8c17a1647c444bdc1d375da54f07b1e8d45.png';
-import ladyDevimonSprite from 'figma:asset/6e5b9d1d2d1c049b40fcb76d3e31d0ed15713538.png';
-import lilithmonSprite from 'figma:asset/4834d54b968cbf6223b91134a426afc867a9138a.png';
-import mikemonSprite from 'figma:asset/79da08e63a9021eed7f83f46fafd43e36f1e30dd.png';
-import nefertimonSprite from 'figma:asset/750c493568ac7846d39b203e8be583d896133c60.png';
-import holyDramonSprite from 'figma:asset/829e91e67710908cd0cecd99b5b12163536d3926.png';
-import mastemonSprite from 'figma:asset/a036d6071a61f5a7cde8ca604f58cd0267141481.png';
-// Item-digivolution forms (shop) — DMC-style dots from src/assets
-import greymonSprite from '../assets/greymon_dmc.png';
-import garurumonSprite from '../assets/garurumon_dmc.png';
-import meramonSprite from '../assets/meramon_dmc.png';
-import monzaemonSprite from '../assets/monzaemon_dmc.png';
-import etemonSprite from '../assets/etemon_dmc.png';
-// Extra dungeon enemies (+ 2 new evo forms) — DMC dots from src/assets
-import agumonSprite from '../assets/agumon_dmc.png';
-import patamonSprite from '../assets/patamon_dmc.png';
-import palmonSprite from '../assets/palmon_dmc.png';
-import betamonSprite from '../assets/betamon_dmc.png';
-import birdramonSprite from '../assets/birdramon_dmc.png';
-import kabuterimonSprite from '../assets/kabuterimon_dmc.png';
-import angemonSprite from '../assets/angemon_dmc.png';
-import devimonSprite from '../assets/devimon_dmc.png';
-import airdramonSprite from '../assets/airdramon_dmc.png';
-import seadramonSprite from '../assets/seadramon_dmc.png';
-import kuwagamonSprite from '../assets/kuwagamon_dmc.png';
-import ogremonSprite from '../assets/ogremon_dmc.png';
-import numemonSprite from '../assets/numemon_dmc.png';
-import megadramonSprite from '../assets/megadramon_dmc.png';
-import andromonSprite from '../assets/andromon_dmc.png';
-import vademonSprite from '../assets/vademon_dmc.png';
-import nanimonSprite from '../assets/nanimon_dmc.png';
-// Rookie item digivolutions (minigame drops)
-import gabumonSprite from '../assets/gabumon_dmc.png';
-import piyomonSprite from '../assets/piyomon_dmc.png';
-import tentomonSprite from '../assets/tentomon_dmc.png';
+// Arte dos pets — mascotes SVG originais (estilo flat/arredondado), gerados em
+// código e servidos como data-URIs. O mapa STAGE_SPRITES mantém o mesmo
+// contrato de antes (chave da forma → src de imagem), então CompanionHUD,
+// masmorra, página de evolução e onboarding consomem sem mudanças de shape.
+//
+// Chaves disponíveis:
+//   'egg'                     — ovo neutro (fallback)
+//   'egg-vix' | 'egg-momo' | 'egg-kiwi' — ovo na cor do pet
+//   '<pet>-<1|2|3>'           — as 9 formas (3 pets × 3 fases)
+//   'shadow-<pet>-<1|2|3>'    — variantes sombrias (inimigos da masmorra)
+import { PETS, PET_TYPES, type PetType } from '../types/progression';
 
-export const STAGE_SPRITES: Record<string, string> = {
-  digiegg: digiEggSprite,
-  pichimon: pichimonSprite,
-  pukamon: pukamonSprite,
-  tapirmon: tapirmonSprite,
-  monochromon: monochromonSprite,
-  triceramon: triceramonSprite,
-  tuskmon: tuskmonSprite,
-  bakemon: bakemonSprite,
-  digitamamon: digitamamonSprite,
-  gigadramon: gigadramonSprite,
-  ultimatebrachiomon: ultimateBrachiomonSprite,
-  gaioumon: gaioumonSprite,
-  titamon: titamonSprite,
-  'gaioumon-itto': gaioumonIttoSprite,
-  chicomon: chicomonSprite,
-  chibimon: chibimonSprite,
-  veemon: veemonSprite,
-  exveemon: exVeemonSprite,
-  veedramon: veedramonSprite,
-  paildramon: paildramonSprite,
-  aeroveedramon: aeroVeedramonSprite,
-  imperialdramon: imperialdramonSprite,
-  ulforceveedramon: ulforceVeedramonSprite,
-  flamedramon: flamedramonSprite,
-  raidramon: raidramonSprite,
-  magnamon: magnamonSprite,
-  'imperialdramon-paladin': imperialdramonPaladinSprite,
-  yukimibotamon: yukimibotamonSprite,
-  nyaromon: nyaromonSprite,
-  plotmon: plotmonSprite,
-  gatomon: gatomonSprite,
-  angewomon: angewomonSprite,
-  ophanimon: ophanimonSprite,
-  'gatomon-black': blackGatomonSprite,
-  ladydevimon: ladyDevimonSprite,
-  lilithmon: lilithmonSprite,
-  mikemon: mikemonSprite,
-  nefertimon: nefertimonSprite,
-  holydramon: holyDramonSprite,
-  mastemon: mastemonSprite,
-  // Item digivolutions (shop)
-  greymon: greymonSprite,
-  garurumon: garurumonSprite,
-  meramon: meramonSprite,
-  monzaemon: monzaemonSprite,
-  etemon: etemonSprite,
-  // Extra dungeon enemies (devimon + andromon are also shop evo forms)
-  agumon: agumonSprite,
-  patamon: patamonSprite,
-  palmon: palmonSprite,
-  betamon: betamonSprite,
-  birdramon: birdramonSprite,
-  kabuterimon: kabuterimonSprite,
-  angemon: angemonSprite,
-  devimon: devimonSprite,
-  airdramon: airdramonSprite,
-  seadramon: seadramonSprite,
-  kuwagamon: kuwagamonSprite,
-  ogremon: ogremonSprite,
-  numemon: numemonSprite,
-  megadramon: megadramonSprite,
-  andromon: andromonSprite,
-  vademon: vademonSprite,
-  nanimon: nanimonSprite,
-  // Rookie item digivolutions (agumon/patamon/palmon already mapped above)
-  gabumon: gabumonSprite,
-  piyomon: piyomonSprite,
-  tentomon: tentomonSprite,
-  // Armor digivolution — same sprite as the veemon-line raidramon
-  'raidramon-armor': raidramonSprite,
-};
-
-export function getSpriteForStage(stage: string): string {
-  return STAGE_SPRITES[stage.toLowerCase()] ?? digiEggSprite;
+interface Palette {
+  body: string; body2: string; belly: string; outline: string; cheek: string; pupil: string;
 }
 
-/** Sprites drawn facing LEFT by default — flip them when they should face right. */
-export const LEFT_FACING_STAGES = ['pichimon', 'chicomon', 'yukimibotamon', 'pukamon', 'tapirmon'];
+const PALETTES: Record<PetType, Palette> = {
+  vix:  { body: '#a855f7', body2: '#7e22ce', belly: '#e9d5ff', outline: '#3b1d5e', cheek: '#c084fc', pupil: '#2e1065' },
+  momo: { body: '#f472b6', body2: '#db2777', belly: '#fce7f3', outline: '#83184a', cheek: '#f9a8d4', pupil: '#500724' },
+  kiwi: { body: '#4ade80', body2: '#16a34a', belly: '#dcfce7', outline: '#14532d', cheek: '#86efac', pupil: '#052e16' },
+};
+
+const SHADOW_PALETTE: Palette = {
+  body: '#4b4458', body2: '#332d3e', belly: '#6b6478', outline: '#17141d', cheek: '#4b4458', pupil: '#f87171',
+};
+
+const uri = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+const wrap = (inner: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${inner}</svg>`;
+
+// Olhos + bochechas + boca, compartilhados pelas 3 fases.
+function face(p: Palette, cx: number, cy: number, s: number, shadow: boolean): string {
+  const ex = 8.5 * s; // afastamento do olho
+  const er = 5 * s;   // raio do olho
+  const pr = 2.4 * s; // pupila
+  const eyes = shadow
+    ? `<circle cx="${cx - ex}" cy="${cy}" r="${pr * 1.4}" fill="${p.pupil}"/>` +
+      `<circle cx="${cx + ex}" cy="${cy}" r="${pr * 1.4}" fill="${p.pupil}"/>` +
+      `<path d="M ${cx - ex - er} ${cy - er} l ${er * 1.4} ${er * 0.7}" stroke="${p.pupil}" stroke-width="${1.8 * s}" stroke-linecap="round"/>` +
+      `<path d="M ${cx + ex + er} ${cy - er} l ${-er * 1.4} ${er * 0.7}" stroke="${p.pupil}" stroke-width="${1.8 * s}" stroke-linecap="round"/>`
+    : `<circle cx="${cx - ex}" cy="${cy}" r="${er}" fill="#fff"/>` +
+      `<circle cx="${cx + ex}" cy="${cy}" r="${er}" fill="#fff"/>` +
+      `<circle cx="${cx - ex + 1.2 * s}" cy="${cy + 0.6 * s}" r="${pr}" fill="${p.pupil}"/>` +
+      `<circle cx="${cx + ex + 1.2 * s}" cy="${cy + 0.6 * s}" r="${pr}" fill="${p.pupil}"/>`;
+  const cheeks = shadow ? '' :
+    `<circle cx="${cx - ex - 5 * s}" cy="${cy + 6 * s}" r="${2.6 * s}" fill="${p.cheek}" opacity="0.85"/>` +
+    `<circle cx="${cx + ex + 5 * s}" cy="${cy + 6 * s}" r="${2.6 * s}" fill="${p.cheek}" opacity="0.85"/>`;
+  const mouth = shadow
+    ? `<path d="M ${cx - 3.5 * s} ${cy + 8 * s} q ${3.5 * s} ${-3 * s} ${7 * s} 0" fill="none" stroke="${p.pupil}" stroke-width="${1.8 * s}" stroke-linecap="round"/>`
+    : `<path d="M ${cx - 3.5 * s} ${cy + 7 * s} q ${3.5 * s} ${3.5 * s} ${7 * s} 0" fill="none" stroke="${p.outline}" stroke-width="${1.8 * s}" stroke-linecap="round"/>`;
+  return eyes + cheeks + mouth;
+}
+
+// Detalhe de topo por pet: orelhas pontudas (vix), orelhas redondas (momo),
+// brotinho de folha (kiwi). `y` = topo do corpo; `s` = escala.
+function topFeature(pet: PetType, p: Palette, cx: number, y: number, s: number): string {
+  const o = `stroke="${p.outline}" stroke-width="3" stroke-linejoin="round"`;
+  if (pet === 'vix') {
+    return `<path d="M ${cx - 16 * s} ${y + 6 * s} L ${cx - 22 * s} ${y - 14 * s} L ${cx - 6 * s} ${y - 2 * s} Z" fill="${p.body2}" ${o}/>` +
+           `<path d="M ${cx + 16 * s} ${y + 6 * s} L ${cx + 22 * s} ${y - 14 * s} L ${cx + 6 * s} ${y - 2 * s} Z" fill="${p.body2}" ${o}/>`;
+  }
+  if (pet === 'momo') {
+    return `<ellipse cx="${cx - 12 * s}" cy="${y - 6 * s}" rx="${6.5 * s}" ry="${10 * s}" fill="${p.body}" ${o} transform="rotate(-18 ${cx - 12 * s} ${y - 6 * s})"/>` +
+           `<ellipse cx="${cx + 12 * s}" cy="${y - 6 * s}" rx="${6.5 * s}" ry="${10 * s}" fill="${p.body}" ${o} transform="rotate(18 ${cx + 12 * s} ${y - 6 * s})"/>`;
+  }
+  // kiwi: brotinho
+  return `<path d="M ${cx} ${y + 2 * s} q ${-1.5 * s} ${-8 * s} ${1.5 * s} ${-12 * s}" fill="none" stroke="${p.outline}" stroke-width="${2.4 * s}" stroke-linecap="round"/>` +
+         `<ellipse cx="${cx + 7 * s}" cy="${y - 12 * s}" rx="${7 * s}" ry="${4 * s}" fill="${p.body2}" ${o} transform="rotate(-24 ${cx + 7 * s} ${y - 12 * s})"/>`;
+}
+
+// Extra da fase 3 (forma final): asas (vix), laço (momo), espinhos (kiwi).
+function grandFeature(pet: PetType, p: Palette, cx: number, cy: number, ry: number): string {
+  const o = `stroke="${p.outline}" stroke-width="3" stroke-linejoin="round"`;
+  if (pet === 'vix') {
+    return `<path d="M ${cx - 30} ${cy - 6} q -18 -4 -14 -22 q 12 4 16 12 Z" fill="${p.body2}" ${o}/>` +
+           `<path d="M ${cx + 30} ${cy - 6} q 18 -4 14 -22 q -12 4 -16 12 Z" fill="${p.body2}" ${o}/>`;
+  }
+  if (pet === 'momo') {
+    const y = cy - ry - 4;
+    return `<path d="M ${cx - 3} ${y} L ${cx - 17} ${y - 9} L ${cx - 15} ${y + 8} Z" fill="${p.body2}" ${o}/>` +
+           `<path d="M ${cx + 3} ${y} L ${cx + 17} ${y - 9} L ${cx + 15} ${y + 8} Z" fill="${p.body2}" ${o}/>` +
+           `<circle cx="${cx}" cy="${y}" r="5" fill="${p.body}" ${o}/>`;
+  }
+  const y = cy - ry + 4;
+  return `<path d="M ${cx - 22} ${y + 10} l -8 -12 l 12 2 Z" fill="${p.body2}" ${o}/>` +
+         `<path d="M ${cx + 22} ${y + 10} l 8 -12 l -12 2 Z" fill="${p.body2}" ${o}/>`;
+}
+
+/** Uma forma do pet. phase: 1 (pequeno) · 2 (médio) · 3 (grande). */
+function petSVG(pet: PetType, phase: 1 | 2 | 3, shadow = false): string {
+  const p = shadow ? SHADOW_PALETTE : PALETTES[pet];
+  const o = `stroke="${p.outline}" stroke-width="3.5"`;
+  const cx = 50;
+  if (phase === 1) {
+    const cy = 62, r = 25;
+    return wrap(
+      topFeature(pet, p, cx, cy - r + 4, 0.8) +
+      `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${p.body}" ${o}/>` +
+      `<ellipse cx="${cx}" cy="${cy + 11}" rx="12" ry="8" fill="${p.belly}"/>` +
+      `<ellipse cx="${cx - 11}" cy="${cy + r - 2}" rx="6" ry="4" fill="${p.body2}" ${o}/>` +
+      `<ellipse cx="${cx + 11}" cy="${cy + r - 2}" rx="6" ry="4" fill="${p.body2}" ${o}/>` +
+      face(p, cx, cy - 4, 0.85, shadow),
+    );
+  }
+  if (phase === 2) {
+    const cy = 58, rx = 27, ry = 32;
+    return wrap(
+      topFeature(pet, p, cx, cy - ry + 5, 1) +
+      `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${p.body}" ${o}/>` +
+      `<ellipse cx="${cx}" cy="${cy + 14}" rx="14" ry="11" fill="${p.belly}"/>` +
+      `<ellipse cx="${cx - rx - 2}" cy="${cy + 8}" rx="6" ry="8" fill="${p.body}" ${o}/>` +
+      `<ellipse cx="${cx + rx + 2}" cy="${cy + 8}" rx="6" ry="8" fill="${p.body}" ${o}/>` +
+      `<ellipse cx="${cx - 12}" cy="${cy + ry - 2}" rx="7" ry="4.5" fill="${p.body2}" ${o}/>` +
+      `<ellipse cx="${cx + 12}" cy="${cy + ry - 2}" rx="7" ry="4.5" fill="${p.body2}" ${o}/>` +
+      face(p, cx, cy - 8, 1, shadow),
+    );
+  }
+  const cy = 56, rx = 32, ry = 37;
+  return wrap(
+    grandFeature(pet, p, cx, cy, ry) +
+    topFeature(pet, p, cx, cy - ry + 6, 1.15) +
+    `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${p.body}" ${o}/>` +
+    `<ellipse cx="${cx}" cy="${cy + 17}" rx="17" ry="13" fill="${p.belly}"/>` +
+    `<ellipse cx="${cx - rx - 2}" cy="${cy + 10}" rx="7" ry="10" fill="${p.body}" ${o}/>` +
+    `<ellipse cx="${cx + rx + 2}" cy="${cy + 10}" rx="7" ry="10" fill="${p.body}" ${o}/>` +
+    `<ellipse cx="${cx - 14}" cy="${cy + ry - 2}" rx="8" ry="5" fill="${p.body2}" ${o}/>` +
+    `<ellipse cx="${cx + 14}" cy="${cy + ry - 2}" rx="8" ry="5" fill="${p.body2}" ${o}/>` +
+    face(p, cx, cy - 10, 1.15, shadow) +
+    (shadow ? '' : `<path d="M ${cx + rx - 4} ${cy - ry + 2} l 2.4 4.8 l 5.2 0.8 l -3.8 3.7 l 0.9 5.2 l -4.7 -2.5 l -4.7 2.5 l 0.9 -5.2 l -3.8 -3.7 l 5.2 -0.8 Z" fill="#fde047" stroke="${p.outline}" stroke-width="2"/>`),
+  );
+}
+
+/** Ovo — casca clara com pintas na cor do pet (ou neutro, sem pet). */
+function eggSVG(pet: PetType | null): string {
+  const p = pet ? PALETTES[pet] : { body: '#94a3b8', body2: '#64748b', belly: '#f1f5f9', outline: '#334155', cheek: '', pupil: '' };
+  return wrap(
+    `<path d="M 50 16 C 32 16 24 40 24 58 C 24 76 35 88 50 88 C 65 88 76 76 76 58 C 76 40 68 16 50 16 Z" fill="${p.belly}" stroke="${p.outline}" stroke-width="3.5"/>` +
+    `<circle cx="42" cy="44" r="6" fill="${p.body}"/>` +
+    `<circle cx="60" cy="58" r="7.5" fill="${p.body}"/>` +
+    `<circle cx="44" cy="70" r="5" fill="${p.body2}"/>` +
+    `<circle cx="59" cy="34" r="4" fill="${p.body2}"/>`,
+  );
+}
+
+export const STAGE_SPRITES: Record<string, string> = { egg: uri(eggSVG(null)) };
+for (const pet of PET_TYPES) {
+  STAGE_SPRITES[`egg-${pet}`] = uri(eggSVG(pet));
+  PETS[pet].phases.forEach((formId, i) => {
+    const phase = (i + 1) as 1 | 2 | 3;
+    STAGE_SPRITES[formId] = uri(petSVG(pet, phase));
+    STAGE_SPRITES[`shadow-${formId}`] = uri(petSVG(pet, phase, true));
+  });
+}
+
+/** Sprite de uma forma; para 'egg', o eggType (quando conhecido) colore o ovo. */
+export function getSpriteForStage(stage: string, eggType?: string | null): string {
+  const key = stage.toLowerCase();
+  if (key === 'egg' || key === 'digiegg') {
+    return STAGE_SPRITES[`egg-${eggType ?? ''}`] ?? STAGE_SPRITES.egg;
+  }
+  return STAGE_SPRITES[key] ?? STAGE_SPRITES.egg;
+}
+
+/** Sprites desenhados virados para a ESQUERDA (nenhum, na arte nova). */
+export const LEFT_FACING_STAGES: string[] = [];

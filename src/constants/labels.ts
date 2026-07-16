@@ -1,3 +1,4 @@
+import { PETS, PET_TYPES } from '../types/progression';
 import type { ActivityCategory } from '../types/attributes';
 
 export interface FoodItem {
@@ -35,82 +36,13 @@ export const AI_CATEGORY_MAP: Record<string, ActivityCategory> = {
   Creative: 'Creativity',
 };
 
-export const DIGIMON_STAGE_NAMES: Record<string, string> = {
-  // Armor digivolution (Digimental of Friendship). Listed FIRST on purpose:
-  // DEGENERATION_STAGE_MAP inverts this object and keeps the LAST entry per
-  // display name, so 'Raidramon' keeps resolving to the veemon-line form.
-  'raidramon-armor': 'Raidramon',
-  // Rookie item digivolutions (minigame drops)
-  agumon: 'Agumon',
-  gabumon: 'Gabumon',
-  piyomon: 'Piyomon',
-  tentomon: 'Tentomon',
-  patamon: 'Patamon',
-  palmon: 'Palmon',
-  // Item digivolutions (shop)
-  greymon: 'Greymon',
-  garurumon: 'Garurumon',
-  meramon: 'Meramon',
-  devimon: 'Devimon',
-  angemon: 'Angemon',
-  birdramon: 'Birdramon',
-  kabuterimon: 'Kabuterimon',
-  seadramon: 'Seadramon',
-  airdramon: 'Airdramon',
-  ogremon: 'Ogremon',
-  kuwagamon: 'Kuwagamon',
-  numemon: 'Numemon',
-  monzaemon: 'Monzaemon',
-  etemon: 'Etemon',
-  andromon: 'Andromon',
-  megadramon: 'Megadramon',
-  vademon: 'Vademon',
-  nanimon: 'Nanimon',
-  digiegg: 'DigiEgg',
-  pichimon: 'Pichimon',
-  pukamon: 'Pukamon',
-  tapirmon: 'Tapirmon',
-  tuskmon: 'Tuskmon',
-  monochromon: 'Monochromon',
-  bakemon: 'Bakemon',
-  gigadramon: 'Gigadramon',
-  triceramon: 'Triceramon',
-  digitamamon: 'Digitamamon',
-  gaioumon: 'Gaioumon',
-  ultimatebrachiomon: 'UltimateBrachiomon',
-  titamon: 'Titamon',
-  // Veemon line
-  chicomon: 'Chicomon',
-  chibimon: 'Chibimon',
-  veemon: 'Veemon',
-  exveemon: 'ExVeemon',
-  veedramon: 'Veedramon',
-  flamedramon: 'Flamedramon',
-  paildramon: 'Paildramon',
-  aeroveedramon: 'AeroVeedramon',
-  raidramon: 'Raidramon',
-  imperialdramon: 'Imperialdramon',
-  ulforceveedramon: 'UlforceVeedramon',
-  magnamon: 'Magnamon',
-  // Salamon line
-  yukimibotamon: 'Yukimibotamon',
-  nyaromon: 'Nyaromon',
-  plotmon: 'Plotmon',
-  gatomon: 'Gatomon',
-  'gatomon-black': 'BlackGatomon',
-  mikemon: 'Mikemon',
-  angewomon: 'Angewomon',
-  ladydevimon: 'LadyDevimon',
-  nefertimon: 'Nefertimon',
-  ophanimon: 'Ophanimon',
-  lilithmon: 'Lilithmon',
-  holydramon: 'Holydramon',
-  // Ultra
-  'gaioumon-itto': 'Gaioumon: Itto Mode',
-  'imperialdramon-paladin': 'Imperialdramon Paladin Mode',
-  mastemon: 'Mastemon',
-};
+// Nome exibido de cada forma dos pets (ids novos). O ovo tem nome por idioma
+// via getStageDisplayName; aqui fica 'Ovo' (PT-first) para consumidores
+// legados que só têm o id.
 
-export const DEGENERATION_STAGE_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries(DIGIMON_STAGE_NAMES).map(([k, v]) => [v, k])
-);
+export const STAGE_NAMES: Record<string, string> = { egg: 'Ovo' };
+for (const pet of PET_TYPES) {
+  PETS[pet].phases.forEach((formId, i) => {
+    STAGE_NAMES[formId] = PETS[pet].phaseNames[i];
+  });
+}

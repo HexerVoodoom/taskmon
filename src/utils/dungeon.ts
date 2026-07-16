@@ -1,72 +1,63 @@
-// ⚔️ Dungeon logic — an ascending ladder of enemies (baby-i → mega), each random
-// within its tier and each stronger than the last. Clearing the whole ladder
-// advances the "dungeon level" (wave): enemies then deal MORE damage and take
-// LESS. That level persists (resets monthly), plus a daily play limit, score
+// ⚔️ Dungeon logic — an ascending ladder of shadow monsters (fase 1 → fase 3),
+// each random within its tier and each stronger than the last. Clearing the
+// whole ladder advances the "dungeon level" (wave): enemies then deal MORE
+// damage and take LESS. That level persists (resets weekly), plus a score
 // ranking and heart drops. Kept out of the component so the rules are testable.
-import { STAGE_SPRITES } from './sprites';
-import { getStageLevel } from '../types/progression';
+import { PETS, PET_TYPES, getStageLevel, getPetOfStage, type EvolutionStage } from '../types/progression';
 import { STORAGE_KEYS } from './storageKeys';
 
 export interface DungeonEnemy {
-  name: string;
-  stage: string;       // sprite key
+  namePt: string;
+  nameEn: string;
+  stage: string;       // sprite key ('shadow-<pet>-<fase>')
   hp: number;
   atk: number;
   speed: number;       // timing-bar sweeps per second (higher = harder)
-  points: number;      // 🪙 Bits granted when defeated
+  points: number;      // Bits granted when defeated
   dmgReduction: number; // 0..~0.7 — fraction of the player's damage it shrugs off
 }
 
-// Enemies always climb these tiers in order within a wave (weakest → strongest).
-export type EnemyTier = 'baby-i' | 'baby-ii' | 'rookie' | 'champion' | 'ultimate' | 'mega';
-export const LADDER_TIERS: EnemyTier[] = ['baby-i', 'baby-ii', 'rookie', 'champion', 'ultimate', 'mega'];
+// Enemies always climb these tiers in order within a wave (weakest → strongest):
+// two shadow monsters per phase, fase 1 → fase 3.
+export type EnemyTier = 'fase-1' | 'fase-2' | 'fase-3';
+export const LADDER_TIERS: EnemyTier[] = ['fase-1', 'fase-1', 'fase-2', 'fase-2', 'fase-3', 'fase-3'];
 
 // No daily run cap: entry is gated only by HP (losing costs a real heart, so the
 // player can go as often as they can afford). Heart drops are deliberately rare.
 const HEART_DROP_DAILY_CAP = 2;            // hearts the dungeon can drop per day
 const HEART_DROP_CHANCE = 0.05;            // per enemy defeated (very low)
 
-// Base enemy stats per tier, before the per-wave difficulty scaling.
+// Base enemy stats per tier, before the per-wave difficulty scaling. Within a
+// tier, the SECOND ladder slot is slightly stronger (see buildDungeonWave).
 const TIER_BASE: Record<EnemyTier, { hp: number; atk: number; speed: number; points: number }> = {
-  'baby-i':   { hp: 6,  atk: 2, speed: 0.85, points: 2 },
-  'baby-ii':  { hp: 8,  atk: 3, speed: 0.95, points: 3 },
-  rookie:     { hp: 11, atk: 4, speed: 1.05, points: 4 },
-  champion:   { hp: 15, atk: 5, speed: 1.2,  points: 6 },
-  ultimate:   { hp: 20, atk: 6, speed: 1.4,  points: 9 },
-  mega:       { hp: 28, atk: 8, speed: 1.6,  points: 13 },
+  'fase-1': { hp: 7,  atk: 2, speed: 0.9,  points: 2 },
+  'fase-2': { hp: 13, atk: 4, speed: 1.1,  points: 5 },
+  'fase-3': { hp: 22, atk: 7, speed: 1.45, points: 10 },
 };
 
-// Pretty display name from a sprite key: 'gatomon-black' → 'Gatomon Black'.
-function prettyName(stage: string): string {
-  return stage.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+// Sombra de qual forma luta em cada tier: qualquer fase equivalente de
+// qualquer pet, exceto a forma atual do jogador.
+function poolForTier(tier: EnemyTier, excludeStage: string): string[] {
+  const phaseIdx = Number(tier.slice(-1)) - 1;
+  const pool = PET_TYPES.map(p => PETS[p].phases[phaseIdx]).filter(f => f !== excludeStage);
+  return pool.length > 0 ? pool : PET_TYPES.map(p => PETS[p].phases[phaseIdx]);
 }
 
-// Extra dungeon-only enemies (not part of the pet's evolution tree). Their
-// sprites live in STAGE_SPRITES; this maps each to the tier it fights at.
-// (Nearly all extras became item-evolution forms — they're in STAGES_BY_LEVEL,
-// so getStageLevel already tiers them. Only Betamon remains dungeon-only.)
-const DUNGEON_ENEMY_TIERS: Record<string, EnemyTier> = {
-  betamon: 'rookie',
-};
-
-// Sprite keys that fight at a given tier — the pet's own evolution forms (via
-// getStageLevel) plus the extra dungeon-only enemies above.
-function poolForTier(tier: EnemyTier, exclude: string): string[] {
-  const atTier = (k: string) => getStageLevel(k) === tier || DUNGEON_ENEMY_TIERS[k] === tier;
-  const pool = Object.keys(STAGE_SPRITES).filter(k => atTier(k) && k !== exclude);
-  return pool.length > 0 ? pool : Object.keys(STAGE_SPRITES).filter(atTier);
+function shadowNames(formId: string): { namePt: string; nameEn: string } {
+  const pet = PETS[getPetOfStage(formId)];
+  const level = getStageLevel(formId) as Exclude<EvolutionStage, 'egg'>;
+  const base = pet.phaseNames[Number(level.slice(-1)) - 1];
+  return { namePt: `${base} Sombrio`, nameEn: `Shadow ${base}` };
 }
 
 /**
- * Build one wave: a random Digimon from each tier (baby-i → mega, in order),
+ * Build one wave: 6 shadow monsters climbing fase 1 → fase 3 (two per phase),
  * with stats scaled by the dungeon `level`. Higher level = more enemy damage
  * dealt and less damage taken (dmgReduction). Random each call.
  */
 export function buildDungeonWave(level: number, petStage: string): DungeonEnemy[] {
-  // A "level" is roughly one player-tier of difficulty: level 1 suits a rookie,
-  // level 2 a champion, level 3 an ultimate… so a floor a couple levels above
-  // the player is brutal. Each level: more enemy HP + damage, and the enemy
-  // shrugs off more of the player's damage.
+  // A "level" is roughly one player-phase of difficulty: level 1 suits fase 1,
+  // level 2 fase 2… so a floor a couple levels above the player is brutal.
   const step = Math.max(0, level - 1);
   const hpMult = 1 + 0.14 * step;
   const atkMult = 1 + 0.2 * step;
@@ -74,18 +65,21 @@ export function buildDungeonWave(level: number, petStage: string): DungeonEnemy[
   const speedBump = Math.min(0.5, 0.05 * step);
   const ptsMult = 1 + 0.12 * step;
 
-  return LADDER_TIERS.map(tier => {
+  return LADDER_TIERS.map((tier, i) => {
     const base = TIER_BASE[tier];
+    // Second slot of each phase pair is a bit stronger, keeping the ladder rising.
+    const slotMult = i % 2 === 1 ? 1.18 : 1;
     const pool = poolForTier(tier, petStage);
     const key = pool[Math.floor(Math.random() * pool.length)];
+    const names = shadowNames(key);
     const variance = 0.9 + Math.random() * 0.2;    // ±10% on HP
     return {
-      name: prettyName(key),
-      stage: key,
-      hp: Math.max(5, Math.round(base.hp * hpMult * variance)),
-      atk: Math.max(2, Math.round(base.atk * atkMult)),
-      speed: +(base.speed + speedBump).toFixed(2),
-      points: Math.max(2, Math.round(base.points * ptsMult)),
+      ...names,
+      stage: `shadow-${key}`,
+      hp: Math.max(5, Math.round(base.hp * hpMult * slotMult * variance)),
+      atk: Math.max(2, Math.round(base.atk * atkMult * slotMult)),
+      speed: +(base.speed * (i % 2 === 1 ? 1.05 : 1) + speedBump).toFixed(2),
+      points: Math.max(2, Math.round(base.points * ptsMult * slotMult)),
       dmgReduction: +dmgReduction.toFixed(2),
     };
   });
@@ -129,15 +123,6 @@ export function recordDungeonScore(score: number): number {
   const best = Math.max(getDungeonBest(), score);
   localStorage.setItem(STORAGE_KEYS.DUNGEON_BEST, String(best));
   return best;
-}
-
-// ── Digimental drops ─────────────────────────────────────────────────────────
-// Ultra-rare (0.1% per defeated enemy), uncapped — the rarity IS the cap.
-// Returns the dropped digimental's EVO_ITEMS id, or null.
-const DIGIMENTAL_DROP_CHANCE = 0.001;
-export function rollDungeonDigimental(rng: () => number = Math.random): string | null {
-  if (rng() > DIGIMENTAL_DROP_CHANCE) return null;
-  return rng() < 0.5 ? 'digimental-courage' : 'digimental-friendship';
 }
 
 // ── Heart drops ──────────────────────────────────────────────────────────────

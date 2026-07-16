@@ -9,7 +9,6 @@ interface ChatBoxProps {
   digimonName: string;
   mood: 'idle' | 'happy' | 'tired';
   evolutionStage: string;
-  dominantBranch?: string;
   useAI: boolean;
   onSendMessage: (response: string) => void;
   theme?: 'default' | 'win98' | 'glitch';
@@ -27,7 +26,6 @@ export function ChatBox({
   digimonName,
   mood,
   evolutionStage,
-  dominantBranch,
   useAI,
   onSendMessage,
   theme = 'default',
@@ -48,8 +46,8 @@ export function ChatBox({
   const [isInputReadOnly, setIsInputReadOnly] = useState(true);
   const [randomName] = useState(`chat-${Math.random().toString(36).substring(7)}`);
 
-  // Digimon responses based on keywords and mood
-  const getDigimonResponse = (userMessage: string): string => {
+  // Pet responses based on keywords and mood
+  const getPetResponse = (userMessage: string): string => {
     const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
     const category = detectMessageCategory(userMessage);
 
@@ -151,8 +149,7 @@ export function ChatBox({
           digimonName,
           mood,
           evolutionStage,
-          dominantBranch,
-          language,
+                  language,
           aiSettings,
         }),
         signal: controller.signal,
@@ -161,7 +158,7 @@ export function ChatBox({
       if (!response.ok) {
         if (import.meta.env.DEV) console.error('AI API error:', await response.text());
         toast.warning('AI unavailable, using local responses');
-        return getDigimonResponse(userMessage);
+        return getPetResponse(userMessage);
       }
 
       const data = await response.json();
@@ -179,7 +176,7 @@ export function ChatBox({
         if (import.meta.env.DEV) console.error('Failed to get AI response:', error);
         toast.warning('AI unavailable, using local responses');
       }
-      return getDigimonResponse(userMessage);
+      return getPetResponse(userMessage);
     } finally {
       clearTimeout(timeout);
     }
@@ -201,7 +198,7 @@ export function ChatBox({
       } else {
         // Use keyword-based response
         await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
-        response = getDigimonResponse(userMessage);
+        response = getPetResponse(userMessage);
       }
 
       onSendMessage(response);

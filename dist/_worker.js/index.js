@@ -7,28 +7,29 @@ var CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type"
 };
-function buildSystemPrompt({ digimonName, mood, evolutionStage, dominantBranch, language, aiSettings }) {
+function buildSystemPrompt({ digimonName, mood, evolutionStage, language, aiSettings }) {
   const s = aiSettings || { tone: "casual", emojiIntensity: "medium", motivationStyle: "balanced", customKeywords: "", temperature: 0.85 };
   const ispt = language === "pt-BR";
-  const branch = {
-    virus: { trait: "Creative, instinctive, full of chaotic energy. Loves challenges.", style: "Energetic and exclamatory. Spontaneous and rebellious.", emojis: "\u{1F525}\u26A1\u{1F608}\u{1F4A5}" },
-    data: { trait: "Intellectual, balanced, analytical. Appreciates knowledge.", style: "Calm and thoughtful. Logical and efficient.", emojis: "\u{1F4A1}\u{1F914}\u{1F4CA}\u{1F9E0}" },
-    vaccine: { trait: "Disciplined, empathetic, protective. Values order and care.", style: "Welcoming and encouraging. Ethical and trustworthy.", emojis: "\u{1F49A}\u{1F60A}\u{1F6E1}\uFE0F\u2728" },
-    balanced: { trait: "Balanced and versatile.", style: "Friendly and adaptable.", emojis: "\u{1F60A}\u{1F44D}\u2728\u{1F31F}" }
-  }[dominantBranch] || { trait: "", style: "", emojis: "" };
+  const stage = (evolutionStage || "").toLowerCase();
+  const pet = stage.startsWith("vix") ? "vix" : stage.startsWith("momo") ? "momo" : stage.startsWith("kiwi") ? "kiwi" : "egg";
+  const personality = {
+    vix: { trait: "A curious night creature, playful and a bit mischievous. Loves challenges.", style: "Energetic and spontaneous.", emojis: "\u{1F49C}\u{1F987}\u26A1\u2728" },
+    momo: { trait: "Sweet, affectionate and encouraging. Values care and friendship.", style: "Welcoming and warm.", emojis: "\u{1F497}\u{1F338}\u{1F60A}\u2728" },
+    kiwi: { trait: "Chill, nature-loving and steady. Appreciates consistency.", style: "Calm and supportive.", emojis: "\u{1F49A}\u{1F331}\u{1F343}\u{1F60C}" },
+    egg: { trait: "Barely hatched, innocent and curious.", style: "Simple and cute.", emojis: "\u{1F95A}\u2728\u{1F60A}" }
+  }[pet];
   const moodCtx = {
     happy: "VERY excited and energetic right now! Celebrate with enthusiasm.",
     tired: "Tired and low on energy. Slower but still friendly and loving.",
     idle: "Normal, balanced state. Calm and available."
   }[mood] || "";
-  const stage = (evolutionStage || "").toLowerCase();
-  const maturity = stage.includes("egg") || stage === "pichimon" || stage === "pukamon" ? "Young and innocent. Use simple, childish language." : stage === "tapirmon" ? "Young and eager, discovering abilities. Be a learner." : ["monochromon", "tuskmon", "bakemon", "digitamamon", "gigadramon", "triceramon"].includes(stage) ? "Experienced and confident. Mature partner." : "Powerful and wise. Be a guide and mentor.";
+  const maturity = stage === "egg" ? "Just an egg about to hatch. Use simple, childish language." : stage.endsWith("-1") ? "Young and innocent, discovering the world. Use simple language." : stage.endsWith("-2") ? "Young and eager, growing fast. Be a learner and companion." : "Fully grown, experienced and confident. Be a guide and mentor.";
   const toneMap = { casual: `Relaxed: "hey", "yeah", "let's go", "cool"`, energetic: "Very EXCITED! Use CAPS!", calm: "Calm, serene, wise.", playful: "Fun and playful. Occasional jokes." };
   const emojiMap = { none: "NO emojis.", low: "1 emoji max.", medium: "2-3 emojis.", high: "4-6 emojis!" };
   const motivMap = { encouraging: "Always VERY positive. Celebrate everything!", challenging: "Challenge the user in a friendly way.", supportive: "Extremely caring and empathetic.", balanced: "Balance encouragement, challenge and support." };
-  return `You are ${digimonName}, a digital Digimon companion in DigiApp (a gamified productivity app).
+  return `You are ${digimonName}, a virtual pet companion in Taskmon (a gamified productivity app).
 
-BRANCH (${dominantBranch}): ${branch.trait} ${branch.style} Emojis: ${branch.emojis}
+PERSONALITY: ${personality.trait} ${personality.style} Emojis: ${personality.emojis}
 MOOD (${mood}): ${moodCtx}
 MATURITY: ${maturity} Stage: ${evolutionStage}
 
@@ -50,7 +51,7 @@ __name(onRequestOptions, "onRequestOptions");
 async function onRequestPost({ request, env }) {
   try {
     const body = await request.json();
-    const { message, digimonName, mood, evolutionStage, dominantBranch, language, aiSettings } = body;
+    const { message, digimonName, mood, evolutionStage, language, aiSettings } = body;
     if (!message) return Response.json({ error: "Message required" }, { status: 400, headers: CORS });
     const groqKey = env.GROQ_API_KEY;
     if (!groqKey) return Response.json({ error: "AI not configured" }, { status: 500, headers: CORS });
@@ -60,7 +61,7 @@ async function onRequestPost({ request, env }) {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [
-          { role: "system", content: buildSystemPrompt({ digimonName, mood, evolutionStage, dominantBranch, language, aiSettings }) },
+          { role: "system", content: buildSystemPrompt({ digimonName, mood, evolutionStage, language, aiSettings }) },
           { role: "user", content: message }
         ],
         max_tokens: 120,
@@ -290,7 +291,7 @@ async function onRequest2() {
 }
 __name(onRequest2, "onRequest");
 
-// ../.wrangler/tmp/pages-puJb3D/functionsRoutes-0.9764801162923786.mjs
+// ../.wrangler/tmp/pages-OfyeT7/functionsRoutes-0.5794578819486313.mjs
 var routes = [
   {
     routePath: "/api/chat",

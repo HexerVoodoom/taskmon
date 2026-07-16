@@ -11,27 +11,24 @@ import type { Language } from '../utils/i18n';
  * All games award 🪙 Bits (GameState.gamePoints), spent in the shop.
  * Balance: Dungeon points/enemy + wave clear · Dino floor(score/100) · RPS +5/match.
  */
-export function ActivitiesPage({ evolutionStage, language, theme = 'default', totalPoints, ownedBackgrounds, equippedBackground, equippedEvoItem, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onDungeonDigimental, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onItemDrop, onEarnPoints, onShopBuy, onEquipBackground, missionProgress, droppedItems }: {
+export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, ownedBackgrounds, equippedBackground, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onEarnPoints, onShopBuy, onEquipBackground, missionProgress }: {
   evolutionStage: string;
+  eggType?: string;
   language: Language;
   theme?: 'default' | 'win98' | 'glitch';
   totalPoints: number;
   ownedBackgrounds: string[];
   equippedBackground: string | null;
-  equippedEvoItem: string | null;
   onDungeonEnter: () => { ok: true; level: number; best: number } | { ok: false; reason: 'hp' };
   onDungeonLose: () => void;
   onDungeonHeartDrop: () => boolean;
-  onDungeonDigimental: () => string | null;
   onGlitchtama: () => void;
   onDungeonEnemyDefeated: () => void;
   onDinoScore: (score: number) => void;
-  onItemDrop: (emoji: string) => string;
   onEarnPoints: (pts: number) => void;
   onShopBuy: (itemId: string) => boolean;
   onEquipBackground: (id: string | null) => void;
   missionProgress: Record<string, number>;
-  droppedItems: string[];
 }) {
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
@@ -58,7 +55,7 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
     {
       key: 'rps', icon: '✊',
       title: isPt ? 'Pedra, Papel e Tesoura' : 'Rock, Paper, Scissors',
-      desc: isPt ? 'Clássico duelo contra o seu Digimon. Melhor de 5.' : 'The classic duel against your Digimon. First to 3.',
+      desc: isPt ? 'Clássico duelo contra o seu pet. Melhor de 5.' : 'The classic duel against your pet. First to 3.',
       pts: isPt ? '5 Bits por vitória' : '5 Bits per match win',
     },
   ];
@@ -74,7 +71,7 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
         </h2>
         <div className="flex items-center gap-2">
           <span
-            className="px-3 py-1 rounded-md"
+            className="px-3 py-1 rounded-md tk-keep-mono"
             style={{ ...bitsStyle, fontSize: '0.85rem', background: '#0a1408', border: '1px solid rgba(57,255,20,0.4)' }}
             title={isPt ? 'Bits — moeda dos minijogos (gaste na loja!)' : 'Bits — minigame currency (spend in the shop!)'}
           >
@@ -84,7 +81,7 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
           <button
             onClick={() => setShopOpen(true)}
             aria-label={isPt ? 'Loja' : 'Shop'}
-            title={isPt ? 'Loja — chips, coraçõezinhos, itens de digievolução e cenários!' : 'Shop — chips, little hearts, digivolution items and backdrops!'}
+            title={isPt ? 'Loja — coraçõezinhos e cenários!' : 'Shop — little hearts and backdrops!'}
             className="cursor-pointer active:scale-[0.97] transition-all"
             style={{
               background: '#0d1420',
@@ -106,7 +103,7 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
       </div>
       <p className={isGlitch ? 'text-[#5fbcbc]' : isWin98 ? 'text-gray-700' : 'text-gray-500'}
          style={{ ...mono, fontSize: '0.78rem' }}>
-        {isPt ? 'Minijogos para se divertir e acumular pontos com seu Digimon.' : 'Minigames to have fun and earn points with your Digimon.'}
+        {isPt ? 'Minijogos para se divertir e acumular Bits com seu pet.' : 'Minigames to have fun and earn Bits with your pet.'}
       </p>
 
       {cards.map(c => (
@@ -150,9 +147,7 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
           points={totalPoints}
           ownedBackgrounds={ownedBackgrounds}
           equippedBackground={equippedBackground}
-          equippedEvoItem={equippedEvoItem}
           missionProgress={missionProgress}
-          droppedItems={droppedItems}
           onBuy={onShopBuy}
           onEquip={onEquipBackground}
           onClose={() => setShopOpen(false)}
@@ -162,11 +157,11 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
       {openGame === 'dungeon' && (
         <DungeonGame
           evolutionStage={evolutionStage}
+          eggType={eggType}
           language={language}
           onEnter={onDungeonEnter}
           onLose={onDungeonLose}
           onHeartDrop={onDungeonHeartDrop}
-          onDigimentalDrop={onDungeonDigimental}
           onGlitchtama={onGlitchtama}
           onEnemyDefeated={onDungeonEnemyDefeated}
           onEarnPoints={onEarnPoints}
@@ -176,9 +171,9 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
       {openGame === 'dino' && (
         <DinoGame
           evolutionStage={evolutionStage}
+          eggType={eggType}
           language={language}
           onEarnPoints={onEarnPoints}
-          onItemDrop={onItemDrop}
           onScore={onDinoScore}
           onExit={() => setOpenGame(null)}
         />
@@ -186,9 +181,9 @@ export function ActivitiesPage({ evolutionStage, language, theme = 'default', to
       {openGame === 'rps' && (
         <RPSGame
           evolutionStage={evolutionStage}
+          eggType={eggType}
           language={language}
           onEarnPoints={onEarnPoints}
-          onItemDrop={onItemDrop}
           onExit={() => setOpenGame(null)}
         />
       )}

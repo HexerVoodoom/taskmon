@@ -1,6 +1,5 @@
-import React from 'react';
 import svgPaths from '../imports/svg-hfvoappsgk';
-import { Users } from 'lucide-react';
+import { getActiveProfile, setActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
 
 type ViewType = 'main' | 'evolution' | 'stats' | 'settings' | 'games';
 
@@ -8,64 +7,40 @@ interface HeaderProps {
   currentView: ViewType;
   onNavigate: (view: ViewType) => void;
   theme?: 'default' | 'win98' | 'glitch';
-  onOpenHub?: () => void;
 }
 
-// Home Icon
-function HomeIcon() {
+// Cor de cada perfil (0 preto+roxo · 1 rosa · 2 verde) — mesmas dos temas.
+export const PROFILE_COLORS = ['#a855f7', '#ec4899', '#22c55e'];
+
+// Casinha (estilo flat, preenchida quando ativa)
+function HouseIcon({ color, active }: { color: string; active: boolean }) {
   return (
-    <div className="h-[19.997px] overflow-clip relative shrink-0 w-full">
-      <div className="absolute bottom-[12.5%] left-[37.5%] right-[37.5%] top-1/2">
-        <div className="absolute inset-[-8.33%_-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 6.24897 8.74856">
-            <path d={svgPaths.p221ad280} stroke="#101828" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.24979" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[8.33%_12.5%_12.5%_12.5%]">
-        <div className="absolute inset-[-3.95%_-4.17%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16.2473 17.0809">
-            <path d={svgPaths.p2b44b080} stroke="#101828" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.24979" />
-          </svg>
-        </div>
-      </div>
-    </div>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M3.5 10.5 12 3.5l8.5 7v8.5a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5a1.5 1.5 0 0 1-1.5-1.5Z"
+        fill={active ? color : 'none'}
+        stroke={color}
+        strokeWidth="2.2"
+        strokeLinejoin="round"
+        opacity={active ? 1 : 0.55}
+      />
+    </svg>
   );
 }
 
-// Evolution Icon (pencil/edit) - usado no botão debug quando ativo
-function EvolutionIcon({ isActive }: { isActive: boolean }) {
-  const strokeColor = isActive ? '#9810FA' : '#6A7282';
-  return (
-    <div className="h-[19.997px] overflow-clip relative shrink-0 w-full">
-      <div className="absolute inset-[12.5%_12.5%_8.34%_8.34%]">
-        <div className="absolute inset-[-3.95%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 17.0787 17.0787">
-            <path d={svgPaths.p38aea500} stroke={strokeColor} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.24979" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute inset-[8.33%_8.33%_66.66%_66.67%]">
-        <div className="absolute inset-[-12.5%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 6.24979 6.24979">
-            <path d={svgPaths.padf4f00} stroke={strokeColor} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.24979" />
-          </svg>
-        </div>
-      </div>
-      <div className="absolute bottom-[33.33%] left-[16.67%] right-1/2 top-[66.67%]">
-        <div className="absolute inset-[-0.62px_-9.38%]">
-          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 7.91536 1.24979">
-            <path d="M7.29046 0.624897H0.624897" stroke={strokeColor} strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.24979" />
-          </svg>
-        </div>
-      </div>
-    </div>
-  );
+// Troca de perfil: casinha ativa navega pra home; as outras trocam o save.
+function switchProfile(index: number, isActive: boolean, onNavigate: (v: ViewType) => void) {
+  if (isActive) {
+    onNavigate('main');
+    return;
+  }
+  setActiveProfile(index);
+  window.location.reload();
 }
 
 // Branches Icon
 function BranchesIcon({ isActive }: { isActive: boolean }) {
-  const strokeColor = isActive ? '#101828' : '#6A7282';
+  const strokeColor = isActive ? 'var(--tk-text, #101828)' : 'var(--tk-muted, #6A7282)';
   return (
     <div className="h-[19.997px] overflow-clip relative shrink-0 w-full">
       <div className="absolute bottom-[37.5%] left-1/4 right-3/4 top-[12.5%]">
@@ -102,7 +77,7 @@ function BranchesIcon({ isActive }: { isActive: boolean }) {
 
 // Stats Icon (bar chart)
 function StatsIcon({ isActive }: { isActive: boolean }) {
-  const strokeColor = isActive ? '#101828' : '#6A7282';
+  const strokeColor = isActive ? 'var(--tk-text, #101828)' : 'var(--tk-muted, #6A7282)';
   return (
     <div className="h-[19.997px] overflow-clip relative shrink-0 w-full">
       <div className="absolute inset-[12.5%]">
@@ -137,28 +112,27 @@ function StatsIcon({ isActive }: { isActive: boolean }) {
   );
 }
 
-// Gamepad Icon — pixel-art (8-bit) to match the app's retro vibe.
-// Drawn as filled squares on an integer grid (crispEdges keeps it blocky).
+// Gamepad Icon — pixel-art (8-bit) to match the games page.
 function PixelGamepadIcon({ isActive }: { isActive: boolean }) {
-  const c = isActive ? '#101828' : '#6A7282';
+  const c = isActive ? 'var(--tk-text, #101828)' : 'var(--tk-muted, #6A7282)';
   return (
     <svg width="22" height="15" viewBox="0 0 12 8" shapeRendering="crispEdges" aria-hidden="true">
       {/* body */}
       <rect x="1" y="1" width="10" height="6" fill={c} />
       <rect x="0" y="2" width="12" height="4" fill={c} />
       {/* d-pad cross */}
-      <rect x="2" y="3" width="3" height="1" fill="#fff" />
-      <rect x="3" y="2" width="1" height="3" fill="#fff" />
+      <rect x="2" y="3" width="3" height="1" fill="var(--tk-card, #fff)" />
+      <rect x="3" y="2" width="1" height="3" fill="var(--tk-card, #fff)" />
       {/* A/B buttons */}
-      <rect x="8" y="3" width="1" height="1" fill="#fff" />
-      <rect x="10" y="3" width="1" height="1" fill="#fff" />
+      <rect x="8" y="3" width="1" height="1" fill="var(--tk-card, #fff)" />
+      <rect x="10" y="3" width="1" height="1" fill="var(--tk-card, #fff)" />
     </svg>
   );
 }
 
 // Settings Icon
 function SettingsIcon({ isActive }: { isActive: boolean }) {
-  const strokeColor = isActive ? '#101828' : '#6A7282';
+  const strokeColor = isActive ? 'var(--tk-text, #101828)' : 'var(--tk-muted, #6A7282)';
   return (
     <div className="h-[19.997px] overflow-clip relative shrink-0 w-full">
       <div className="absolute inset-[8.41%_12.68%]">
@@ -179,15 +153,26 @@ function SettingsIcon({ isActive }: { isActive: boolean }) {
   );
 }
 
-export function Header({ currentView, onNavigate, theme = 'default', onOpenHub }: HeaderProps) {
+export function Header({ currentView, onNavigate, theme = 'default' }: HeaderProps) {
+  const activeProfile = getActiveProfile();
+  const profiles = Array.from({ length: PROFILE_COUNT }, (_, i) => i);
+
   // Win98 theme - mantém o layout antigo
   if (theme === 'win98') {
     return (
       <div className="win98-header">
         <div className="win98-menubar">
-          <button className={`win98-menu-item ${currentView === 'main' ? 'active' : ''}`} onClick={() => onNavigate('main')}>
-            Home
-          </button>
+          {profiles.map(i => (
+            <button
+              key={i}
+              className={`win98-menu-item ${i === activeProfile && currentView === 'main' ? 'active' : ''}`}
+              onClick={() => switchProfile(i, i === activeProfile, onNavigate)}
+              title={`Perfil ${i + 1}`}
+            >
+              <HouseIcon color={PROFILE_COLORS[i]} active={i === activeProfile} />
+              {i + 1}
+            </button>
+          ))}
           <button className={`win98-menu-item ${currentView === 'evolution' ? 'active' : ''}`} onClick={() => onNavigate('evolution')}>
             Evolution
           </button>
@@ -200,90 +185,73 @@ export function Header({ currentView, onNavigate, theme = 'default', onOpenHub }
           <button className={`win98-menu-item ${currentView === 'settings' ? 'active' : ''}`} onClick={() => onNavigate('settings')}>
             Settings
           </button>
-          {onOpenHub && (
-            <button className="win98-menu-item" onClick={onOpenHub}>
-              <Users size={14} />
-              Hub
-            </button>
-          )}
         </div>
       </div>
     );
   }
 
-  // Default theme - usa o design do Figma
+  // Default theme — 3 casinhas (uma por perfil) + navegação
   return (
-    <div className="bg-white content-stretch flex flex-col items-start justify-center px-[12px] py-[8px] relative w-full">
-      <div aria-hidden="true" className="absolute border-[#c0c0c0] border-[0px_0px_1.098px] border-solid inset-0 pointer-events-none" />
-      
+    <div
+      className="content-stretch flex flex-col items-start justify-center px-[12px] py-[8px] relative w-full"
+      style={{ backgroundColor: 'var(--tk-card, #fff)', borderBottom: '1px solid var(--tk-border, #e5e7eb)' }}
+    >
       <div className="h-[61.962px] relative shrink-0 w-full">
         <div className="flex flex-row items-center size-full">
           <div className="content-stretch flex items-center justify-between relative size-full">
-            
-            {/* Left: Home Button (always gray background) */}
-            <div className="h-[61.962px] relative shrink-0 w-[127.56px]">
-              <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex gap-[23.993px] items-center relative size-full">
-                <button
-                  onClick={() => onNavigate('main')}
-                  aria-label="Início"
-                  className="bg-[#e5e7eb] relative rounded-[14px] shrink-0 size-[39.993px] transition-all"
-                >
-                  <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pb-0 pt-[9.998px] px-[9.998px] relative size-full">
-                    <HomeIcon />
-                  </div>
-                </button>
-                <div className="h-[61.962px] relative shrink-0 w-[63.574px]">
-                  <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start relative size-full">
-                    <div className="h-[23.993px] shrink-0 w-full" />
-                  </div>
-                </div>
-              </div>
+
+            {/* Left: 3 casinhas — uma por perfil (ativa = preenchida) */}
+            <div className="flex gap-[6px] items-center">
+              {profiles.map(i => {
+                const isActive = i === activeProfile;
+                return (
+                  <button
+                    key={i}
+                    onClick={() => switchProfile(i, isActive, onNavigate)}
+                    aria-label={isActive ? 'Início' : `Trocar para o perfil ${i + 1}`}
+                    title={isActive ? `Perfil ${i + 1} (ativo)` : `Perfil ${i + 1}`}
+                    className="relative rounded-[14px] shrink-0 size-[39.993px] transition-all active:scale-95 flex items-center justify-center"
+                    style={{
+                      backgroundColor: isActive ? `${PROFILE_COLORS[i]}22` : 'transparent',
+                      border: isActive
+                        ? `2px solid ${PROFILE_COLORS[i]}`
+                        : '1px solid var(--tk-border, #e5e7eb)',
+                    }}
+                  >
+                    <HouseIcon color={PROFILE_COLORS[i]} active={isActive} />
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Center: Profile Hub Button */}
-            {onOpenHub && (
-              <button
-                onClick={onOpenHub}
-                aria-label="Hub de perfis"
-                className="bg-[#f3e8ff] relative rounded-[14px] shrink-0 size-[39.993px] transition-all"
-                title="Profile Hub"
-              >
-                <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-center justify-center pb-0 pt-[9.998px] px-[9.998px] relative size-full">
-                  <Users size={20} className="text-[#9810FA]" strokeWidth={1.5} />
-                </div>
-              </button>
-            )}
-
-            {/* Right: buttons grouped (Games, Branch, Stats, Config) */}
+            {/* Right: buttons grouped (Games, Evolution, Stats, Config) */}
             <div className="h-[39.993px] relative shrink-0 flex gap-[5.985px] items-start">
 
               {/* Games / Activities */}
               <button
                 onClick={() => onNavigate('games')}
                 aria-label="Atividades"
-                className={`relative rounded-[14px] shrink-0 size-[39.993px] transition-all ${
-                  currentView === 'games' ? 'bg-[#e5e7eb]' : 'bg-white'
-                }`}
+                className="relative rounded-[14px] shrink-0 size-[39.993px] transition-all"
+                style={{
+                  backgroundColor: currentView === 'games' ? 'var(--tk-soft, #e5e7eb)' : 'transparent',
+                  border: currentView === 'games' ? 'none' : '1px solid var(--tk-border, #c0c0c0)',
+                }}
               >
-                {currentView !== 'games' && (
-                  <div aria-hidden="true" className="absolute border border-[#c0c0c0] border-solid inset-0 pointer-events-none rounded-[14px]" />
-                )}
                 <div className="flex items-center justify-center size-full">
                   <PixelGamepadIcon isActive={currentView === 'games'} />
                 </div>
               </button>
 
-              {/* Branches */}
+              {/* Evolution */}
               <button
                 onClick={() => onNavigate('evolution')}
                 aria-label="Evolução"
-                className={`relative rounded-[14px] shrink-0 size-[39.993px] transition-all ${
-                  currentView === 'evolution' ? 'bg-[#e5e7eb]' : 'bg-white'
-                }`}
+                className="relative rounded-[14px] shrink-0 size-[39.993px] transition-all"
+                style={{
+                  backgroundColor: currentView === 'evolution' ? 'var(--tk-soft, #e5e7eb)' : 'transparent',
+                  border: currentView === 'evolution' ? 'none' : '1px solid var(--tk-border, #c0c0c0)',
+                }}
               >
-                {currentView !== 'evolution' && (
-                  <div aria-hidden="true" className="absolute border border-[#c0c0c0] border-solid inset-0 pointer-events-none rounded-[14px]" />
-                )}
                 <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pb-0 pt-[9.998px] px-[9.998px] relative size-full">
                   <BranchesIcon isActive={currentView === 'evolution'} />
                 </div>
@@ -293,13 +261,12 @@ export function Header({ currentView, onNavigate, theme = 'default', onOpenHub }
               <button
                 onClick={() => onNavigate('stats')}
                 aria-label="Estatísticas"
-                className={`relative rounded-[14px] shrink-0 size-[39.993px] transition-all ${
-                  currentView === 'stats' ? 'bg-[#e5e7eb]' : 'bg-white'
-                }`}
+                className="relative rounded-[14px] shrink-0 size-[39.993px] transition-all"
+                style={{
+                  backgroundColor: currentView === 'stats' ? 'var(--tk-soft, #e5e7eb)' : 'transparent',
+                  border: currentView === 'stats' ? 'none' : '1px solid var(--tk-border, #c0c0c0)',
+                }}
               >
-                {currentView !== 'stats' && (
-                  <div aria-hidden="true" className="absolute border border-[#c0c0c0] border-solid inset-0 pointer-events-none rounded-[14px]" />
-                )}
                 <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pb-0 pt-[9.998px] px-[9.998px] relative size-full">
                   <StatsIcon isActive={currentView === 'stats'} />
                 </div>
@@ -309,13 +276,12 @@ export function Header({ currentView, onNavigate, theme = 'default', onOpenHub }
               <button
                 onClick={() => onNavigate('settings')}
                 aria-label="Configurações"
-                className={`relative rounded-[14px] shrink-0 size-[39.993px] transition-all ${
-                  currentView === 'settings' ? 'bg-[#e5e7eb]' : 'bg-white'
-                }`}
+                className="relative rounded-[14px] shrink-0 size-[39.993px] transition-all"
+                style={{
+                  backgroundColor: currentView === 'settings' ? 'var(--tk-soft, #e5e7eb)' : 'transparent',
+                  border: currentView === 'settings' ? 'none' : '1px solid var(--tk-border, #c0c0c0)',
+                }}
               >
-                {currentView !== 'settings' && (
-                  <div aria-hidden="true" className="absolute border border-[#c0c0c0] border-solid inset-0 pointer-events-none rounded-[14px]" />
-                )}
                 <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start pb-0 pt-[9.998px] px-[9.998px] relative size-full">
                   <SettingsIcon isActive={currentView === 'settings'} />
                 </div>

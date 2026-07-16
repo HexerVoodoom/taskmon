@@ -68,8 +68,8 @@ export function InstallPrompt({ theme = 'default', language = 'en-US' }: Install
   const installBtn = language === 'pt-BR' ? 'Instalar' : 'Install';
   const dismissBtn = language === 'pt-BR' ? 'Não, obrigado' : 'No thanks';
   const description = language === 'pt-BR'
-    ? 'Instale o DigiApp para acesso rápido, funcionamento offline e notificações.'
-    : 'Install DigiApp for quick access, offline support and notifications.';
+    ? 'Instale o Taskmon para acesso rápido, funcionamento offline e notificações.'
+    : 'Install Taskmon for quick access, offline support and notifications.';
 
   return (
     <div

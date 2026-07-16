@@ -33,8 +33,7 @@ export interface Mission {
 
 // Numeric rank per stage level, to check "reached at least X".
 const LEVEL_RANK: Record<EvolutionStage, number> = {
-  digiegg: 0, 'baby-i': 1, 'baby-ii': 2, rookie: 3,
-  champion: 4, ultimate: 5, mega: 6, ultra: 7,
+  egg: 0, 'fase-1': 1, 'fase-2': 2, 'fase-3': 3,
 };
 
 /** 1 when the pet has EVER reached the given level (current or unlocked form). */
@@ -45,16 +44,16 @@ function reachedLevel(s: MissionState, level: EvolutionStage): number {
 
 export const MISSIONS: Mission[] = [
   {
-    id: 'mission-champion', icon: '🥋', target: 1, bgReward: 'bg-mission-filecity',
-    namePt: 'Primeiro Campeão', nameEn: 'First Champion',
-    descPt: 'Evolua até o nível CAMPEÃO', descEn: 'Evolve to CHAMPION level',
-    progress: s => reachedLevel(s, 'champion'),
+    id: 'mission-fase2', icon: '🥋', target: 1, bgReward: 'bg-mission-filecity',
+    namePt: 'Crescidinho', nameEn: 'All Grown Up',
+    descPt: 'Evolua até a FASE 2', descEn: 'Evolve to PHASE 2',
+    progress: s => reachedLevel(s, 'fase-2'),
   },
   {
-    id: 'mission-mega', icon: '👑', target: 1, bgReward: 'bg-mission-infinity',
-    namePt: 'Lenda Mega', nameEn: 'Mega Legend',
-    descPt: 'Evolua até o nível MEGA', descEn: 'Evolve to MEGA level',
-    progress: s => reachedLevel(s, 'mega'),
+    id: 'mission-fase3', icon: '👑', target: 1, bgReward: 'bg-mission-infinity',
+    namePt: 'Forma Final', nameEn: 'Final Form',
+    descPt: 'Evolua até a FASE 3', descEn: 'Evolve to PHASE 3',
+    progress: s => reachedLevel(s, 'fase-3'),
   },
   {
     id: 'mission-kills-100', icon: '⚔️', target: 100, bgReward: 'bg-mission-coliseum',
@@ -96,15 +95,11 @@ export function isMissionComplete(missionId: string, progress: Record<string, nu
 /**
  * Whether a shop item's purchase is unlocked. Locked items still render in
  * the shop (darkened + padlock) with a hint on how to unlock them.
- * - drop-gated: unlocked once the item has EVER dropped (droppedItems ids).
- * - mission-gated: unlocked once the mission is complete.
  */
 export function isShopItemUnlocked(
   item: ShopItem,
-  droppedItems: string[],
   missionProgress: Record<string, number>,
 ): boolean {
   if (!item.unlock) return true;
-  if (item.unlock.kind === 'drop') return droppedItems.includes(item.id);
   return isMissionComplete(item.unlock.missionId, missionProgress);
 }

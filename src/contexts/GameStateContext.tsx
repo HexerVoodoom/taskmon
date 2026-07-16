@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { type ActivityCategory } from '../types/attributes';
-import { MAX_HP_BY_FORM, getStageLevel, FORM_REQUIREMENTS } from '../types/progression';
+import { MAX_HP_BY_FORM, getStageLevel, FORM_REQUIREMENTS, LEGACY_EGG_TYPE, stageForLevel, type PetType, type EvolutionStage } from '../types/progression';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import { cloudSave } from '../utils/cloudSave';
 import { buildHubCloudPayload } from '../utils/profiles';
@@ -58,61 +58,35 @@ export interface GameState {
   activityStats: ActivityStats;
   healthPoints: number;
   maxHealthPoints: number;
-  /** Version B: energy/satiety gauge — fills only by feeding, caps at maxHealthPoints */
+  /** Energia/saciedade — enche só comendo, zera todo dia. */
   energyPoints: number;
   perfectDays: number;
   totalXP: number;
-  virusPoints: number;
-  dataPoints: number;
-  vaccinePoints: number;
   lastResetDate: string;
-  evolutionStage:
-    | 'digiegg' | 'pichimon' | 'pukamon' | 'tapirmon'
-    | 'monochromon' | 'tuskmon' | 'bakemon'
-    | 'gigadramon' | 'triceramon' | 'digitamamon'
-    | 'gaioumon' | 'ultimatebrachiomon' | 'titamon'
-    | 'chicomon' | 'chibimon' | 'veemon'
-    | 'exveemon' | 'veedramon' | 'flamedramon'
-    | 'paildramon' | 'aeroveedramon' | 'raidramon'
-    | 'imperialdramon' | 'ulforceveedramon' | 'magnamon'
-    | 'yukimibotamon' | 'nyaromon' | 'plotmon'
-    | 'gatomon' | 'gatomon-black' | 'mikemon'
-    | 'angewomon' | 'ladydevimon' | 'nefertimon'
-    | 'ophanimon' | 'lilithmon' | 'holydramon'
-    | 'gaioumon-itto' | 'imperialdramon-paladin' | 'mastemon'
-    | 'greymon' | 'garurumon' | 'meramon' | 'monzaemon' | 'etemon'
-    | 'devimon' | 'andromon'
-    | 'angemon' | 'birdramon' | 'kabuterimon' | 'seadramon'
-    | 'airdramon' | 'ogremon' | 'kuwagamon' | 'numemon'
-    | 'megadramon' | 'vademon' | 'nanimon'
-    | 'agumon' | 'gabumon' | 'piyomon' | 'tentomon' | 'patamon' | 'palmon'
-    | 'raidramon-armor';
+  /** Forma atual: 'egg' ou '<pet>-<1|2|3>' (ex.: 'vix-2'). */
+  evolutionStage: string;
   digivolutionSegments: number;
   digivolutionSegmentsNeeded: number;
   poopEventsScheduled: number[];
   poopEventsCompleted: number[];
   unlockedEvolutions: string[];
   degeneratedByHP: boolean;
-  currentBranch: 'virus' | 'data' | 'vaccine';
   lastDayWasPerfect: boolean;
   maxActivityCap: number;
-  eggType?: 'tapirmon' | 'veemon' | 'salamon';
-  /** Attribute points accumulated since the last evolution — drives branch selection */
-  attributesSinceLastEvolution: { virus: number; data: number; vaccine: number };
-  /** Version B: food stockpile keyed by food emoji */
+  /** Pet escolhido no onboarding — define a linha evolutiva (linear). */
+  eggType?: PetType;
+  /** Estoque de comida por emoji. */
   foodInventory: Record<string, number>;
   /** Indices of scheduled poop events that actually appeared on screen (so sleep-skipped ones don't penalize). */
   poopEventsShown: number[];
   /** Epoch ms clock for the "uncleaned poop drains 1 heart / 6h" penalty (0 = inactive). */
   poopPenaltyClockAt: number;
-  /** Bits (🪙): minigame currency earned in the Activities games, spent in the shop. */
+  /** Bits: minigame currency earned in the Activities games, spent in the shop. */
   gamePoints: number;
   /** Shop: pet-box backgrounds owned (ids from utils/shop.ts). */
   ownedBackgrounds: string[];
   /** Shop: equipped pet-box background id, or null for the default. */
   equippedBackground: string | null;
-  /** Shop item digivolution: replaces the branch form when the pet evolves to the item's level (consumed on evolve). */
-  equippedEvoItem: string | null;
   /** Evolution lock (padlock on the Evolution page): while true the pet never evolves at the day turn. */
   evolutionLocked?: boolean;
   /** Mission counters (lifetime, cloud-synced) — see utils/missions.ts. */
@@ -120,8 +94,6 @@ export interface GameState {
   dungeonRunsCompleted?: number;
   dinoBest?: number;
   totalPerfectDays?: number;
-  /** Shop item ids that have EVER dropped — unlocks their purchase (utils/shop.ts unlock:'drop'). */
-  droppedItems?: string[];
   /** Summary of the previous day, written at the daily reset and shown once as a report. */
   lastDayReport?: {
     date: string;
@@ -138,6 +110,37 @@ export interface GameState {
 
 export function getMaxHPForStage(stage: GameState['evolutionStage']): number {
   return MAX_HP_BY_FORM[getStageLevel(stage)];
+}
+
+// ── Migração DigiApp → Taskmon ───────────────────────────────────────────────
+// Saves antigos guardam formas Digimon ('tapirmon', 'greymon'…) e eggTypes de
+// linha ('tapirmon'|'veemon'|'salamon'). Mapeia para o pet novo preservando o
+// NÍVEL de progresso, e limpa itens que deixaram de existir (chips etc.).
+const NEW_STAGE_RE = /^(egg|(vix|momo|kiwi)-[123])$/;
+const REMOVED_ITEM_EMOJIS = ['🦠', '💾', '💉', '🌞', '🌩️', '🔥', '🐺', '🐣', '🐞', '🍃', '🌺'];
+
+function migrateEggType(raw: string | null | undefined): PetType {
+  if (raw === 'vix' || raw === 'momo' || raw === 'kiwi') return raw;
+  return LEGACY_EGG_TYPE[raw ?? ''] ?? 'vix';
+}
+
+function migrateLoadedState(loaded: Partial<GameState> & Record<string, unknown>): Partial<GameState> {
+  const eggType = migrateEggType(loaded.eggType as string | undefined);
+  let stage = (loaded.evolutionStage as string | undefined) ?? 'egg';
+  if (!NEW_STAGE_RE.test(stage)) {
+    stage = stageForLevel(eggType, getStageLevel(stage));
+  }
+  // unlockedEvolutions: reconstrói a trilha linear até a forma atual.
+  const level = getStageLevel(stage);
+  const phase = level === 'egg' ? 0 : Number(level.slice(-1));
+  const unlocked = ['egg'];
+  for (let i = 1; i <= phase; i++) unlocked.push(stageForLevel(eggType, `fase-${i}` as EvolutionStage));
+
+  // foodInventory: descarta itens de sistemas removidos (chips/itens de evolução).
+  const inv: Record<string, number> = { ...(loaded.foodInventory ?? {}) };
+  for (const emoji of REMOVED_ITEM_EMOJIS) delete inv[emoji];
+
+  return { ...loaded, eggType, evolutionStage: stage, unlockedEvolutions: unlocked, foodInventory: inv };
 }
 
 interface GameStateContextType {
@@ -158,40 +161,35 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
       loadedState = null;
     }
     if (loadedState) {
-      const savedEggType = localStorage.getItem(STORAGE_KEYS.EGG_TYPE) as GameState['eggType'] | null;
+      const migrated = migrateLoadedState(loadedState as Partial<GameState> & Record<string, unknown>);
+      const stage = migrated.evolutionStage ?? 'egg';
       return {
-        ...loadedState,
-        tasks: loadedState.tasks ?? [],
-        completedTasks: loadedState.completedTasks ?? [],
-        activityStats: loadedState.activityStats ?? {},
-        maxHealthPoints: getMaxHPForStage(loadedState.evolutionStage ?? 'digiegg'),
-        energyPoints: loadedState.energyPoints ?? 0,
-        perfectDays: loadedState.perfectDays ?? 0,
-        lastDayWasPerfect: loadedState.lastDayWasPerfect ?? false,
-        poopEventsScheduled: loadedState.poopEventsScheduled ?? [],
-        poopEventsCompleted: loadedState.poopEventsCompleted ?? [],
-        unlockedEvolutions: loadedState.unlockedEvolutions ?? ['digiegg'],
-        degeneratedByHP: loadedState.degeneratedByHP ?? false,
-        currentBranch: loadedState.currentBranch ?? 'data',
-        maxActivityCap: loadedState.maxActivityCap ?? FORM_REQUIREMENTS[getStageLevel(loadedState.evolutionStage ?? 'digiegg')].cap,
-        eggType: (
-          (loadedState.eggType as string) === 'agumon' ? 'tapirmon'
-          : loadedState.eggType
-        ) ?? (
-          (savedEggType as string) === 'agumon' ? 'tapirmon'
-          : savedEggType
-        ) ?? 'tapirmon',
-        attributesSinceLastEvolution: loadedState.attributesSinceLastEvolution ?? { virus: 0, data: 0, vaccine: 0 },
-        foodInventory: loadedState.foodInventory ?? {},
-        poopEventsShown: loadedState.poopEventsShown ?? [],
-        poopPenaltyClockAt: loadedState.poopPenaltyClockAt ?? 0,
-        gamePoints: loadedState.gamePoints ?? 0,
-        ownedBackgrounds: loadedState.ownedBackgrounds ?? [],
-        equippedBackground: loadedState.equippedBackground ?? null,
-        equippedEvoItem: loadedState.equippedEvoItem ?? null,
+        ...migrated,
+        tasks: migrated.tasks ?? [],
+        completedTasks: migrated.completedTasks ?? [],
+        activityStats: migrated.activityStats ?? {},
+        maxHealthPoints: getMaxHPForStage(stage),
+        healthPoints: Math.min(migrated.healthPoints ?? 1, getMaxHPForStage(stage)),
+        energyPoints: migrated.energyPoints ?? 0,
+        perfectDays: migrated.perfectDays ?? 0,
+        lastDayWasPerfect: migrated.lastDayWasPerfect ?? false,
+        poopEventsScheduled: migrated.poopEventsScheduled ?? [],
+        poopEventsCompleted: migrated.poopEventsCompleted ?? [],
+        unlockedEvolutions: migrated.unlockedEvolutions ?? ['egg'],
+        degeneratedByHP: migrated.degeneratedByHP ?? false,
+        maxActivityCap: Math.max(
+          migrated.maxActivityCap ?? 0,
+          FORM_REQUIREMENTS[getStageLevel(stage)].cap,
+        ),
+        foodInventory: migrated.foodInventory ?? {},
+        poopEventsShown: migrated.poopEventsShown ?? [],
+        poopPenaltyClockAt: migrated.poopPenaltyClockAt ?? 0,
+        gamePoints: migrated.gamePoints ?? 0,
+        ownedBackgrounds: migrated.ownedBackgrounds ?? [],
+        equippedBackground: migrated.equippedBackground ?? null,
       } as GameState;
     }
-    const savedEggType = localStorage.getItem(STORAGE_KEYS.EGG_TYPE) as GameState['eggType'] | null;
+    const savedEggType = localStorage.getItem(STORAGE_KEYS.EGG_TYPE);
     return {
       activities: [],
       tasks: [],
@@ -202,29 +200,23 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
       energyPoints: 0,
       perfectDays: 0,
       totalXP: 0,
-      virusPoints: 0,
-      dataPoints: 0,
-      vaccinePoints: 0,
       lastResetDate: new Date().toDateString(),
-      evolutionStage: 'digiegg',
+      evolutionStage: 'egg',
       digivolutionSegments: 0,
       digivolutionSegmentsNeeded: 1,
       poopEventsScheduled: [],
       poopEventsCompleted: [],
-      unlockedEvolutions: ['digiegg'],
+      unlockedEvolutions: ['egg'],
       degeneratedByHP: false,
-      currentBranch: 'data',
       lastDayWasPerfect: false,
       maxActivityCap: 2,
-      eggType: ((savedEggType as string) === 'agumon' ? 'tapirmon' : savedEggType) ?? 'tapirmon',
-      attributesSinceLastEvolution: { virus: 0, data: 0, vaccine: 0 },
+      eggType: migrateEggType(savedEggType),
       foodInventory: {},
       poopEventsShown: [],
       poopPenaltyClockAt: 0,
       gamePoints: 0,
       ownedBackgrounds: [],
       equippedBackground: null,
-      equippedEvoItem: null,
     };
   });
 
