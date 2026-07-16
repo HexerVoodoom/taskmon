@@ -10,7 +10,7 @@ interface HeaderProps {
 }
 
 // Cor de cada perfil (0 preto+roxo · 1 rosa · 2 verde) — mesmas dos temas.
-export const PROFILE_COLORS = ['#a855f7', '#ec4899', '#22c55e'];
+export const PROFILE_COLORS = ['#a855f7', '#ec4899', '#65a30d'];
 
 // Casinha (estilo flat, preenchida quando ativa)
 function HouseIcon({ color, active }: { color: string; active: boolean }) {
@@ -292,6 +292,11 @@ export function Header({ currentView, onNavigate, theme = 'default' }: HeaderPro
           </div>
         </div>
       </div>
+
+      {/* Faixa decorativa temática do perfil (arcos góticos / gregas / listras).
+          Em fluxo normal (não absolute): classes utilitárias de posição podem
+          não existir no CSS pré-compilado. Margens negativas anulam o padding. */}
+      <div className="tk-deco-strip" style={{ margin: '8px -12px -8px', width: 'calc(100% + 24px)' }} />
     </div>
   );
 }

@@ -15,7 +15,7 @@ export function NewActivityBar({ onNewActivity, theme = 'default', language }: N
   return (
     <div className="flex gap-3 items-center w-full">
       <h2
-        className={`flex-1 min-w-0 truncate font-extrabold ${isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : ''}`}
+        className={`flex-1 min-w-0 truncate font-extrabold tk-display ${isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : ''}`}
         style={{ fontSize: '1.05rem', color: !isGlitch && !isWin98 ? 'var(--tk-text, #111827)' : undefined }}
       >
         {language === 'pt-BR' ? 'Hoje' : 'Today'}
