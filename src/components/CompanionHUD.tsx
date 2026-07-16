@@ -589,7 +589,7 @@ export const CompanionHUD = memo(function CompanionHUD({
             backgroundImage: isWin98
               ? 'none'
               : (equippedBackground && PET_BACKGROUNDS[equippedBackground]?.css)
-                || 'linear-gradient(180deg, #7dd3fc 0%, #a7f3d0 70%, #86efac 70%, #4ade80 100%)',
+                || 'var(--tk-scene)',
             backgroundColor: isWin98 ? '#9cbd90' : undefined,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
