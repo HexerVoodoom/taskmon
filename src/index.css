@@ -5090,3 +5090,57 @@ html.tk-theme .tk-display, html.tk-theme .tk-display * {
   text-transform: var(--tk-display-case);
   letter-spacing: var(--tk-display-tracking);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TEMÁTICAS — fase 2: a interface inteira segue o tema do perfil.
+   Raio de canto, gradiente dos botões, textura do fundo e ornamentos.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --tk-radius: 20px;
+  --tk-radius-sm: 14px;
+  --tk-btn-bg: linear-gradient(var(--tk-accent), var(--tk-accent));
+  --tk-bg-full: var(--tk-bg);
+}
+
+/* Gótico: cantos mais retos, botão roxo profundo, treliça de vitral no fundo */
+:root[data-profile='0'] {
+  --tk-radius: 8px;
+  --tk-radius-sm: 6px;
+  --tk-btn-bg: linear-gradient(180deg, #a855f7, #7e22ce);
+  --tk-bg-full:
+    repeating-linear-gradient(45deg, rgba(168, 85, 247, 0.05) 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(-45deg, rgba(168, 85, 247, 0.05) 0 1px, transparent 1px 16px),
+    linear-gradient(var(--tk-bg), var(--tk-bg));
+}
+
+/* Grécia: cantos suaves, botão rosa com base dourada, veios de mármore */
+:root[data-profile='1'] {
+  --tk-radius: 16px;
+  --tk-radius-sm: 12px;
+  --tk-btn-bg: linear-gradient(180deg, #ec4899 78%, #c9a227 78%);
+  --tk-bg-full:
+    repeating-linear-gradient(0deg, rgba(201, 162, 39, 0.06) 0 1px, transparent 1px 28px),
+    radial-gradient(1200px 500px at 50% -10%, rgba(236, 72, 153, 0.06), transparent),
+    linear-gradient(var(--tk-bg), var(--tk-bg));
+}
+
+/* Mad Max: cantos curtos, botão metal enferrujado, areia pontilhada */
+:root[data-profile='2'] {
+  --tk-radius: 7px;
+  --tk-radius-sm: 5px;
+  --tk-btn-bg: linear-gradient(180deg, #84cc16 0%, #65a30d 55%, #4d7c0f 100%);
+  --tk-bg-full:
+    radial-gradient(rgba(61, 30, 12, 0.07) 1px, transparent 1.6px) 0 0 / 9px 9px repeat,
+    repeating-linear-gradient(0deg, rgba(133, 116, 81, 0.05) 0 2px, transparent 2px 40px),
+    linear-gradient(var(--tk-bg), var(--tk-bg));
+}
+
+/* Raio de canto temático nos cartões/botões (tema default) */
+html.tk-theme .rounded-2xl { border-radius: var(--tk-radius) !important; }
+html.tk-theme .rounded-xl { border-radius: var(--tk-radius-sm) !important; }
+html.tk-theme .rounded-\[14px\] { border-radius: var(--tk-radius-sm) !important; }
+html.tk-theme .rounded-\[10px\] { border-radius: var(--tk-radius-sm) !important; }
+
+/* Botões de destaque ganham o gradiente do tema */
+html.tk-theme .bg-gray-900 { background: var(--tk-btn-bg) !important; }
+html.tk-theme .bg-teal-500 { background: var(--tk-btn-bg) !important; }

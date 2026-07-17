@@ -64,7 +64,7 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h2
-          className={isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}
+          className={`tk-display ${isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}`}
           style={{ ...mono, fontSize: '1.05rem', fontWeight: 700 }}
         >
           🎮 {isPt ? 'Atividades' : 'Activities'}

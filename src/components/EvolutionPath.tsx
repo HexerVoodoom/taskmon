@@ -192,7 +192,7 @@ export function EvolutionPath({
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-extrabold" style={{ color: step.isFuture ? 'var(--tk-muted, #999)' : 'var(--tk-text, #111)', fontSize: '1rem' }}>
+                    <h3 className="font-extrabold tk-display" style={{ color: step.isFuture ? 'var(--tk-muted, #999)' : 'var(--tk-text, #111)', fontSize: '1rem' }}>
                       {step.isFuture ? '???' : step.name}
                     </h3>
                     {step.isCurrent && (

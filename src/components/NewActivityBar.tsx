@@ -33,7 +33,7 @@ export function NewActivityBar({ onNewActivity, theme = 'default', language }: N
         style={
           !isGlitch && !isWin98
             ? {
-                backgroundColor: 'var(--tk-accent, #14b8a6)',
+                background: 'var(--tk-btn-bg, var(--tk-accent, #14b8a6))',
                 boxShadow: '0 3px 0 var(--tk-accent-dark, rgba(0,0,0,0.25))',
               }
             : undefined
