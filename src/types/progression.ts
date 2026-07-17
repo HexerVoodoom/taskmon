@@ -37,6 +37,9 @@ export interface PetInfo {
   /** Nome do ovo (PT / EN). */
   eggNamePt: string;
   eggNameEn: string;
+  /** Espécie/criatura do pet (flavor text — onboarding e guia). */
+  speciesPt: string;
+  speciesEn: string;
 }
 
 export const PETS: Record<PetType, PetInfo> = {
@@ -45,18 +48,21 @@ export const PETS: Record<PetType, PetInfo> = {
     phases: ['vix-1', 'vix-2', 'vix-3'],
     phaseNames: ['Vixinho', 'Vix', 'Vixão'],
     eggNamePt: 'Ovo Roxo', eggNameEn: 'Purple Egg',
+    speciesPt: 'Gatoelho-lebrilope', speciesEn: 'Cat-hare-antelope',
   },
   momo: {
     id: 'momo', name: 'Momo', accent: '#ec4899',
     phases: ['momo-1', 'momo-2', 'momo-3'],
     phaseNames: ['Mominho', 'Momo', 'Momão'],
     eggNamePt: 'Ovo Rosa', eggNameEn: 'Pink Egg',
+    speciesPt: 'Cérbero', speciesEn: 'Cerberus',
   },
   kiwi: {
     id: 'kiwi', name: 'Kiwi', accent: '#22c55e',
     phases: ['kiwi-1', 'kiwi-2', 'kiwi-3'],
     phaseNames: ['Kiwinho', 'Kiwi', 'Kiwizão'],
     eggNamePt: 'Ovo Verde', eggNameEn: 'Green Egg',
+    speciesPt: 'Cachorro-panqueca', speciesEn: 'Pancake Dog',
   },
 };
 
