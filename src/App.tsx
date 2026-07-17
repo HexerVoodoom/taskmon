@@ -1164,7 +1164,7 @@ export default function App() {
   return (
     <div
       className={`fixed inset-0 overflow-hidden flex flex-col ${theme === 'default' ? '' : `${getOuterContainerClass()} ${getContainerClass()}`}`}
-      style={theme === 'default' ? { backgroundColor: 'var(--tk-bg)' } : undefined}
+      style={theme === 'default' ? { background: 'var(--tk-bg-full, var(--tk-bg))' } : undefined}
     >
         {/* Help Modal */}
         <HelpModal

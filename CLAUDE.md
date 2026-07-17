@@ -41,6 +41,13 @@ npm run build        # vite build + PNG→WebP + wrangler pages functions build 
   App). Vars `--tk-*` + re-mapeamento de utilitários (`.bg-white` → var) no fim
   de `src/index.css`. Zonas retrô (loja/masmorra/minijogos/itens) usam
   `.tk-keep-mono` para manter o monospace. Temas win98/glitch não são afetados.
+- **Temáticas**: 0 GÓTICO · 1 GRÉCIA ANTIGA · 2 MAD MAX. Cada perfil define
+  `--tk-scene` (cenário padrão do box do pet, SVG data-URI; cenário da loja
+  equipado substitui), `--tk-deco`/`--tk-deco-size` (faixa do header e da
+  moldura do pet, `.tk-deco-strip`), `--tk-font-display`+`.tk-display`
+  (títulos), `--tk-radius`/`--tk-radius-sm` (cantos), `--tk-btn-bg` (gradiente
+  dos botões) e `--tk-bg-full` (textura do fundo). Casinhas do header são
+  ícones temáticos (capela/templo/abrigo) em `Header.tsx`.
 
 ## Regras do jogo (fonte da verdade — NÃO reinventar)
 

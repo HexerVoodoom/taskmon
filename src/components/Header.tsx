@@ -12,18 +12,45 @@ interface HeaderProps {
 // Cor de cada perfil (0 preto+roxo · 1 rosa · 2 verde) — mesmas dos temas.
 export const PROFILE_COLORS = ['#a855f7', '#ec4899', '#65a30d'];
 
-// Casinha (estilo flat, preenchida quando ativa)
-function HouseIcon({ color, active }: { color: string; active: boolean }) {
+// Casinha temática por perfil (preenchida quando ativa):
+// 0 = capela gótica (torre pontuda) · 1 = templo grego · 2 = abrigo do deserto
+function HouseIcon({ index, color, active }: { index: number; color: string; active: boolean }) {
+  const fill = active ? color : 'none';
+  const common = {
+    fill,
+    stroke: color,
+    strokeWidth: 2,
+    strokeLinejoin: 'round' as const,
+    opacity: active ? 1 : 0.55,
+  };
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M3.5 10.5 12 3.5l8.5 7v8.5a1.5 1.5 0 0 1-1.5 1.5h-4.5v-6h-5v6H5a1.5 1.5 0 0 1-1.5-1.5Z"
-        fill={active ? color : 'none'}
-        stroke={color}
-        strokeWidth="2.2"
-        strokeLinejoin="round"
-        opacity={active ? 1 : 0.55}
-      />
+      {index === 0 ? (
+        // Capela gótica: torre central com pináculo alto e portas em arco
+        <>
+          <path d="M4 20.5 V12 l4-3 v11.5 Z" {...common} />
+          <path d="M16 20.5 V12 l4 3 v5.5 Z" {...common} />
+          <path d="M9 20.5 V8 l3-5.5 L15 8 v12.5 Z" {...common} />
+          {active && <path d="M11 20.5 v-4 q1-1.4 2 0 v4 Z" fill="var(--tk-card, #fff)" opacity="0.9" />}
+        </>
+      ) : index === 1 ? (
+        // Templo grego: frontão + 3 colunas + base
+        <>
+          <path d="M3 9.5 12 4 l9 5.5 Z" {...common} />
+          <path d="M5 10.5 h3 v7 H5 Z" {...common} />
+          <path d="M10.5 10.5 h3 v7 h-3 Z" {...common} />
+          <path d="M16 10.5 h3 v7 h-3 Z" {...common} />
+          <path d="M3.5 17.5 h17 v3 h-17 Z" {...common} />
+        </>
+      ) : (
+        // Abrigo do deserto: galpão arredondado, antena e porta reforçada
+        <>
+          <path d="M3 20.5 v-7 q9-9 18 0 v7 Z" {...common} />
+          <path d="M17 8 l2.6-3.4" stroke={color} strokeWidth="2" strokeLinecap="round" opacity={active ? 1 : 0.55} />
+          <circle cx="20" cy="4" r="1.3" fill={color} opacity={active ? 1 : 0.55} />
+          {active && <path d="M9.5 20.5 v-5 h5 v5 Z" fill="var(--tk-card, #fff)" opacity="0.9" />}
+        </>
+      )}
     </svg>
   );
 }
@@ -169,7 +196,7 @@ export function Header({ currentView, onNavigate, theme = 'default' }: HeaderPro
               onClick={() => switchProfile(i, i === activeProfile, onNavigate)}
               title={`Perfil ${i + 1}`}
             >
-              <HouseIcon color={PROFILE_COLORS[i]} active={i === activeProfile} />
+              <HouseIcon index={i} color={PROFILE_COLORS[i]} active={i === activeProfile} />
               {i + 1}
             </button>
           ))}
@@ -218,7 +245,7 @@ export function Header({ currentView, onNavigate, theme = 'default' }: HeaderPro
                         : '1px solid var(--tk-border, #e5e7eb)',
                     }}
                   >
-                    <HouseIcon color={PROFILE_COLORS[i]} active={isActive} />
+                    <HouseIcon index={i} color={PROFILE_COLORS[i]} active={isActive} />
                   </button>
                 );
               })}

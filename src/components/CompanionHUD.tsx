@@ -572,6 +572,11 @@ export const CompanionHUD = memo(function CompanionHUD({
         </div>
       )}
       
+      {/* Ornamento temático do perfil no topo da moldura (tema default) */}
+      {!isWin98 && !isGlitch && (
+        <div className="tk-deco-strip" style={{ marginBottom: 6, borderRadius: 3 }} />
+      )}
+
       {/* Main Container with Companion Area and Energy Bar */}
       <div className="relative">
       <div className={`flex gap-2 ${isWin98 ? 'p-2' : ''}`}>
