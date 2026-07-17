@@ -37,6 +37,17 @@ export function EvolutionPath({
   const currentIdx = LEVELS.indexOf(currentLevel);
   const unlockedSet = useMemo(() => new Set(unlockedEvolutions), [unlockedEvolutions]);
   const [confirmDegenerate, setConfirmDegenerate] = useState<{ stage: string; name: string; isSecondConfirm: boolean } | null>(null);
+  // Formas futuras (ainda não alcançadas) ficam ocultas — tocar no ícone
+  // revela qual é; como é estado local do componente, sair da tela (unmount)
+  // reverte tudo automaticamente.
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const toggleReveal = (stageId: string) => {
+    setRevealed(prev => {
+      const next = new Set(prev);
+      next.has(stageId) ? next.delete(stageId) : next.add(stageId);
+      return next;
+    });
+  };
 
   const required = FORM_REQUIREMENTS[currentLevel].required;
   const isFinal = currentLevel === 'fase-3';
@@ -59,11 +70,13 @@ export function EvolutionPath({
     const subtitle = level === 'egg'
       ? (isPt ? 'Onde tudo começa' : 'Where it all begins')
       : (isPt ? `Fase ${level.slice(-1)}` : `Phase ${level.slice(-1)}`);
+    const isFuture = idx > currentIdx && !unlockedSet.has(stageId);
     return {
       level, stageId, name, subtitle,
       isCurrent: idx === currentIdx,
       isPast: idx < currentIdx,
-      isFuture: idx > currentIdx && !unlockedSet.has(stageId),
+      isFuture,
+      isRevealed: isFuture && revealed.has(stageId),
     };
   });
 
@@ -165,13 +178,14 @@ export function EvolutionPath({
                       title={evolutionLocked
                         ? (isPt ? 'Destravar evolução' : 'Unlock evolution')
                         : (isPt ? 'Travar evolução' : 'Lock evolution')}
-                      className="relative w-14 h-14 flex items-center justify-center rounded-xl cursor-pointer"
+                      className="relative flex items-center justify-center rounded-xl cursor-pointer"
+                      style={{ width: '3.5rem', height: '3.5rem' }}
                     >
                       <img
                         src={getSpriteForStage(step.stageId, pet.id)}
                         alt={step.name}
-                        className="w-14 h-14 object-contain"
-                        style={{ filter: evolutionLocked ? 'grayscale(0.7) brightness(0.75)' : 'none' }}
+                        className="object-contain"
+                        style={{ width: '3.5rem', height: '3.5rem', filter: evolutionLocked ? 'grayscale(0.7) brightness(0.75)' : 'none' }}
                       />
                       {evolutionLocked && (
                         <span className="absolute inset-0 flex items-center justify-center" style={{ fontSize: '1.5rem', textShadow: '0 1px 3px rgba(0,0,0,0.6)' }}>
@@ -179,12 +193,30 @@ export function EvolutionPath({
                         </span>
                       )}
                     </button>
+                  ) : step.isFuture ? (
+                    <button
+                      onClick={() => toggleReveal(step.stageId)}
+                      aria-label={step.isRevealed
+                        ? (isPt ? 'Ocultar forma futura' : 'Hide future form')
+                        : (isPt ? 'Revelar forma futura' : 'Reveal future form')}
+                      title={step.isRevealed
+                        ? (isPt ? 'Toque para ocultar' : 'Tap to hide')
+                        : (isPt ? 'Toque para revelar' : 'Tap to reveal')}
+                      className="flex items-center justify-center rounded-xl cursor-pointer"
+                      style={{ width: '3.5rem', height: '3.5rem' }}
+                    >
+                      <img
+                        src={getSpriteForStage(step.stageId, pet.id)}
+                        alt={step.isRevealed ? step.name : '???'}
+                        className="object-contain"
+                        style={{ width: '3.5rem', height: '3.5rem', filter: step.isRevealed ? 'none' : 'brightness(0) opacity(0.25)' }}
+                      />
+                    </button>
                   ) : (
                     <img
                       src={getSpriteForStage(step.stageId, pet.id)}
-                      alt={step.isFuture ? '???' : step.name}
+                      alt={step.name}
                       className="w-14 h-14 object-contain"
-                      style={{ filter: step.isFuture ? 'brightness(0) opacity(0.25)' : 'none' }}
                     />
                   )}
                 </div>
@@ -192,8 +224,8 @@ export function EvolutionPath({
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-extrabold tk-display" style={{ color: step.isFuture ? 'var(--tk-muted, #999)' : 'var(--tk-text, #111)', fontSize: '1rem' }}>
-                      {step.isFuture ? '???' : step.name}
+                    <h3 className="font-extrabold tk-display" style={{ color: step.isFuture && !step.isRevealed ? 'var(--tk-muted, #999)' : 'var(--tk-text, #111)', fontSize: '1rem' }}>
+                      {step.isFuture && !step.isRevealed ? '???' : step.name}
                     </h3>
                     {step.isCurrent && (
                       <span className="text-white text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: accent }}>
