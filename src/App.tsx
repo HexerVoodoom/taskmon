@@ -98,8 +98,14 @@ export default function App() {
     const saved = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
     return saved === 'pt-BR' ? 'pt-BR' : 'en-US';
   });
+  // Onboarding removido: entra direto no jogo. Marca o flag (por perfil) na
+  // primeira vez pra manter o storage consistente; GameStateContext já cuida
+  // de dar o pet certo (vix/momo/kiwi) de cara pra quem nunca teve save.
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(() => {
-    return localStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE) === 'true';
+    if (localStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETE) !== 'true') {
+      localStorage.setItem(STORAGE_KEYS.ONBOARDING_COMPLETE, 'true');
+    }
+    return true;
   });
   const [userName, setUserName] = useState(() => {
     return localStorage.getItem(STORAGE_KEYS.USER_NAME) || '';

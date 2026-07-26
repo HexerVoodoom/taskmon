@@ -9,8 +9,8 @@ interface HeaderProps {
   theme?: 'default' | 'win98' | 'glitch';
 }
 
-// Cor de cada perfil (0 preto+roxo · 1 rosa · 2 verde) — mesmas dos temas.
-export const PROFILE_COLORS = ['#a855f7', '#ec4899', '#65a30d'];
+// Cor de cada perfil (0 preto+roxo · 1 rosa · 2 cinza-claro) — mesmas dos temas.
+export const PROFILE_COLORS = ['#a855f7', '#ec4899', '#94a3b8'];
 
 // Casinha temática por perfil (preenchida quando ativa):
 // 0 = capela gótica (torre pontuda) · 1 = templo grego · 2 = abrigo do deserto

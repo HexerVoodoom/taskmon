@@ -58,7 +58,7 @@ export const PETS: Record<PetType, PetInfo> = {
     speciesPt: 'Cérbero', speciesEn: 'Cerberus',
   },
   kiwi: {
-    id: 'kiwi', name: 'Kiwi', accent: '#22c55e',
+    id: 'kiwi', name: 'Kiwi', accent: '#94a3b8',
     phases: ['kiwi-1', 'kiwi-2', 'kiwi-3'],
     phaseNames: ['Kiwinho', 'Kiwi', 'Kiwizão'],
     eggNamePt: 'Ovo Verde', eggNameEn: 'Green Egg',

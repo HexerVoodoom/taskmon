@@ -4902,7 +4902,7 @@ html {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TASKMON — tema por perfil (0 preto+roxo · 1 rosa · 2 verde)
+   TASKMON — tema por perfil (0 preto+roxo · 1 rosa · 2 cinza-claro)
    Aplicado quando o tema "default" está ativo: <html class="tk-theme"
    data-profile="N">. Os componentes novos consomem as vars diretamente;
    os antigos (utilitários bg-white/text-gray-*) são re-mapeados abaixo,
@@ -4943,15 +4943,15 @@ html {
   --tk-frame: #fde0ef;
 }
 :root[data-profile='2'] {
-  --tk-accent: #22c55e;
-  --tk-accent-dark: #15803d;
-  --tk-bg: #f6fdf7;
+  --tk-accent: #94a3b8;
+  --tk-accent-dark: #52525b;
+  --tk-bg: #f7f7f8;
   --tk-card: #ffffff;
-  --tk-soft: #e6f9ec;
-  --tk-border: #cdeeda;
-  --tk-text: #122619;
-  --tk-muted: #679478;
-  --tk-frame: #dcf5e5;
+  --tk-soft: #eef0f2;
+  --tk-border: #dcdfe3;
+  --tk-text: #1f2328;
+  --tk-muted: #7a8088;
+  --tk-frame: #e6e8eb;
 }
 
 /* Tipografia arredondada em todo o app (tema default). Zonas retrô mantêm o
@@ -5056,7 +5056,7 @@ html.tk-theme .bg-\[\#101828\] { background-color: var(--tk-accent) !important; 
   --tk-deco-size: 20px 10px;
 }
 
-/* ── Perfil 2 · MAD MAX (verde-oliva): deserto, ferrugem, estrada ── */
+/* ── Perfil 2 · MAD MAX (cinza-claro/metal): deserto, ferrugem, estrada ── */
 :root[data-profile='2'] {
   --tk-bg: #ece5d0;
   --tk-card: #f7f2e0;
@@ -5065,8 +5065,8 @@ html.tk-theme .bg-\[\#101828\] { background-color: var(--tk-accent) !important; 
   --tk-text: #2d2414;
   --tk-muted: #857451;
   --tk-frame: #d9cfab;
-  --tk-accent: #65a30d;
-  --tk-accent-dark: #3f6212;
+  --tk-accent: #94a3b8;
+  --tk-accent-dark: #52525b;
   --tk-font-display: Impact, 'Arial Black', 'Franklin Gothic Bold', sans-serif;
   --tk-display-case: uppercase;
   --tk-display-tracking: 0.05em;
@@ -5128,7 +5128,7 @@ html.tk-theme .tk-display, html.tk-theme .tk-display * {
 :root[data-profile='2'] {
   --tk-radius: 7px;
   --tk-radius-sm: 5px;
-  --tk-btn-bg: linear-gradient(180deg, #84cc16 0%, #65a30d 55%, #4d7c0f 100%);
+  --tk-btn-bg: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 55%, #64748b 100%);
   --tk-bg-full:
     radial-gradient(rgba(61, 30, 12, 0.07) 1px, transparent 1.6px) 0 0 / 9px 9px repeat,
     repeating-linear-gradient(0deg, rgba(133, 116, 81, 0.05) 0 2px, transparent 2px 40px),

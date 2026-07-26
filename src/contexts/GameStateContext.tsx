@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { type ActivityCategory } from '../types/attributes';
-import { MAX_HP_BY_FORM, getStageLevel, FORM_REQUIREMENTS, LEGACY_EGG_TYPE, stageForLevel, type PetType, type EvolutionStage } from '../types/progression';
-import { STORAGE_KEYS } from '../utils/storageKeys';
+import { MAX_HP_BY_FORM, getStageLevel, FORM_REQUIREMENTS, LEGACY_EGG_TYPE, PET_TYPES, stageForLevel, type PetType, type EvolutionStage } from '../types/progression';
+import { STORAGE_KEYS, getActiveProfile } from '../utils/storageKeys';
 import { cloudSave } from '../utils/cloudSave';
 import { buildHubCloudPayload } from '../utils/profiles';
 
@@ -189,28 +189,37 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
         equippedBackground: migrated.equippedBackground ?? null,
       } as GameState;
     }
+    // Perfil sem save nenhum (nunca passou pelo onboarding, que não roda mais):
+    // entra direto no jogo já com o pet da casinha (vix/momo/kiwi) na fase 1,
+    // em vez do ovo. Um eggType salvo (save legado/onboarding antigo) preserva
+    // o comportamento anterior (ovo).
     const savedEggType = localStorage.getItem(STORAGE_KEYS.EGG_TYPE);
+    const isFreshProfile = savedEggType === null;
+    const eggType = isFreshProfile
+      ? (PET_TYPES[getActiveProfile()] ?? 'vix')
+      : migrateEggType(savedEggType);
+    const startStage = isFreshProfile ? stageForLevel(eggType, 'fase-1') : 'egg';
     return {
       activities: [],
       tasks: [],
       completedTasks: [],
       activityStats: {},
-      healthPoints: 1,
-      maxHealthPoints: 1,
+      healthPoints: isFreshProfile ? MAX_HP_BY_FORM['fase-1'] : 1,
+      maxHealthPoints: isFreshProfile ? MAX_HP_BY_FORM['fase-1'] : 1,
       energyPoints: 0,
       perfectDays: 0,
       totalXP: 0,
       lastResetDate: new Date().toDateString(),
-      evolutionStage: 'egg',
+      evolutionStage: startStage,
       digivolutionSegments: 0,
       digivolutionSegmentsNeeded: 1,
       poopEventsScheduled: [],
       poopEventsCompleted: [],
-      unlockedEvolutions: ['egg'],
+      unlockedEvolutions: isFreshProfile ? ['egg', startStage] : ['egg'],
       degeneratedByHP: false,
       lastDayWasPerfect: false,
-      maxActivityCap: 2,
-      eggType: migrateEggType(savedEggType),
+      maxActivityCap: isFreshProfile ? FORM_REQUIREMENTS['fase-1'].cap : 2,
+      eggType,
       foodInventory: {},
       poopEventsShown: [],
       poopPenaltyClockAt: 0,
