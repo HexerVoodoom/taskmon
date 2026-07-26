@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { DungeonGame } from './DungeonGame';
 import { DinoGame } from './DinoGame';
+import { RoofRunGame } from './RoofRunGame';
 import { RPSGame } from './RPSGame';
 import { ShopModal } from './ShopModal';
 import { bitsStyle } from '../utils/currency';
 import { getSpriteForStage } from '../utils/sprites';
+import rooftopIcon from '../assets/roofrun/rooftop.png';
 import type { Language } from '../utils/i18n';
 
 /**
  * "Atividades" page — interactive minigames hub.
  * All games award 🪙 Bits (GameState.gamePoints), spent in the shop on food.
- * Balance: Dungeon points/enemy + wave clear · Dino floor(score/100) · RPS +5/match.
+ * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/100) · RPS +5/match.
  */
 export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onEarnPoints, onShopBuy }: {
   evolutionStage: string;
@@ -30,10 +32,10 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
   const isGlitch = theme === 'glitch';
-  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'rps' | null>(null);
+  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
 
-  const cards: { key: 'dungeon' | 'dino' | 'rps'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
+  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
     {
       key: 'dungeon', icon: '⚔️', sprite: getSpriteForStage('enemy-wraith'),
       badgeBg: 'linear-gradient(160deg, #4c1d95, #1e1b4b)',
@@ -48,6 +50,13 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       badgeBg: 'linear-gradient(160deg, #ea580c, #7c2d12)',
       title: isPt ? 'Corrida do Dino' : 'Dino Runner',
       desc: isPt ? 'Pule os monstros e corra o máximo que conseguir.' : 'Jump the monsters and run as far as you can.',
+      pts: isPt ? '1 Bit a cada 100 de score' : '1 Bit per 100 score',
+    },
+    {
+      key: 'roofrun', icon: '🏠', sprite: rooftopIcon,
+      badgeBg: 'linear-gradient(160deg, #db7a3f, #7c3a12)',
+      title: isPt ? 'Corrida nos Telhados' : 'Roof Run',
+      desc: isPt ? 'Pule de telhado em telhado sem cair no vão.' : 'Jump from rooftop to rooftop without falling.',
       pts: isPt ? '1 Bit a cada 100 de score' : '1 Bit per 100 score',
     },
     {
@@ -177,6 +186,15 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
           language={language}
           onEarnPoints={onEarnPoints}
           onScore={onDinoScore}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'roofrun' && (
+        <RoofRunGame
+          evolutionStage={evolutionStage}
+          eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
           onExit={() => setOpenGame(null)}
         />
       )}
