@@ -274,8 +274,8 @@ export const checkAndShowNotifications = (
   const lastDailyCheck = localStorage.getItem(DAILY_CHECK_KEY);
   if (currentTime === '12:00' && lastDailyCheck !== today) {
     const title = language === 'pt-BR'
-      ? '🦖 Seu Digimon está chamando!'
-      : '🦖 Your Digimon is calling!';
+      ? '🐾 Seu pet está chamando!'
+      : '🐾 Your pet is calling!';
     const body = language === 'pt-BR'
       ? `Olá ${userName}! Não se esqueça de checar suas atividades hoje! 💪`
       : `Hi ${userName}! Don't forget to check your activities today! 💪`;

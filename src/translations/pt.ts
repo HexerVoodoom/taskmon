@@ -25,13 +25,13 @@ export const pt = {
         low_hp: "Preciso de sua ajuda! Complete tarefas para me manter saudável!",
         time_until_reset: "Tempo até o reset",
         stats: "Status",
-        chat_placeholder: "Fale com seu Digi..."
+        chat_placeholder: "Fale com seu pet..."
     },
     care: {
         poop_warning: "Hora de limpar!",
-        poop_desc: "Seu Digimon fez sujeira! Limpe para deixá-lo feliz.",
+        poop_desc: "Seu pet fez sujeira! Limpe para deixá-lo feliz.",
         food_warning: "Fome!",
-        food_desc: "Seu Digimon está com fome! Alimente-o logo.",
+        food_desc: "Seu pet está com fome! Alimente-o logo.",
         clean_btn: "Limpar",
         feed_btn: "Alimentar",
         poop_request: "Preciso ir ao banheiro! 💩 Complete uma tarefa!",
@@ -148,7 +148,7 @@ export const pt = {
         days: "DIAS"
     },
     egg_selection: {
-        title: "Escolha seu DigiEgg",
+        title: "Escolha seu ovo",
         subtitle: "Sua jornada começa aqui. Qual ovo você vai chocar?",
         btn_start: "Chocar",
         pick_button: "Escolher este ovo",

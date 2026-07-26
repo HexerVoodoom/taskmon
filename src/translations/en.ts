@@ -25,13 +25,13 @@ export const en = {
         low_hp: "I need your help! Complete tasks to keep me healthy!",
         time_until_reset: "Time until reset",
         stats: "Stats",
-        chat_placeholder: "Talk to your Digi..."
+        chat_placeholder: "Talk to your pet..."
     },
     care: {
         poop_warning: "Time to clean up!",
-        poop_desc: "Your Digimon made a mess! Clean up to keep them happy.",
+        poop_desc: "Your pet made a mess! Clean up to keep them happy.",
         food_warning: "Hungry!",
-        food_desc: "Your Digimon is hungry! Feed them soon.",
+        food_desc: "Your pet is hungry! Feed them soon.",
         clean_btn: "Clean",
         feed_btn: "Feed",
         poop_request: "I need to go to the bathroom! 💩 Complete a task!",
@@ -144,11 +144,11 @@ export const en = {
         no_tasks: "No tasks completed yet.",
         recent_history: "Recent History",
         no_history: "No history yet.",
-        digivolve: "DIGIVOLVE",
+        digivolve: "EVOLVE",
         days: "DAYS"
     },
     egg_selection: {
-        title: "Choose your DigiEgg",
+        title: "Choose your egg",
         subtitle: "Your journey begins here. Which egg will you hatch?",
         btn_start: "Hatch",
         pick_button: "Choose this egg",

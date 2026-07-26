@@ -2,7 +2,7 @@
 
 App de produtividade gamificado (bichinho virtual original, estilo Tamagotchi).
 React 18 + TypeScript + Vite 6 (web) e Capacitor 8.4 (APK Android).
-Fork do DigiApp, mas **sem nenhuma referência a Digimon**: pets originais em SVG,
+Fork do DigiApp, mas **sem nenhuma referência a Digimon**: pets originais em pixel art (PNG),
 progressão linear própria e 3 perfis de jogo. UI/textos em PT-BR e EN (sempre os
 dois, via `language === 'pt-BR'`).
 
@@ -22,7 +22,7 @@ npm run build        # vite build + PNG→WebP + wrangler pages functions build 
   `wrangler pages functions build`. NÃO recriar `public/_redirects` (conflita com
   `not_found_handling` e causa "Infinite loop detected").
 - Ao mudar assets estáticos/HTML de forma incompatível, **bump `CACHE_VERSION`**
-  em `public/sw.js` (v15 atual).
+  em `public/sw.js` (v16 atual).
 - KV/secrets (`DIGIAPP_SAVES` etc.) são configurados no dashboard do projeto.
 
 ## Os 3 perfis (hub de casinhas)
@@ -42,7 +42,7 @@ npm run build        # vite build + PNG→WebP + wrangler pages functions build 
   de `src/index.css`. Zonas retrô (loja/masmorra/minijogos/itens) usam
   `.tk-keep-mono` para manter o monospace. Temas win98/glitch não são afetados.
 - **Temáticas**: 0 GÓTICO · 1 GRÉCIA ANTIGA · 2 MAD MAX. Cada perfil define
-  `--tk-scene` (cenário padrão do box do pet, SVG data-URI; cenário da loja
+  `--tk-scene` (cenário padrão do box do pet, PNG pixel-art em `src/assets/scenes/`; cenário da loja
   equipado substitui), `--tk-deco`/`--tk-deco-size` (faixa do header e da
   moldura do pet, `.tk-deco-strip`), `--tk-font-display`+`.tk-display`
   (títulos), `--tk-radius`/`--tk-radius-sm` (cantos), `--tk-btn-bg` (gradiente
@@ -53,7 +53,7 @@ npm run build        # vite build + PNG→WebP + wrangler pages functions build 
 
 | Sistema | Regra |
 |---|---|
-| 🐣 Pets e fases | 3 pets originais (SVG gerado em `utils/sprites.ts`): **Vix** (roxo), **Momo** (rosa), **Kiwi** (verde) — escolhidos no ovo do onboarding. Linha **linear, sem branches**: `egg` → `<pet>-1` → `<pet>-2` → `<pet>-3` (Vixinho→Vix→Vixão etc., `types/progression.ts` `PETS`). Sem sistema de atributos (virus/data/vaccine REMOVIDO). Migração de saves DigiApp preserva o nível (`LEGACY_EGG_TYPE`, `getStageLevel` aceita ids legados). |
+| 🐣 Pets e fases | 3 pets originais em pixel art PNG (`src/assets/pets/`, mapeados em `utils/sprites.ts`; SVG gerado é fallback): **Vix** (roxo), **Momo** (rosa), **Kiwi** (verde) — escolhidos no ovo do onboarding. Linha **linear, sem branches**: `egg` → `<pet>-1` → `<pet>-2` → `<pet>-3` (Vixinho→Vix→Vixão etc., `types/progression.ts` `PETS`). Sem sistema de atributos (virus/data/vaccine REMOVIDO). Migração de saves DigiApp preserva o nível (`LEGACY_EGG_TYPE`, `getStageLevel` aceita ids legados). |
 | 📊 Requisitos | `FORM_REQUIREMENTS`: egg 1 tarefa/dia (cap 2) · fase-1 3 (cap 5) · fase-2 5 (cap 7) · fase-3 6 (cap 9). HP máx: 1/2/3/4. `daysToEvolve`: 1/3/10/— (dias perfeitos). Dias da semana selecionáveis a partir da fase 2. |
 | ❤️ Corações (HP) | Perde na virada do dia: `floor((1 − feitas/meta) × maxHP)`, meta = `min(cadastradas, requisito da fase)`. HP aceita 0.5. HP 0 → volta uma fase (desconto: começa com `floor(required/2)` dias perfeitos). |
 | 🫶 Carinho | Cura principal: esfregar o pet ~2s = +0.5 coração, máx. 1/dia (`RUB_HEAL_DAY`). Alternativa: **Coraçãozinho** (`💗`, loja/drop da masmorra) cura +1 ao usar. |
@@ -76,8 +76,11 @@ npm run build        # vite build + PNG→WebP + wrangler pages functions build 
   No load use fallback `?? padrão` SEMPRE.
 - `src/types/progression.ts` — PETS, fases, requisitos, níveis (`getStageLevel`
   aceita ids novos E legados).
-- `src/utils/sprites.ts` — **arte SVG gerada em código** (data-URIs):
-  ovo (neutro + 3 cores), 9 formas, 9 sombras p/ masmorra. `getSpriteForStage(stage, eggType?)`.
+- `src/utils/sprites.ts` — sprites dos pets: **PNG em `src/assets/pets/`** (9 formas + 9
+  sombras da masmorra, 320×320, geradas via Higgsfield/Gemini); ovos seguem em SVG
+  gerado em código. `getSpriteForStage(stage, eggType?)`. Cenários por perfil:
+  PNG do Higgsfield em `src/assets/scenes/` (gothic/greek/madmax), ligados em
+  `--tk-scene` no `src/index.css`.
 - `src/utils/dailyReset.ts` + `src/hooks/useDailyReset.ts` — reset na virada
   (check 30s; NÃO reintroduzir ticker de 1s), evolução/degeneração linear.
 - `src/components/Header.tsx` — 3 casinhas + navegação.
