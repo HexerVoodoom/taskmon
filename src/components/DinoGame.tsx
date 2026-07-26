@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getSpriteForStage, getExpressionSprite, LEFT_FACING_STAGES } from '../utils/sprites';
-import { getPetOfStage, type PetType } from '../types/progression';
 import { playDegenerate, playTaskComplete } from '../utils/sounds';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import type { Language } from '../utils/i18n';
@@ -54,15 +53,14 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
 
   useEffect(() => {
     const pet = new Image();
-    const petType = getPetOfStage(evolutionStage, (eggType as PetType) ?? 'vix');
-    pet.src = getExpressionSprite(petType, 'walk', evolutionStage);
+    pet.src = getExpressionSprite(evolutionStage, 'walk');
     petImgRef.current = pet;
     tierImgsRef.current = OBSTACLE_TIERS.map(t => {
       const img = new Image();
       img.src = getSpriteForStage(t.stage);
       return img;
     });
-  }, [evolutionStage, eggType]);
+  }, [evolutionStage]);
 
   const jump = useCallback(() => {
     if (phaseRef.current !== 'playing') return;

@@ -366,9 +366,9 @@ export const CompanionHUD = memo(function CompanionHUD({
   // da fase — só pra fora do ovo, que não tem essas poses.
   const isEgg = getStageLevel(evolutionStage) === 'egg';
   const displaySprite = isEgg ? sprite
-    : isMunching ? getExpressionSprite(eggType, 'eat', evolutionStage)
-    : isRubbing ? getExpressionSprite(eggType, 'happy', evolutionStage)
-    : idleExpr !== 'none' ? getExpressionSprite(eggType, idleExpr, evolutionStage)
+    : isMunching ? getExpressionSprite(evolutionStage, 'eat')
+    : isRubbing ? getExpressionSprite(evolutionStage, 'happy')
+    : idleExpr !== 'none' ? getExpressionSprite(evolutionStage, idleExpr)
     : sprite;
 
   // Ovo nunca vira; as demais formas viram quando andam para a esquerda.
