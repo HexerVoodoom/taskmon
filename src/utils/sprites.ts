@@ -15,10 +15,15 @@
 //   'shadow-<pet>-<1|2|3>'    — variantes sombrias (inimigos da masmorra)
 import { PETS, PET_TYPES, type PetType } from '../types/progression';
 
-// Arte PNG (pixel art) — Momo (Cérbero) e Kiwi (Cachorro-panqueca) usam
-// imagens (src/assets/pets/*.png, 320×320, fundo transparente) em vez de SVG
-// gerado; Vix segue em SVG até ter arte própria. As shadow-* são as silhuetas
-// dos inimigos da masmorra.
+// Arte PNG (pixel art) — os 3 pets usam imagens (src/assets/pets/*.png,
+// 320×320, fundo transparente) em vez de SVG gerado. As shadow-* são as
+// silhuetas dos inimigos da masmorra.
+import vix1 from '../assets/pets/vix-1.png';
+import vix2 from '../assets/pets/vix-2.png';
+import vix3 from '../assets/pets/vix-3.png';
+import shadowVix1 from '../assets/pets/shadow-vix-1.png';
+import shadowVix2 from '../assets/pets/shadow-vix-2.png';
+import shadowVix3 from '../assets/pets/shadow-vix-3.png';
 import momo1 from '../assets/pets/momo-1.png';
 import momo2 from '../assets/pets/momo-2.png';
 import momo3 from '../assets/pets/momo-3.png';
@@ -33,6 +38,8 @@ import shadowKiwi2 from '../assets/pets/shadow-kiwi-2.png';
 import shadowKiwi3 from '../assets/pets/shadow-kiwi-3.png';
 
 const PNG_SPRITES: Record<string, string> = {
+  'vix-1': vix1, 'vix-2': vix2, 'vix-3': vix3,
+  'shadow-vix-1': shadowVix1, 'shadow-vix-2': shadowVix2, 'shadow-vix-3': shadowVix3,
   'momo-1': momo1, 'momo-2': momo2, 'momo-3': momo3,
   'kiwi-1': kiwi1, 'kiwi-2': kiwi2, 'kiwi-3': kiwi3,
   'shadow-momo-1': shadowMomo1, 'shadow-momo-2': shadowMomo2, 'shadow-momo-3': shadowMomo3,
