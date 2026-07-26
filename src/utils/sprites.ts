@@ -15,6 +15,30 @@
 //   'shadow-<pet>-<1|2|3>'    — variantes sombrias (inimigos da masmorra)
 import { PETS, PET_TYPES, type PetType } from '../types/progression';
 
+// Arte PNG (pixel art) — Momo (Cérbero) e Kiwi (Cachorro-panqueca) usam
+// imagens (src/assets/pets/*.png, 320×320, fundo transparente) em vez de SVG
+// gerado; Vix segue em SVG até ter arte própria. As shadow-* são as silhuetas
+// dos inimigos da masmorra.
+import momo1 from '../assets/pets/momo-1.png';
+import momo2 from '../assets/pets/momo-2.png';
+import momo3 from '../assets/pets/momo-3.png';
+import kiwi1 from '../assets/pets/kiwi-1.png';
+import kiwi2 from '../assets/pets/kiwi-2.png';
+import kiwi3 from '../assets/pets/kiwi-3.png';
+import shadowMomo1 from '../assets/pets/shadow-momo-1.png';
+import shadowMomo2 from '../assets/pets/shadow-momo-2.png';
+import shadowMomo3 from '../assets/pets/shadow-momo-3.png';
+import shadowKiwi1 from '../assets/pets/shadow-kiwi-1.png';
+import shadowKiwi2 from '../assets/pets/shadow-kiwi-2.png';
+import shadowKiwi3 from '../assets/pets/shadow-kiwi-3.png';
+
+const PNG_SPRITES: Record<string, string> = {
+  'momo-1': momo1, 'momo-2': momo2, 'momo-3': momo3,
+  'kiwi-1': kiwi1, 'kiwi-2': kiwi2, 'kiwi-3': kiwi3,
+  'shadow-momo-1': shadowMomo1, 'shadow-momo-2': shadowMomo2, 'shadow-momo-3': shadowMomo3,
+  'shadow-kiwi-1': shadowKiwi1, 'shadow-kiwi-2': shadowKiwi2, 'shadow-kiwi-3': shadowKiwi3,
+};
+
 interface Palette {
   body: string; body2: string; belly: string; outline: string; cheek: string; pupil: string;
 }
@@ -327,8 +351,9 @@ for (const pet of PET_TYPES) {
   STAGE_SPRITES[`egg-${pet}`] = uri(eggSVG(pet));
   PETS[pet].phases.forEach((formId, i) => {
     const phase = (i + 1) as 1 | 2 | 3;
-    STAGE_SPRITES[formId] = uri(petSVG(pet, phase));
-    STAGE_SPRITES[`shadow-${formId}`] = uri(petSVG(pet, phase, true));
+    STAGE_SPRITES[formId] = PNG_SPRITES[formId] ?? uri(petSVG(pet, phase));
+    STAGE_SPRITES[`shadow-${formId}`] =
+      PNG_SPRITES[`shadow-${formId}`] ?? uri(petSVG(pet, phase, true));
   });
 }
 
