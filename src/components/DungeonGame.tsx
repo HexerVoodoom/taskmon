@@ -171,7 +171,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
   // Begin a run at floor 1 (level = persisted base). No entry gate.
   const startRun = () => {
     const res = onEnter();
-    const list = buildDungeonWave(res.level, evolutionStage);
+    const list = buildDungeonWave(res.level);
     setRunScenes(buildRunScenes());
     setBaseLevel(res.level);
     setBest(res.best);
@@ -322,7 +322,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
   // Descend to the next (harder) floor, carrying HP over.
   const nextFloor = () => {
     const f = floor + 1;
-    const list = buildDungeonWave(baseLevel + (f - 1), evolutionStage);
+    const list = buildDungeonWave(baseLevel + (f - 1));
     setFloor(f);
     setEnemies(list);
     setEnemyIdx(0);

@@ -1,18 +1,17 @@
-// ⚔️ Dungeon logic — an ascending ladder of monsters (fase 1 → fase 3), drawn
-// from shadow versions of the 3 pets AND dedicated dungeon creatures
-// (dungeonEnemies.ts), each random within its tier and each stronger than the
-// last. Clearing the whole ladder advances the "dungeon level" (wave):
-// enemies then deal MORE damage and take LESS. That level persists (resets
-// weekly), plus a score ranking and heart drops. Kept out of the component so
-// the rules are testable. Free minigame: losing costs no real heart.
-import { PETS, PET_TYPES, getStageLevel, getPetOfStage, type EvolutionStage } from '../types/progression';
+// ⚔️ Dungeon logic — an ascending ladder of the masmorra's dedicated monsters
+// (dungeonEnemies.ts, fase 1 → fase 3), each tier's pair shuffled in and each
+// stronger than the last. Clearing the whole ladder advances the "dungeon
+// level" (wave): enemies then deal MORE damage and take LESS. That level
+// persists (resets weekly), plus a score ranking and heart drops. Kept out
+// of the component so the rules are testable. Free minigame: losing costs
+// no real heart.
 import { STORAGE_KEYS } from './storageKeys';
 import { monstersForTier } from './dungeonEnemies';
 
 export interface DungeonEnemy {
   namePt: string;
   nameEn: string;
-  stage: string;       // sprite key ('shadow-<pet>-<fase>' ou 'enemy-<id>')
+  stage: string;       // sprite key ('enemy-<id>')
   hp: number;
   atk: number;
   speed: number;       // timing-bar sweeps per second (higher = harder)
@@ -37,37 +36,21 @@ const TIER_BASE: Record<EnemyTier, { hp: number; atk: number; speed: number; poi
   'fase-3': { hp: 22, atk: 7, speed: 1.45, points: 10 },
 };
 
-interface EnemyCandidate { stage: string; namePt: string; nameEn: string }
-
-// Candidatos de um tier: sombra de qualquer pet nessa fase (exceto a forma
-// atual do jogador) + os monstros dedicados da masmorra (utils/dungeonEnemies.ts).
-function poolForTier(tier: EnemyTier, excludeStage: string): EnemyCandidate[] {
-  const phaseIdx = Number(tier.slice(-1)) - 1;
-  const shadows = PET_TYPES.map(p => PETS[p].phases[phaseIdx])
-    .filter(f => f !== excludeStage)
-    .map(formId => ({ stage: `shadow-${formId}`, ...shadowNames(formId) }));
-  const monsters = monstersForTier(tier).map(m => ({
-    stage: `enemy-${m.id}`, namePt: m.namePt, nameEn: m.nameEn,
-  }));
-  const pool = [...shadows, ...monsters];
-  if (pool.length > 0) return pool;
-  // Exclusão deixou o tier vazio (não deveria acontecer com >1 pet) — sem filtro.
-  return PET_TYPES.map(p => PETS[p].phases[phaseIdx]).map(formId => ({ stage: `shadow-${formId}`, ...shadowNames(formId) }));
-}
-
-function shadowNames(formId: string): { namePt: string; nameEn: string } {
-  const pet = PETS[getPetOfStage(formId)];
-  const level = getStageLevel(formId) as Exclude<EvolutionStage, 'egg'>;
-  const base = pet.phaseNames[Number(level.slice(-1)) - 1];
-  return { namePt: `${base} Sombrio`, nameEn: `Shadow ${base}` };
+// Embaralha os 2 monstros dedicados de um tier — cada run mostra os dois,
+// em ordem aleatória, em vez de sortear com reposição (evitava repetir o
+// mesmo monstro duas vezes num par de andar).
+function shuffledPairForTier(tier: EnemyTier) {
+  const pair = monstersForTier(tier);
+  return Math.random() < 0.5 ? pair : [pair[1], pair[0]];
 }
 
 /**
- * Build one wave: 6 shadow monsters climbing fase 1 → fase 3 (two per phase),
- * with stats scaled by the dungeon `level`. Higher level = more enemy damage
- * dealt and less damage taken (dmgReduction). Random each call.
+ * Build one wave: 6 dedicated dungeon monsters climbing fase 1 → fase 3 (two
+ * per phase, utils/dungeonEnemies.ts), with stats scaled by the dungeon
+ * `level`. Higher level = more enemy damage dealt and less damage taken
+ * (dmgReduction). Random each call.
  */
-export function buildDungeonWave(level: number, petStage: string): DungeonEnemy[] {
+export function buildDungeonWave(level: number): DungeonEnemy[] {
   // A "level" is roughly one player-phase of difficulty: level 1 suits fase 1,
   // level 2 fase 2… so a floor a couple levels above the player is brutal.
   const step = Math.max(0, level - 1);
@@ -77,15 +60,21 @@ export function buildDungeonWave(level: number, petStage: string): DungeonEnemy[
   const speedBump = Math.min(0.5, 0.05 * step);
   const ptsMult = 1 + 0.12 * step;
 
+  const pairs: Record<EnemyTier, ReturnType<typeof shuffledPairForTier>> = {
+    'fase-1': shuffledPairForTier('fase-1'),
+    'fase-2': shuffledPairForTier('fase-2'),
+    'fase-3': shuffledPairForTier('fase-3'),
+  };
+  const seenPerTier: Record<EnemyTier, number> = { 'fase-1': 0, 'fase-2': 0, 'fase-3': 0 };
+
   return LADDER_TIERS.map((tier, i) => {
     const base = TIER_BASE[tier];
     // Second slot of each phase pair is a bit stronger, keeping the ladder rising.
     const slotMult = i % 2 === 1 ? 1.18 : 1;
-    const pool = poolForTier(tier, petStage);
-    const enemy = pool[Math.floor(Math.random() * pool.length)];
+    const monster = pairs[tier][seenPerTier[tier]++];
     const variance = 0.9 + Math.random() * 0.2;    // ±10% on HP
     return {
-      namePt: enemy.namePt, nameEn: enemy.nameEn, stage: enemy.stage,
+      namePt: monster.namePt, nameEn: monster.nameEn, stage: `enemy-${monster.id}`,
       hp: Math.max(5, Math.round(base.hp * hpMult * slotMult * variance)),
       atk: Math.max(2, Math.round(base.atk * atkMult * slotMult)),
       speed: +(base.speed * (i % 2 === 1 ? 1.05 : 1) + speedBump).toFixed(2),

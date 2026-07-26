@@ -4,6 +4,7 @@ import { DinoGame } from './DinoGame';
 import { RPSGame } from './RPSGame';
 import { ShopModal } from './ShopModal';
 import { bitsStyle } from '../utils/currency';
+import { getSpriteForStage } from '../utils/sprites';
 import type { Language } from '../utils/i18n';
 
 /**
@@ -32,23 +33,26 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'rps' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
 
-  const cards: { key: 'dungeon' | 'dino' | 'rps'; icon: string; title: string; desc: string; pts: string }[] = [
+  const cards: { key: 'dungeon' | 'dino' | 'rps'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
     {
-      key: 'dungeon', icon: '⚔️',
+      key: 'dungeon', icon: '⚔️', sprite: getSpriteForStage('enemy-wraith'),
+      badgeBg: 'linear-gradient(160deg, #4c1d95, #1e1b4b)',
       title: isPt ? 'Masmorra' : 'Dungeon',
       desc: isPt
-        ? '5 andares, cada um com 6 inimigos mais fortes. Minijogo livre, sem custo de coração!'
-        : '5 floors, each with 6 tougher enemies. Free to play, no heart cost!',
+        ? '5 andares com os monstros da masmorra, cada vez mais fortes. Minijogo livre, sem custo de coração!'
+        : '5 floors of dungeon monsters, each tougher than the last. Free to play, no heart cost!',
       pts: isPt ? 'Bits por inimigo + ranking' : 'Bits per enemy + ranking',
     },
     {
-      key: 'dino', icon: '🦖',
+      key: 'dino', icon: '🦖', sprite: getSpriteForStage('enemy-golem'),
+      badgeBg: 'linear-gradient(160deg, #ea580c, #7c2d12)',
       title: isPt ? 'Corrida do Dino' : 'Dino Runner',
-      desc: isPt ? 'Pule os obstáculos e corra o máximo que conseguir.' : 'Jump the obstacles and run as far as you can.',
+      desc: isPt ? 'Pule os monstros e corra o máximo que conseguir.' : 'Jump the monsters and run as far as you can.',
       pts: isPt ? '1 Bit a cada 100 de score' : '1 Bit per 100 score',
     },
     {
       key: 'rps', icon: '✊',
+      badgeBg: 'linear-gradient(160deg, #0369a1, #0c4a6e)',
       title: isPt ? 'Pedra, Papel e Tesoura' : 'Rock, Paper, Scissors',
       desc: isPt ? 'Clássico duelo contra o seu pet. Melhor de 5.' : 'The classic duel against your pet. First to 3.',
       pts: isPt ? '5 Bits por vitória' : '5 Bits per match win',
@@ -91,7 +95,7 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
               lineHeight: 1,
             }}
           >
-            🛒
+            🍽️
           </button>
         </div>
       </div>
@@ -113,7 +117,15 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
           }`}
         >
           <div className="flex items-center gap-3">
-            <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>{c.icon}</span>
+            <div style={{
+              width: 52, height: 52, borderRadius: 'var(--tk-radius-sm, 14px)', flexShrink: 0,
+              background: c.badgeBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
+              {c.sprite
+                ? <img src={c.sprite} alt="" style={{ width: 42, height: 42, objectFit: 'contain', imageRendering: 'pixelated' }} />
+                : <span style={{ fontSize: '1.7rem', lineHeight: 1 }}>{c.icon}</span>}
+            </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className={isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}

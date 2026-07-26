@@ -37,7 +37,7 @@ export function ShopModal({ language, points, onBuy, onClose }: {
           background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff',
         }}>
           <span className="tk-display" style={{ fontWeight: 800, fontSize: '1.05rem' }}>
-            🛒 {isPt ? 'LOJA' : 'SHOP'}
+            🍽️ {isPt ? 'LOJA' : 'SHOP'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span className="tk-keep-mono" style={{ ...bitsStyle, fontSize: '0.9rem' }}>
