@@ -37,6 +37,34 @@ import shadowKiwi1 from '../assets/pets/shadow-kiwi-1.png';
 import shadowKiwi2 from '../assets/pets/shadow-kiwi-2.png';
 import shadowKiwi3 from '../assets/pets/shadow-kiwi-3.png';
 
+// Expressões extras por espécie (uma pose universal por espécie, independente
+// da fase — usadas em interações pontuais: comer, carinho, correr, idle
+// aleatório). Geradas no Higgsfield a partir do sprite de cada pet.
+import vixEat from '../assets/pets/vix-eat.png';
+import vixWalk from '../assets/pets/vix-walk.png';
+import vixHappy from '../assets/pets/vix-happy.png';
+import vixIdle2 from '../assets/pets/vix-idle2.png';
+import vixSleepy from '../assets/pets/vix-sleepy.png';
+import momoEat from '../assets/pets/momo-eat.png';
+import momoWalk from '../assets/pets/momo-walk.png';
+import momoHappy from '../assets/pets/momo-happy.png';
+import momoIdle2 from '../assets/pets/momo-idle2.png';
+import momoSleepy from '../assets/pets/momo-sleepy.png';
+import kiwiEat from '../assets/pets/kiwi-eat.png';
+import kiwiWalk from '../assets/pets/kiwi-walk.png';
+import kiwiHappy from '../assets/pets/kiwi-happy.png';
+import kiwiIdle2 from '../assets/pets/kiwi-idle2.png';
+import kiwiSleepy from '../assets/pets/kiwi-sleepy.png';
+
+// Monstros criativos da masmorra (além das sombras dos 3 pets): sorteados
+// junto com shadow-<pet>-<fase> em utils/dungeon.ts (ver dungeonEnemies.ts).
+import enemySlime from '../assets/enemies/enemy-slime.png';
+import enemyWisp from '../assets/enemies/enemy-wisp.png';
+import enemyMummy from '../assets/enemies/enemy-mummy.png';
+import enemyGolem from '../assets/enemies/enemy-golem.png';
+import enemyDemon from '../assets/enemies/enemy-demon.png';
+import enemyWraith from '../assets/enemies/enemy-wraith.png';
+
 const PNG_SPRITES: Record<string, string> = {
   'vix-1': vix1, 'vix-2': vix2, 'vix-3': vix3,
   'shadow-vix-1': shadowVix1, 'shadow-vix-2': shadowVix2, 'shadow-vix-3': shadowVix3,
@@ -44,7 +72,25 @@ const PNG_SPRITES: Record<string, string> = {
   'kiwi-1': kiwi1, 'kiwi-2': kiwi2, 'kiwi-3': kiwi3,
   'shadow-momo-1': shadowMomo1, 'shadow-momo-2': shadowMomo2, 'shadow-momo-3': shadowMomo3,
   'shadow-kiwi-1': shadowKiwi1, 'shadow-kiwi-2': shadowKiwi2, 'shadow-kiwi-3': shadowKiwi3,
+  'enemy-slime': enemySlime, 'enemy-wisp': enemyWisp, 'enemy-mummy': enemyMummy,
+  'enemy-golem': enemyGolem, 'enemy-demon': enemyDemon, 'enemy-wraith': enemyWraith,
 };
+
+export type PetExpression = 'eat' | 'walk' | 'happy' | 'idle2' | 'sleepy';
+
+const PET_EXPRESSIONS: Record<PetType, Record<PetExpression, string>> = {
+  vix: { eat: vixEat, walk: vixWalk, happy: vixHappy, idle2: vixIdle2, sleepy: vixSleepy },
+  momo: { eat: momoEat, walk: momoWalk, happy: momoHappy, idle2: momoIdle2, sleepy: momoSleepy },
+  kiwi: { eat: kiwiEat, walk: kiwiWalk, happy: kiwiHappy, idle2: kiwiIdle2, sleepy: kiwiSleepy },
+};
+
+/** Pose extra de uma espécie (comer/andar/feliz/idle alternativo/sonolento) —
+ * uma pose única por pet, independente da fase atual. Cai pro sprite normal
+ * da forma quando o pet é desconhecido. */
+export function getExpressionSprite(pet: PetType | null | undefined, expr: PetExpression, fallbackStage: string): string {
+  if (pet && PET_EXPRESSIONS[pet]) return PET_EXPRESSIONS[pet][expr];
+  return getSpriteForStage(fallbackStage);
+}
 
 interface Palette {
   body: string; body2: string; belly: string; outline: string; cheek: string; pupil: string;

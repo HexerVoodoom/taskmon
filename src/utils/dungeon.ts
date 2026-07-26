@@ -1,15 +1,18 @@
-// ⚔️ Dungeon logic — an ascending ladder of shadow monsters (fase 1 → fase 3),
-// each random within its tier and each stronger than the last. Clearing the
-// whole ladder advances the "dungeon level" (wave): enemies then deal MORE
-// damage and take LESS. That level persists (resets weekly), plus a score
-// ranking and heart drops. Kept out of the component so the rules are testable.
+// ⚔️ Dungeon logic — an ascending ladder of monsters (fase 1 → fase 3), drawn
+// from shadow versions of the 3 pets AND dedicated dungeon creatures
+// (dungeonEnemies.ts), each random within its tier and each stronger than the
+// last. Clearing the whole ladder advances the "dungeon level" (wave):
+// enemies then deal MORE damage and take LESS. That level persists (resets
+// weekly), plus a score ranking and heart drops. Kept out of the component so
+// the rules are testable. Free minigame: losing costs no real heart.
 import { PETS, PET_TYPES, getStageLevel, getPetOfStage, type EvolutionStage } from '../types/progression';
 import { STORAGE_KEYS } from './storageKeys';
+import { monstersForTier } from './dungeonEnemies';
 
 export interface DungeonEnemy {
   namePt: string;
   nameEn: string;
-  stage: string;       // sprite key ('shadow-<pet>-<fase>')
+  stage: string;       // sprite key ('shadow-<pet>-<fase>' ou 'enemy-<id>')
   hp: number;
   atk: number;
   speed: number;       // timing-bar sweeps per second (higher = harder)
@@ -22,8 +25,7 @@ export interface DungeonEnemy {
 export type EnemyTier = 'fase-1' | 'fase-2' | 'fase-3';
 export const LADDER_TIERS: EnemyTier[] = ['fase-1', 'fase-1', 'fase-2', 'fase-2', 'fase-3', 'fase-3'];
 
-// No daily run cap: entry is gated only by HP (losing costs a real heart, so the
-// player can go as often as they can afford). Heart drops are deliberately rare.
+// No entry gate, no daily run cap — free minigame. Heart drops are a rare reward.
 const HEART_DROP_DAILY_CAP = 2;            // hearts the dungeon can drop per day
 const HEART_DROP_CHANCE = 0.05;            // per enemy defeated (very low)
 
@@ -35,12 +37,22 @@ const TIER_BASE: Record<EnemyTier, { hp: number; atk: number; speed: number; poi
   'fase-3': { hp: 22, atk: 7, speed: 1.45, points: 10 },
 };
 
-// Sombra de qual forma luta em cada tier: qualquer fase equivalente de
-// qualquer pet, exceto a forma atual do jogador.
-function poolForTier(tier: EnemyTier, excludeStage: string): string[] {
+interface EnemyCandidate { stage: string; namePt: string; nameEn: string }
+
+// Candidatos de um tier: sombra de qualquer pet nessa fase (exceto a forma
+// atual do jogador) + os monstros dedicados da masmorra (utils/dungeonEnemies.ts).
+function poolForTier(tier: EnemyTier, excludeStage: string): EnemyCandidate[] {
   const phaseIdx = Number(tier.slice(-1)) - 1;
-  const pool = PET_TYPES.map(p => PETS[p].phases[phaseIdx]).filter(f => f !== excludeStage);
-  return pool.length > 0 ? pool : PET_TYPES.map(p => PETS[p].phases[phaseIdx]);
+  const shadows = PET_TYPES.map(p => PETS[p].phases[phaseIdx])
+    .filter(f => f !== excludeStage)
+    .map(formId => ({ stage: `shadow-${formId}`, ...shadowNames(formId) }));
+  const monsters = monstersForTier(tier).map(m => ({
+    stage: `enemy-${m.id}`, namePt: m.namePt, nameEn: m.nameEn,
+  }));
+  const pool = [...shadows, ...monsters];
+  if (pool.length > 0) return pool;
+  // Exclusão deixou o tier vazio (não deveria acontecer com >1 pet) — sem filtro.
+  return PET_TYPES.map(p => PETS[p].phases[phaseIdx]).map(formId => ({ stage: `shadow-${formId}`, ...shadowNames(formId) }));
 }
 
 function shadowNames(formId: string): { namePt: string; nameEn: string } {
@@ -70,12 +82,10 @@ export function buildDungeonWave(level: number, petStage: string): DungeonEnemy[
     // Second slot of each phase pair is a bit stronger, keeping the ladder rising.
     const slotMult = i % 2 === 1 ? 1.18 : 1;
     const pool = poolForTier(tier, petStage);
-    const key = pool[Math.floor(Math.random() * pool.length)];
-    const names = shadowNames(key);
+    const enemy = pool[Math.floor(Math.random() * pool.length)];
     const variance = 0.9 + Math.random() * 0.2;    // ±10% on HP
     return {
-      ...names,
-      stage: `shadow-${key}`,
+      namePt: enemy.namePt, nameEn: enemy.nameEn, stage: enemy.stage,
       hp: Math.max(5, Math.round(base.hp * hpMult * slotMult * variance)),
       atk: Math.max(2, Math.round(base.atk * atkMult * slotMult)),
       speed: +(base.speed * (i % 2 === 1 ? 1.05 : 1) + speedBump).toFixed(2),

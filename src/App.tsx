@@ -869,18 +869,15 @@ export default function App() {
     playSleep();
   }, []);
 
-  // Dungeon: no daily cap — entry is blocked only at ≤1 heart (a loss costs a
-  // real heart, so the player must be able to afford it). As long as HP allows,
-  // they can go as often as they like. Returns the monthly difficulty + best.
-  const handleDungeonEnter = useCallback((): { ok: true; level: number; best: number } | { ok: false; reason: 'hp' } => {
-    if (gameState.healthPoints <= 1) return { ok: false, reason: 'hp' };
+  // Dungeon: no gate, no daily cap — free to play from HP 0 up, any time.
+  // Losing has no real-HP cost anymore (see handleDungeonLose below).
+  const handleDungeonEnter = useCallback((): { ok: true; level: number; best: number } => {
     return { ok: true, level: getDungeonDifficulty(), best: getDungeonBest() };
-  }, [gameState.healthPoints]);
+  }, []);
 
-  // Losing the dungeon costs one real heart. (Score/difficulty bookkeeping lives
-  // in the game component via utils/dungeon.)
+  // Losing the dungeon no longer costs a real heart — it's a free minigame.
+  // (Score/difficulty bookkeeping lives in the game component via utils/dungeon.)
   const handleDungeonLose = useCallback(() => {
-    setGameState(prev => ({ ...prev, healthPoints: Math.max(0, prev.healthPoints - 1) }));
   }, []);
 
   // Heart item can drop in the dungeon (capped per day). Adds it to the Items

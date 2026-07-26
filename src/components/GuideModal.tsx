@@ -169,8 +169,8 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
               The Activities page has minigames (Dungeon, Dino Runner, Rock-Paper-Scissors)
               that award <strong>Bits</strong> — spend them in the shop on
               <strong> Little Hearts</strong> and <strong>backdrops</strong> for the pet box.
-              Missions unlock exclusive backdrops. Losing a dungeon run costs
-              <strong> 1 real heart</strong>!
+              Missions unlock exclusive backdrops. The Dungeon is free to play —
+              losing costs no real heart.
             </p>
           </section>
 

@@ -1,24 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getSpriteForStage, LEFT_FACING_STAGES } from '../utils/sprites';
+import { getSpriteForStage, getExpressionSprite, LEFT_FACING_STAGES } from '../utils/sprites';
+import { getPetOfStage, type PetType } from '../types/progression';
 import { playDegenerate, playTaskComplete } from '../utils/sounds';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import type { Language } from '../utils/i18n';
 
 /**
  * Dino Runner — endless runner starring the pet.
- * Obstacles are shadow monsters and get scarier as difficulty ramps:
- * Bakemon → Tuskmon → Gigadramon → Titamon (tier by elapsed time; speed and
- * spawn rate also scale continuously). Jump via the big button BELOW the game
- * box (thumb never covers the action), the box itself, or SPACE.
- * Scoring: 🪙 Bits earned = floor(distance score / 100) per run.
+ * Obstacles are the dungeon's dedicated monsters and get scarier as
+ * difficulty ramps: Slime → Mummy → Golem → Wraith (tier by elapsed time;
+ * speed and spawn rate also scale continuously). Jump via the big button
+ * BELOW the game box (thumb never covers the action), the box itself, or
+ * SPACE. Scoring: 🪙 Bits earned = floor(distance score / 100) per run.
  */
 
 // Obstacle tiers: unlocked as the run progresses (start time in seconds).
 const OBSTACLE_TIERS = [
-  { stage: 'bakemon',    from: 0,  size: 38 },
-  { stage: 'tuskmon',    from: 20, size: 44 },
-  { stage: 'gigadramon', from: 45, size: 50 },
-  { stage: 'titamon',    from: 75, size: 56 },
+  { stage: 'enemy-slime',  from: 0,  size: 38 },
+  { stage: 'enemy-mummy',  from: 20, size: 44 },
+  { stage: 'enemy-golem',  from: 45, size: 50 },
+  { stage: 'enemy-wraith', from: 75, size: 56 },
 ];
 
 export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onScore, onExit }: {
@@ -53,14 +54,15 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
 
   useEffect(() => {
     const pet = new Image();
-    pet.src = getSpriteForStage(evolutionStage);
+    const petType = getPetOfStage(evolutionStage, (eggType as PetType) ?? 'vix');
+    pet.src = getExpressionSprite(petType, 'walk', evolutionStage);
     petImgRef.current = pet;
     tierImgsRef.current = OBSTACLE_TIERS.map(t => {
       const img = new Image();
       img.src = getSpriteForStage(t.stage);
       return img;
     });
-  }, [evolutionStage]);
+  }, [evolutionStage, eggType]);
 
   const jump = useCallback(() => {
     if (phaseRef.current !== 'playing') return;

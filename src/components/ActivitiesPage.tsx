@@ -19,7 +19,7 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   totalPoints: number;
   ownedBackgrounds: string[];
   equippedBackground: string | null;
-  onDungeonEnter: () => { ok: true; level: number; best: number } | { ok: false; reason: 'hp' };
+  onDungeonEnter: () => { ok: true; level: number; best: number };
   onDungeonLose: () => void;
   onDungeonHeartDrop: () => boolean;
   onGlitchtama: () => void;
@@ -42,8 +42,8 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       key: 'dungeon', icon: '⚔️',
       title: isPt ? 'Masmorra' : 'Dungeon',
       desc: isPt
-        ? '5 andares retrô, cada um com 6 inimigos e mais forte. Perder custa 1 coração! Reset semanal.'
-        : '5 retro floors, each with 6 tougher enemies. Losing costs 1 heart! Weekly reset.',
+        ? '5 andares retrô, cada um com 6 inimigos e mais forte. Minijogo livre, sem custo de coração! Reset semanal.'
+        : '5 retro floors, each with 6 tougher enemies. Free to play, no heart cost! Weekly reset.',
       pts: isPt ? 'Bits por inimigo + ranking' : 'Bits per enemy + ranking',
     },
     {

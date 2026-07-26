@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
-import { getSpriteForStage } from '../utils/sprites';
+import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
 import { PET_BACKGROUNDS } from '../utils/backgrounds';
 import { EnergyBar } from './EnergyBar';
 import { CareSystem, CareEvent } from './CareSystem';
@@ -119,6 +119,22 @@ export const CompanionHUD = memo(function CompanionHUD({
   onPetRef.current = onPet;
   const [showerCooldown, setShowerCooldown] = useState(false);
   const [hugBalloon, setHugBalloon] = useState(false);
+  // Random idle variety: every so often, briefly swap to an alternate pose
+  // (side glance / yawn) while the pet is just standing around.
+  const [idleExpr, setIdleExpr] = useState<'none' | 'idle2' | 'sleepy'>('none');
+  useEffect(() => {
+    const idleTimeoutRef: { current: ReturnType<typeof setTimeout> | null } = { current: null };
+    const id = setInterval(() => {
+      if (isSleeping || isShowering || isMunching || isRubbing) return;
+      if (Math.random() >= 0.5) return;
+      setIdleExpr(Math.random() < 0.5 ? 'idle2' : 'sleepy');
+      idleTimeoutRef.current = setTimeout(() => setIdleExpr('none'), 4000 + Math.random() * 3000);
+    }, 25000 + Math.random() * 15000);
+    return () => {
+      clearInterval(id);
+      if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+    };
+  }, [isSleeping, isShowering, isMunching, isRubbing]);
 
   // Always-current snapshot of props for stable intervals
   const propsRef = useRef({ useAI, language, currentStage, companionMood, evolutionStage, aiSettings, healthPoints, energyPoints, maxEnergy, maxHealthPoints, careEvent, isSleeping });
@@ -346,7 +362,14 @@ export const CompanionHUD = memo(function CompanionHUD({
   };
 
   const sprite = getSpriteForStage(evolutionStage, eggType);
-
+  // Pose especial (comer/carinho/idle alternativo) por cima do sprite normal
+  // da fase — só pra fora do ovo, que não tem essas poses.
+  const isEgg = getStageLevel(evolutionStage) === 'egg';
+  const displaySprite = isEgg ? sprite
+    : isMunching ? getExpressionSprite(eggType, 'eat', evolutionStage)
+    : isRubbing ? getExpressionSprite(eggType, 'happy', evolutionStage)
+    : idleExpr !== 'none' ? getExpressionSprite(eggType, idleExpr, evolutionStage)
+    : sprite;
 
   // Ovo nunca vira; as demais formas viram quando andam para a esquerda.
   const getHorizontalFlip = () => {
@@ -692,7 +715,7 @@ export const CompanionHUD = memo(function CompanionHUD({
             >
               {sprite ? (
                 <img
-                  src={sprite}
+                  src={displaySprite}
                   alt={currentStage}
                   className={`w-20 h-20 object-contain ${getCompanionFilter()}`}
                   style={{

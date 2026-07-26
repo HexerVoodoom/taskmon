@@ -24,8 +24,8 @@ import type { Language } from '../utils/i18n';
  *
  * Attack: stop the sweeping marker near CENTER for more damage (≥92% = crit).
  * Defense: same bar, timed — center dodges, a perfect stop dodges + counters.
- * No daily cap — entry is gated only by HP: LOSING costs one real heart, so you
- * can't enter with ≤1 heart. Hearts (rarely) drop; the run score feeds a ranking.
+ * No entry gate, no daily cap — it's a free minigame; losing costs no real
+ * heart. Hearts (rarely) drop as a reward; the run score feeds a ranking.
  */
 
 const PLAYER_STATS: Record<string, { hp: number; dmg: number }> = {
@@ -41,7 +41,7 @@ const POPUP_MS = 1400;     // how long result popups stay before the next phase
 // Bits for clearing a floor — scales with how deep you are (10/15/20/25/30).
 const clearBonus = (floor: number) => 10 + 5 * (floor - 1);
 
-type Phase = 'intro' | 'blocked' | 'attack' | 'defend' | 'result' | 'enemy-down' | 'floor-clear' | 'run-complete' | 'lost';
+type Phase = 'intro' | 'attack' | 'defend' | 'result' | 'enemy-down' | 'floor-clear' | 'run-complete' | 'lost';
 interface Popup { icon: string; title: string; detail: string; color: string }
 
 // ── Timing bar ─────────────────────────────────────────────────────────────
@@ -102,9 +102,9 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
   evolutionStage: string;
   eggType?: string;
   language: Language;
-  /** Start a run: gates on HP only. Returns the base level (floor 1's level). */
-  onEnter: () => { ok: true; level: number; best: number } | { ok: false; reason: 'hp' };
-  /** Losing costs 1 real heart. */
+  /** Start a run (no gate). Returns the base level (floor 1's level). */
+  onEnter: () => { ok: true; level: number; best: number };
+  /** Called on a loss (no real-HP cost — free minigame). */
   onLose: () => void;
   /** Rolls for a heart drop (added to Items); returns whether one dropped. */
   onHeartDrop: () => boolean;
@@ -132,7 +132,6 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
   const [floor, setFloor] = useState(1);
   const [best, setBest] = useState(() => getDungeonBest());
   const [runScore, setRunScore] = useState(0);
-  const [blocked, setBlocked] = useState(false);
   // 5 scenes drawn per run from the classic pool + the shop backdrops.
   const [runScenes, setRunScenes] = useState<DungeonScene[]>(() => buildRunScenes());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -169,14 +168,9 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
     onExit();
   };
 
-  // Begin a run at floor 1 (level = persisted base); gated only by HP.
+  // Begin a run at floor 1 (level = persisted base). No entry gate.
   const startRun = () => {
     const res = onEnter();
-    if (!res.ok) {
-      setBlocked(true);
-      setPhase('blocked');
-      return;
-    }
     const list = buildDungeonWave(res.level, evolutionStage);
     setRunScenes(buildRunScenes());
     setBaseLevel(res.level);
@@ -190,7 +184,6 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
     setRunScore(0);
     setRewardMsg('');
     setPopup(null);
-    setBlocked(false);
     setPhase('attack');
   };
 
@@ -274,7 +267,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
 
     if (newHp <= 0) {
       playDegenerate();
-      onLose();                                   // -1 real heart
+      onLose();                                   // no real-HP cost, just run bookkeeping
       const newBest = recordDungeonScore(runScoreRef.current);
       setBest(newBest);
       setRunScore(runScoreRef.current);
@@ -418,36 +411,27 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
         </div>
       )}
 
-      {/* Intro / blocked title area */}
-      {(phase === 'intro' || phase === 'blocked') && (
+      {/* Intro title area */}
+      {phase === 'intro' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
           <div style={{ fontSize: '3rem' }}>⚔️</div>
           <div style={{ ...mono, display: 'flex', gap: 18, fontSize: '0.82rem', color: '#c6d4f2' }}>
             <span>🏅 {isPt ? 'Recorde' : 'Best'}: <b style={{ color: '#facc15' }}>{best}</b></span>
             <span>🔥 {isPt ? 'Dificuldade base' : 'Base level'}: <b style={{ color: '#c084fc' }}>{baseLevel}</b></span>
           </div>
-          {blocked ? (
-            <p style={{ ...mono, fontSize: '0.82rem', color: '#f87171', maxWidth: 300, fontWeight: 700 }}>
-              {isPt ? '💔 Corações insuficientes! Perder custa 1 coração — recupere antes (não dá pra entrar com 1 ou meio coração).'
-                    : '💔 Not enough hearts! Losing costs 1 heart — recover first (you can\'t enter with 1 or half a heart).'}
-            </p>
-          ) : (
-            <p style={{ ...mono, fontSize: '0.76rem', color: '#9fb2d8', maxWidth: 330 }}>
-              {isPt
-                ? '5 andares, cada um com 6 monstrinhos sombrios e mais forte que o anterior. Andar 1 serve pra fase 1; alguns andares acima ficam brutais. Concluir a run inteira sobe a dificuldade (reset semanal). Perder custa 1 coração real!'
-                : '5 floors, each with 6 shadow monsters and tougher than the last. Floor 1 suits phase 1; a few floors up gets brutal. Completing the whole run raises the difficulty (weekly reset). Losing costs 1 real heart!'}
-            </p>
-          )}
+          <p style={{ ...mono, fontSize: '0.76rem', color: '#9fb2d8', maxWidth: 330 }}>
+            {isPt
+              ? '5 andares, cada um com 6 monstrinhos sombrios e mais forte que o anterior. Andar 1 serve pra fase 1; alguns andares acima ficam brutais. Concluir a run inteira sobe a dificuldade (reset semanal). É só um minijogo — perder não custa coração real!'
+              : '5 floors, each with 6 shadow monsters and tougher than the last. Floor 1 suits phase 1; a few floors up gets brutal. Completing the whole run raises the difficulty (weekly reset). It\'s just a minigame — losing costs no real heart!'}
+          </p>
           <button
-            onClick={blocked ? exitRun : startRun}
+            onClick={startRun}
             style={{
               ...mono, width: '100%', maxWidth: 320, padding: '12px 0', borderRadius: 8, border: 'none',
-              background: blocked ? '#60a5fa' : '#4ade80', color: '#0b0f17',
+              background: '#4ade80', color: '#0b0f17',
               fontWeight: 800, fontSize: '1rem', cursor: 'pointer',
             }}>
-            {blocked
-              ? (isPt ? 'VOLTAR' : 'BACK')
-              : (isPt ? 'ENTRAR NA MASMORRA' : 'ENTER THE DUNGEON')}
+            {isPt ? 'ENTRAR NA MASMORRA' : 'ENTER THE DUNGEON'}
           </button>
         </div>
       )}
