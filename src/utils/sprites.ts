@@ -445,7 +445,13 @@ function eggSVG(pet: PetType | null): string {
   );
 }
 
+// Chaves que NÃO seguem o padrão '<pet>-<fase>' (monstros dedicados da
+// masmorra) — copiadas direto, senão getSpriteForStage cai no fallback do
+// ovo pra elas (bug real: monstros apareciam como ovo em vez do sprite certo).
+const DIRECT_KEYS = Object.keys(PNG_SPRITES).filter(k => k.startsWith('enemy-'));
+
 export const STAGE_SPRITES: Record<string, string> = { egg: PNG_SPRITES.egg ?? uri(eggSVG(null)) };
+for (const key of DIRECT_KEYS) STAGE_SPRITES[key] = PNG_SPRITES[key];
 for (const pet of PET_TYPES) {
   STAGE_SPRITES[`egg-${pet}`] = PNG_SPRITES[`egg-${pet}`] ?? uri(eggSVG(pet));
   PETS[pet].phases.forEach((formId, i) => {

@@ -29,7 +29,6 @@ import { isMuted, setMuted, playTaskComplete, playFeed, playPoopClean, playDigiv
 import { requestNotificationPermission, showNotification } from './utils/notifications';
 import { SHOP_ITEMS, HEART_HEAL, SPECIAL_ITEMS, HEART_ITEM_EMOJI, GLITCHTAMA_EMOJI } from './utils/shop';
 import { getDungeonDifficulty, getDungeonBest, rollDungeonHeartDrop } from './utils/dungeon';
-import { getMissionProgress, isShopItemUnlocked } from './utils/missions';
 
 const DIGIVOLVE_SEGMENTS: Record<string, number> = {
   egg: 1, 'fase-1': 3, 'fase-2': 5, 'fase-3': 999,
@@ -910,54 +909,30 @@ export default function App() {
     setGameState(prev => (score > (prev.dinoBest ?? 0) ? { ...prev, dinoBest: score } : prev));
   }, []);
 
-  // Mission progress — derived from GameState counters. Dino's best also reads
-  // the pre-existing localStorage record so old feats keep counting.
-  const missionState = {
-    evolutionStage: gameState.evolutionStage,
-    unlockedEvolutions: gameState.unlockedEvolutions,
-    dungeonKills: gameState.dungeonKills ?? 0,
-    dungeonRunsCompleted: gameState.dungeonRunsCompleted ?? 0,
-    dinoBest: Math.max(gameState.dinoBest ?? 0, Number(localStorage.getItem(STORAGE_KEYS.DINO_BEST)) || 0),
-    totalPerfectDays: gameState.totalPerfectDays ?? 0,
-  };
-  const missionProgress = getMissionProgress(missionState);
-
   // 🪙 Bits — minigame currency; accumulates in GameState (cloud-synced), spent in the shop.
   const handleEarnGamePoints = useCallback((pts: number) => {
     if (pts <= 0) return;
     setGameState(prev => ({ ...prev, gamePoints: (prev.gamePoints ?? 0) + pts }));
   }, []);
 
-  // 🛒 Shop purchase — charges points and applies the item's effect. Items can
-  // be locked behind a mission (utils/shop.ts `unlock`).
+  // 🛒 Shop purchase — charges points, adds the food to the Items folder (same
+  // +1-energy feed as task-completion food; see handleFeed).
   const handleShopBuy = useCallback((itemId: string): boolean => {
     const item = SHOP_ITEMS.find(i => i.id === itemId);
     if (!item) return false;
-    if (!isShopItemUnlocked(item, missionProgress)) return false;
     if ((gameState.gamePoints ?? 0) < item.price) return false;
-    if (item.kind === 'bg' && (gameState.ownedBackgrounds ?? []).includes(item.id)) return false;
 
-    setGameState(prev => {
-      const next = { ...prev, gamePoints: (prev.gamePoints ?? 0) - item.price };
-      if (item.kind === 'heart') {
-        // Consumables go to the Items folder; their effect is applied on USE.
-        next.foodInventory = {
-          ...prev.foodInventory,
-          [item.icon]: (prev.foodInventory[item.icon] ?? 0) + 1,
-        };
-      } else if (item.kind === 'bg') {
-        next.ownedBackgrounds = [...(prev.ownedBackgrounds ?? []), item.id];
-        next.equippedBackground = item.id; // equip right away
-      }
-      return next;
-    });
+    setGameState(prev => ({
+      ...prev,
+      gamePoints: (prev.gamePoints ?? 0) - item.price,
+      foodInventory: {
+        ...prev.foodInventory,
+        [item.icon]: (prev.foodInventory[item.icon] ?? 0) + 1,
+      },
+    }));
     playFeed();
     return true;
-  }, [gameState.gamePoints, gameState.ownedBackgrounds, missionProgress]);
-
-  const handleEquipBackground = useCallback((id: string | null) => {
-    setGameState(prev => ({ ...prev, equippedBackground: id }));
-  }, []);
+  }, [gameState.gamePoints]);
 
   // 🔒 Evolution padlock (Evolution page): tapping the current Digimon toggles
   // it. While locked, the pet never evolves at the day turn; unlocking lets the
@@ -1379,18 +1354,14 @@ export default function App() {
                 language={language}
                 theme={theme}
                 totalPoints={gameState.gamePoints ?? 0}
-                ownedBackgrounds={gameState.ownedBackgrounds ?? []}
-                equippedBackground={gameState.equippedBackground ?? null}
                 onDungeonEnter={handleDungeonEnter}
                 onDungeonLose={handleDungeonLose}
                 onDungeonHeartDrop={handleDungeonHeartDrop}
                 onGlitchtama={handleGlitchtama}
                 onDungeonEnemyDefeated={handleDungeonEnemyDefeated}
                 onDinoScore={handleDinoScore}
-                missionProgress={missionProgress}
                 onEarnPoints={handleEarnGamePoints}
                 onShopBuy={handleShopBuy}
-                onEquipBackground={handleEquipBackground}
               />
             </Suspense>
           )}

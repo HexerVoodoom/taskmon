@@ -76,12 +76,12 @@ function TimingBar({ speed, color, label, onStop }: {
     onStop(1 - Math.abs(posRef.current - 0.5) * 2); // 1 = dead center
   };
 
-  const mono = { fontFamily: 'monospace' as const };
+  const mono = {}; // theme font applies (was forced monospace)
   return (
     <div style={{ width: '100%' }}>
       <div
         onPointerDown={stop}
-        style={{ position: 'relative', height: 34, borderRadius: 6, background: '#131a26', border: '1px solid #2c3a52', overflow: 'hidden', cursor: 'pointer', touchAction: 'manipulation' }}
+        style={{ position: 'relative', height: 34, borderRadius: 6, background: 'var(--tk-soft)', border: '1px solid var(--tk-border)', overflow: 'hidden', cursor: 'pointer', touchAction: 'manipulation' }}
       >
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: '35%', width: '30%', background: 'rgba(250, 204, 21, 0.22)' }} />
         <div style={{ position: 'absolute', top: 0, bottom: 0, left: '46%', width: '8%', background: 'rgba(74, 222, 128, 0.45)' }} />
@@ -140,7 +140,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
 
   const enemy = enemies[enemyIdx];
   const petSprite = getSpriteForStage(evolutionStage, eggType);
-  const mono = { fontFamily: 'monospace' as const };
+  const mono = {}; // theme font applies (was forced monospace)
   const ladderLen = LADDER_TIERS.length;
   const scene = runScenes[floor - 1] ?? DUNGEON_SCENES[0];
   // Some shop backdrops are LIGHT — keep the in-scene labels readable on them.
@@ -215,7 +215,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
     const title = crit ? (isPt ? 'PERFEITO!' : 'PERFECT!')
       : acc >= 0.6 ? (isPt ? 'Bom golpe!' : 'Good hit!')
       : (isPt ? 'Raspão...' : 'Graze...');
-    const atkPopup: Popup = { icon: '⚔️', title, detail: isPt ? `${dmg} de dano no ${(isPt ? enemy.namePt : enemy.nameEn)}` : `${dmg} damage to ${(isPt ? enemy.namePt : enemy.nameEn)}`, color: '#4ade80' };
+    const atkPopup: Popup = { icon: '⚔️', title, detail: isPt ? `${dmg} de dano no ${(isPt ? enemy.namePt : enemy.nameEn)}` : `${dmg} damage to ${(isPt ? enemy.namePt : enemy.nameEn)}`, color: 'var(--tk-accent)' };
 
     if (newHp <= 0) { defeatEnemy(atkPopup); return; }
 
@@ -333,7 +333,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
   };
 
   const hpBar = (cur: number, max: number, color: string) => (
-    <div style={{ width: 110, height: 10, borderRadius: 5, background: '#1c2636', border: '1px solid #2c3a52', overflow: 'hidden' }}>
+    <div style={{ width: 110, height: 10, borderRadius: 5, background: 'var(--tk-soft)', border: '1px solid var(--tk-border)', overflow: 'hidden' }}>
       <div style={{ width: `${(cur / max) * 100}%`, height: '100%', background: color, transition: 'width 0.3s' }} />
     </div>
   );
@@ -342,7 +342,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
   const sceneName = isPt ? scene.namePt : scene.nameEn;
 
   return (
-    <div className="tk-keep-mono" style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#07090f', display: 'flex', flexDirection: 'column', color: '#e8eefc' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--tk-bg)', display: 'flex', flexDirection: 'column', color: 'var(--tk-text)' }}>
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
         <span style={{ ...mono, fontWeight: 800, fontSize: '0.95rem', letterSpacing: 1 }}>
@@ -350,16 +350,16 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
           <span style={{ color: scene.accent, marginLeft: 8, fontSize: '0.8rem' }}>
             {isPt ? 'Andar' : 'Floor'} {floor}/{MAX_FLOORS} · {sceneName}
           </span>
-          {inBattle ? <span style={{ color: '#9fb2d8', marginLeft: 8, fontSize: '0.8rem' }}>{enemyIdx + 1}/{ladderLen}</span> : null}
+          {inBattle ? <span style={{ color: 'var(--tk-muted)', marginLeft: 8, fontSize: '0.8rem' }}>{enemyIdx + 1}/{ladderLen}</span> : null}
         </span>
-        <button onClick={exitRun} style={{ ...mono, background: 'rgba(255,255,255,0.08)', border: '1px solid #2c3a52', color: '#e8eefc', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
+        <button onClick={exitRun} style={{ ...mono, background: 'var(--tk-soft)', border: '1px solid var(--tk-border)', color: 'var(--tk-text)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
           {isPt ? 'Sair' : 'Exit'}
         </button>
       </div>
 
       {/* Battlefield (only during a run) — per-floor retro scene + VHS overlay */}
       {inBattle && enemy && (
-        <div style={{ flex: 1, position: 'relative', margin: '0 16px', borderRadius: 12, border: `1px solid ${scene.accent}55`, background: scene.bg, overflow: 'hidden', boxShadow: `inset 0 0 60px rgba(0,0,0,0.6)` }}>
+        <div style={{ flex: 1, position: 'relative', margin: '0 16px', borderRadius: 12, border: '1px solid var(--tk-border)', background: scene.bg, overflow: 'hidden', boxShadow: `inset 0 0 60px rgba(0,0,0,0.6)` }}>
           {/* VHS scanline overlay */}
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.28) 0 1px, transparent 1px 3px)', backgroundSize: '100% 6px', animation: 'dungeon-vhs 5s linear infinite', opacity: 0.55, mixBlendMode: 'overlay' }} />
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', boxShadow: `inset 0 0 40px ${scene.accent}22` }} />
@@ -401,10 +401,10 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
           {/* Result popup — feedback beat between actions */}
           {popup && (
             <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(6,9,15,0.45)' }}>
-              <div style={{ ...mono, textAlign: 'center', background: '#0e1522', border: `2px solid ${popup.color}`, borderRadius: 12, padding: '16px 26px', boxShadow: `0 0 24px ${popup.color}55` }}>
+              <div style={{ ...mono, textAlign: 'center', background: 'var(--tk-card)', border: `2px solid ${popup.color}`, borderRadius: 12, padding: '16px 26px', boxShadow: `0 0 24px ${popup.color}55` }}>
                 <div style={{ fontSize: '1.7rem', lineHeight: 1.2 }}>{popup.icon}</div>
                 <p style={{ fontWeight: 800, fontSize: '1rem', color: popup.color, margin: '4px 0 2px' }}>{popup.title}</p>
-                <p style={{ fontSize: '0.82rem', color: '#c6d4f2' }}>{popup.detail}</p>
+                <p style={{ fontSize: '0.82rem', color: 'var(--tk-muted)' }}>{popup.detail}</p>
               </div>
             </div>
           )}
@@ -415,11 +415,11 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
       {phase === 'intro' && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' }}>
           <div style={{ fontSize: '3rem' }}>⚔️</div>
-          <div style={{ ...mono, display: 'flex', gap: 18, fontSize: '0.82rem', color: '#c6d4f2' }}>
+          <div style={{ ...mono, display: 'flex', gap: 18, fontSize: '0.82rem', color: 'var(--tk-muted)' }}>
             <span>🏅 {isPt ? 'Recorde' : 'Best'}: <b style={{ color: '#facc15' }}>{best}</b></span>
             <span>🔥 {isPt ? 'Dificuldade base' : 'Base level'}: <b style={{ color: '#c084fc' }}>{baseLevel}</b></span>
           </div>
-          <p style={{ ...mono, fontSize: '0.76rem', color: '#9fb2d8', maxWidth: 330 }}>
+          <p style={{ ...mono, fontSize: '0.76rem', color: 'var(--tk-muted)', maxWidth: 330 }}>
             {isPt
               ? '5 andares, cada um com 6 monstrinhos sombrios e mais forte que o anterior. Andar 1 serve pra fase 1; alguns andares acima ficam brutais. Concluir a run inteira sobe a dificuldade (reset semanal). É só um minijogo — perder não custa coração real!'
               : '5 floors, each with 6 shadow monsters and tougher than the last. Floor 1 suits phase 1; a few floors up gets brutal. Completing the whole run raises the difficulty (weekly reset). It\'s just a minigame — losing costs no real heart!'}
@@ -428,7 +428,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
             onClick={startRun}
             style={{
               ...mono, width: '100%', maxWidth: 320, padding: '12px 0', borderRadius: 8, border: 'none',
-              background: '#4ade80', color: '#0b0f17',
+              background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff',
               fontWeight: 800, fontSize: '1rem', cursor: 'pointer',
             }}>
             {isPt ? 'ENTRAR NA MASMORRA' : 'ENTER THE DUNGEON'}
@@ -441,10 +441,10 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
         <div style={{ padding: 16, minHeight: 150 }}>
           {phase === 'attack' && (
             <div>
-              <p style={{ ...mono, textAlign: 'center', fontSize: '0.78rem', color: '#9fb2d8', marginBottom: 6 }}>
+              <p style={{ ...mono, textAlign: 'center', fontSize: '0.78rem', color: 'var(--tk-muted)', marginBottom: 6 }}>
                 {isPt ? 'Seu turno — mire no centro!' : 'Your turn — aim for the center!'}
               </p>
-              <TimingBar key={`atk-${floor}-${enemyIdx}-${enemyHp}-${playerHp}`} speed={enemy.speed} color="#4ade80" label={isPt ? 'ATACAR!' : 'ATTACK!'} onStop={handleAttack} />
+              <TimingBar key={`atk-${floor}-${enemyIdx}-${enemyHp}-${playerHp}`} speed={enemy.speed} color="var(--tk-accent)" label={isPt ? 'ATACAR!' : 'ATTACK!'} onStop={handleAttack} />
             </div>
           )}
           {phase === 'defend' && (
@@ -456,7 +456,7 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
             </div>
           )}
           {phase === 'result' && (
-            <p style={{ ...mono, textAlign: 'center', fontSize: '0.8rem', color: '#5d729c', paddingTop: 24 }}>…</p>
+            <p style={{ ...mono, textAlign: 'center', fontSize: '0.8rem', color: 'var(--tk-muted)', paddingTop: 24 }}>…</p>
           )}
           {phase === 'enemy-down' && (
             <div style={{ textAlign: 'center' }}>
@@ -479,17 +479,17 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
               <p style={{ ...mono, fontWeight: 800, fontSize: '1.05rem', marginBottom: 4 }}>
                 🚪 {isPt ? `Andar ${floor} concluído!` : `Floor ${floor} cleared!`}
               </p>
-              <p style={{ ...mono, fontSize: '0.8rem', color: '#c6d4f2', marginBottom: 2 }}>
+              <p style={{ ...mono, fontSize: '0.8rem', color: 'var(--tk-muted)', marginBottom: 2 }}>
                 {isPt ? `Placar: ${runScore} · Recorde: ${best}` : `Score: ${runScore} · Best: ${best}`}
               </p>
-              <p style={{ ...mono, fontSize: '0.74rem', color: '#4ade80', marginBottom: 10 }}>{rewardMsg}</p>
+              <p style={{ ...mono, fontSize: '0.74rem', color: 'var(--tk-accent)', marginBottom: 10 }}>{rewardMsg}</p>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={nextFloor}
                   style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: 'none', background: (runScenes[floor] ?? DUNGEON_SCENES[0]).accent, color: '#0b0f17', fontWeight: 800, cursor: 'pointer' }}>
                   {isPt ? `ANDAR ${floor + 1} →` : `FLOOR ${floor + 1} →`}
                 </button>
                 <button onClick={exitRun}
-                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid #2c3a52', background: 'transparent', color: '#e8eefc', fontWeight: 800, cursor: 'pointer' }}>
+                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid var(--tk-border)', background: 'transparent', color: 'var(--tk-text)', fontWeight: 800, cursor: 'pointer' }}>
                   {isPt ? 'SAIR C/ PLACAR' : 'BANK & EXIT'}
                 </button>
               </div>
@@ -500,10 +500,10 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
               <p style={{ ...mono, fontWeight: 800, fontSize: '1.05rem', marginBottom: 4, color: '#facc15' }}>
                 {isPt ? '🏆 RUN COMPLETA! Os 5 andares caíram!' : '🏆 RUN COMPLETE! All 5 floors down!'}
               </p>
-              <p style={{ ...mono, fontSize: '0.8rem', color: '#c6d4f2', marginBottom: 2 }}>
+              <p style={{ ...mono, fontSize: '0.8rem', color: 'var(--tk-muted)', marginBottom: 2 }}>
                 {isPt ? `Placar: ${runScore} · Recorde: ${best}` : `Score: ${runScore} · Best: ${best}`}
               </p>
-              <p style={{ ...mono, fontSize: '0.78rem', color: '#4ade80', marginBottom: 2, fontWeight: 800 }}>
+              <p style={{ ...mono, fontSize: '0.78rem', color: 'var(--tk-accent)', marginBottom: 2, fontWeight: 800 }}>
                 🌀 {isPt ? 'Glitchtama obtido! (pastinha de itens)' : 'Glitchtama acquired! (Items folder)'}
               </p>
               <p style={{ ...mono, fontSize: '0.74rem', color: '#c084fc', marginBottom: 10 }}>
@@ -511,11 +511,11 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={startRun}
-                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: 'none', background: '#4ade80', color: '#0b0f17', fontWeight: 800, cursor: 'pointer' }}>
+                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: 'none', background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                   {isPt ? 'NOVA RUN' : 'NEW RUN'}
                 </button>
                 <button onClick={onExit}
-                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid #2c3a52', background: 'transparent', color: '#e8eefc', fontWeight: 800, cursor: 'pointer' }}>
+                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid var(--tk-border)', background: 'transparent', color: 'var(--tk-text)', fontWeight: 800, cursor: 'pointer' }}>
                   {isPt ? 'SAIR' : 'EXIT'}
                 </button>
               </div>
@@ -524,18 +524,18 @@ export function DungeonGame({ evolutionStage, eggType, language, onEnter, onLose
           {phase === 'lost' && (
             <div style={{ textAlign: 'center' }}>
               <p style={{ ...mono, fontWeight: 800, fontSize: '1.05rem', marginBottom: 4 }}>
-                {isPt ? '💀 Você foi derrotado... (−1 ❤️)' : '💀 You were defeated... (−1 ❤️)'}
+                {isPt ? '💀 Você foi derrotado...' : '💀 You were defeated...'}
               </p>
-              <p style={{ ...mono, fontSize: '0.8rem', color: '#c6d4f2', marginBottom: 10 }}>
+              <p style={{ ...mono, fontSize: '0.8rem', color: 'var(--tk-muted)', marginBottom: 10 }}>
                 {isPt ? `Andar ${floor} · Placar: ${runScore} · Recorde: ${best}` : `Floor ${floor} · Score: ${runScore} · Best: ${best}`}
               </p>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={startRun}
-                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: 'none', background: '#4ade80', color: '#0b0f17', fontWeight: 800, cursor: 'pointer' }}>
+                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: 'none', background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
                   {isPt ? 'JOGAR DE NOVO' : 'PLAY AGAIN'}
                 </button>
                 <button onClick={onExit}
-                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid #2c3a52', background: 'transparent', color: '#e8eefc', fontWeight: 800, cursor: 'pointer' }}>
+                  style={{ ...mono, flex: 1, padding: '12px 0', borderRadius: 8, border: '1px solid var(--tk-border)', background: 'transparent', color: 'var(--tk-text)', fontWeight: 800, cursor: 'pointer' }}>
                   {isPt ? 'SAIR' : 'EXIT'}
                 </button>
               </div>

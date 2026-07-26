@@ -90,7 +90,7 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
                 <strong> poop</strong> also drains <strong>1 heart every 6 hours</strong>.
                 Hearts are healed by <strong>rubbing your pet</strong> (up to
                 <strong> 1 heart per day</strong>) or by using a <strong>Little Heart</strong> item
-                (bought in the shop or dropped in the dungeon). If HP hits 0, your pet goes back a phase.
+                (a rare dungeon drop). If HP hits 0, your pet goes back a phase.
               </li>
               <li>
                 <strong>⚡ Energy</strong> — The number of energy bars equals your phase's
@@ -168,8 +168,7 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
             <p>
               The Activities page has minigames (Dungeon, Dino Runner, Rock-Paper-Scissors)
               that award <strong>Bits</strong> — spend them in the shop on
-              <strong> Little Hearts</strong> and <strong>backdrops</strong> for the pet box.
-              Missions unlock exclusive backdrops. The Dungeon is free to play —
+              <strong> food</strong> for your pet. The Dungeon is free to play —
               losing costs no real heart.
             </p>
           </section>

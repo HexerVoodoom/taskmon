@@ -42,7 +42,7 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
   const [finalScore, setFinalScore] = useState(0);
   const [earned, setEarned] = useState(0);
   const [best, setBest] = useState(() => Number(localStorage.getItem(STORAGE_KEYS.DINO_BEST)) || 0);
-  const mono = { fontFamily: 'monospace' as const };
+  const mono = {}; // theme font applies (was forced monospace)
 
   // The pet must FACE RIGHT while running; sprites in LEFT_FACING_STAGES are
   // drawn facing left by default (Tapirmon & friends), so mirror those.
@@ -182,22 +182,22 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
   }, [phase, jump, onEarnPoints, onScore, petNeedsFlip]);
 
   return (
-    <div className="tk-keep-mono" style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'linear-gradient(180deg, #0b0f17 0%, #16202f 100%)', display: 'flex', flexDirection: 'column', color: '#e8eefc' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--tk-bg)', display: 'flex', flexDirection: 'column', color: 'var(--tk-text)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
         <span style={{ ...mono, fontWeight: 800, fontSize: '0.95rem', letterSpacing: 1 }}>
           🦖 {isPt ? 'CORRIDA DO DINO' : 'DINO RUNNER'}
         </span>
-        <button onClick={onExit} style={{ ...mono, background: 'rgba(255,255,255,0.08)', border: '1px solid #2c3a52', color: '#e8eefc', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
+        <button onClick={onExit} style={{ ...mono, background: 'var(--tk-soft)', border: '1px solid var(--tk-border)', color: 'var(--tk-text)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer' }}>
           {isPt ? 'Sair' : 'Exit'}
         </button>
       </div>
 
-      <div style={{ ...mono, display: 'flex', justifyContent: 'space-between', padding: '0 20px 6px', fontSize: '0.8rem', color: '#9fb2d8' }}>
+      <div style={{ ...mono, display: 'flex', justifyContent: 'space-between', padding: '0 20px 6px', fontSize: '0.8rem', color: 'var(--tk-muted)' }}>
         <span>{isPt ? 'Recorde' : 'Best'}: {best}</span>
         <span>Score: <span ref={scoreElRef}>0</span></span>
       </div>
 
-      <div style={{ margin: '0 16px', borderRadius: 12, border: '1px solid #2c3a52', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ margin: '0 16px', borderRadius: 12, border: '1px solid var(--tk-border)', overflow: 'hidden', position: 'relative' }}>
         <canvas
           ref={canvasRef}
           onPointerDown={jump}
@@ -208,20 +208,20 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
             {phase === 'over' && (
               <>
                 <p style={{ ...mono, fontWeight: 800, fontSize: '1.05rem' }}>💥 {isPt ? 'Fim de jogo!' : 'Game over!'}</p>
-                <p style={{ ...mono, fontSize: '0.85rem', color: '#9fb2d8' }}>
+                <p style={{ ...mono, fontSize: '0.85rem', color: 'var(--tk-muted)' }}>
                   Score: {finalScore} · +{earned} Bits
                 </p>
               </>
             )}
             {phase === 'ready' && (
-              <p style={{ ...mono, fontSize: '0.8rem', color: '#9fb2d8', padding: '0 20px', textAlign: 'center' }}>
+              <p style={{ ...mono, fontSize: '0.8rem', color: 'var(--tk-muted)', padding: '0 20px', textAlign: 'center' }}>
                 {isPt
-                  ? 'Pule os monstrinhos sombrios! Eles ficam mais fortes com o tempo. 100 de score = 1 Bit'
-                  : 'Jump the shadow monsters! They get scarier over time. 100 score = 1 Bit'}
+                  ? 'Pule os monstros! Eles ficam mais fortes com o tempo. 100 de score = 1 Bit'
+                  : 'Jump the monsters! They get scarier over time. 100 score = 1 Bit'}
               </p>
             )}
             <button onClick={start}
-              style={{ ...mono, padding: '12px 28px', borderRadius: 8, border: 'none', background: '#4ade80', color: '#0b0f17', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer' }}>
+              style={{ ...mono, padding: '12px 28px', borderRadius: 8, border: 'none', background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer' }}>
               {phase === 'over' ? (isPt ? 'JOGAR DE NOVO' : 'PLAY AGAIN') : (isPt ? 'COMEÇAR' : 'START')}
             </button>
           </div>
@@ -235,8 +235,8 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
           disabled={phase !== 'playing'}
           style={{
             ...mono, width: '100%', padding: '22px 0', borderRadius: 12, border: 'none',
-            background: phase === 'playing' ? '#60a5fa' : '#1c2636',
-            color: phase === 'playing' ? '#0b0f17' : '#5d729c',
+            background: phase === 'playing' ? 'var(--tk-btn-bg, var(--tk-accent))' : 'var(--tk-soft)',
+            color: phase === 'playing' ? '#fff' : 'var(--tk-muted)',
             fontWeight: 800, fontSize: '1.1rem', letterSpacing: 2,
             cursor: phase === 'playing' ? 'pointer' : 'default',
             touchAction: 'manipulation', userSelect: 'none',

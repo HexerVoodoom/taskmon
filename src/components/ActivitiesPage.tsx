@@ -8,17 +8,15 @@ import type { Language } from '../utils/i18n';
 
 /**
  * "Atividades" page — interactive minigames hub.
- * All games award 🪙 Bits (GameState.gamePoints), spent in the shop.
+ * All games award 🪙 Bits (GameState.gamePoints), spent in the shop on food.
  * Balance: Dungeon points/enemy + wave clear · Dino floor(score/100) · RPS +5/match.
  */
-export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, ownedBackgrounds, equippedBackground, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onEarnPoints, onShopBuy, onEquipBackground, missionProgress }: {
+export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onEarnPoints, onShopBuy }: {
   evolutionStage: string;
   eggType?: string;
   language: Language;
   theme?: 'default' | 'win98' | 'glitch';
   totalPoints: number;
-  ownedBackgrounds: string[];
-  equippedBackground: string | null;
   onDungeonEnter: () => { ok: true; level: number; best: number };
   onDungeonLose: () => void;
   onDungeonHeartDrop: () => boolean;
@@ -27,23 +25,20 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   onDinoScore: (score: number) => void;
   onEarnPoints: (pts: number) => void;
   onShopBuy: (itemId: string) => boolean;
-  onEquipBackground: (id: string | null) => void;
-  missionProgress: Record<string, number>;
 }) {
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
   const isGlitch = theme === 'glitch';
   const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'rps' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
-  const mono = { fontFamily: 'monospace' as const };
 
   const cards: { key: 'dungeon' | 'dino' | 'rps'; icon: string; title: string; desc: string; pts: string }[] = [
     {
       key: 'dungeon', icon: '⚔️',
       title: isPt ? 'Masmorra' : 'Dungeon',
       desc: isPt
-        ? '5 andares retrô, cada um com 6 inimigos e mais forte. Minijogo livre, sem custo de coração! Reset semanal.'
-        : '5 retro floors, each with 6 tougher enemies. Free to play, no heart cost! Weekly reset.',
+        ? '5 andares, cada um com 6 inimigos mais fortes. Minijogo livre, sem custo de coração!'
+        : '5 floors, each with 6 tougher enemies. Free to play, no heart cost!',
       pts: isPt ? 'Bits por inimigo + ranking' : 'Bits per enemy + ranking',
     },
     {
@@ -65,28 +60,28 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       <div className="flex items-center justify-between">
         <h2
           className={`tk-display ${isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}`}
-          style={{ ...mono, fontSize: '1.05rem', fontWeight: 700 }}
+          style={{ fontSize: '1.05rem', fontWeight: 700 }}
         >
           🎮 {isPt ? 'Atividades' : 'Activities'}
         </h2>
         <div className="flex items-center gap-2">
           <span
-            className="px-3 py-1 rounded-md tk-keep-mono"
+            className="px-3 py-1 rounded-full tk-keep-mono"
             style={{ ...bitsStyle, fontSize: '0.85rem', background: '#0a1408', border: '1px solid rgba(57,255,20,0.4)' }}
             title={isPt ? 'Bits — moeda dos minijogos (gaste na loja!)' : 'Bits — minigame currency (spend in the shop!)'}
           >
             {totalPoints} Bits
           </span>
-          {/* 🛒 Shop entry — deliberately 8-bit */}
           <button
             onClick={() => setShopOpen(true)}
             aria-label={isPt ? 'Loja' : 'Shop'}
-            title={isPt ? 'Loja — coraçõezinhos e cenários!' : 'Shop — little hearts and backdrops!'}
+            title={isPt ? 'Loja — comidas para o seu pet!' : 'Shop — food for your pet!'}
             className="cursor-pointer active:scale-[0.97] transition-all"
             style={{
-              background: '#0d1420',
-              border: '3px solid #4ade80',
-              boxShadow: '3px 3px 0 #000',
+              background: 'var(--tk-btn-bg, var(--tk-accent, #4ade80))',
+              border: 'none',
+              borderRadius: 'var(--tk-radius-sm, 10px)',
+              boxShadow: '0 2px 0 rgba(0,0,0,0.15)',
               width: 40,
               height: 40,
               display: 'flex',
@@ -94,7 +89,6 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
               justifyContent: 'center',
               fontSize: '1.15rem',
               lineHeight: 1,
-              imageRendering: 'pixelated',
             }}
           >
             🛒
@@ -102,7 +96,7 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         </div>
       </div>
       <p className={isGlitch ? 'text-[#5fbcbc]' : isWin98 ? 'text-gray-700' : 'text-gray-500'}
-         style={{ ...mono, fontSize: '0.78rem' }}>
+         style={{ fontSize: '0.78rem' }}>
         {isPt ? 'Minijogos para se divertir e acumular Bits com seu pet.' : 'Minigames to have fun and earn Bits with your pet.'}
       </p>
 
@@ -123,16 +117,16 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <span className={isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}
-                      style={{ ...mono, fontSize: '0.9rem', fontWeight: 700 }}>
+                      style={{ fontSize: '0.9rem', fontWeight: 700 }}>
                   {c.title}
                 </span>
                 <span className={`px-2 py-[2px] rounded-full ${isGlitch ? 'bg-[#00ffff]/10 text-[#5fbcbc]' : 'bg-gray-100 text-gray-500'}`}
-                      style={{ ...mono, fontSize: '0.6rem' }}>
+                      style={{ fontSize: '0.6rem' }}>
                   {c.pts}
                 </span>
               </div>
               <p className={isGlitch ? 'text-[#5fbcbc]' : isWin98 ? 'text-gray-700' : 'text-gray-500'}
-                 style={{ ...mono, fontSize: '0.72rem', marginTop: 2 }}>
+                 style={{ fontSize: '0.72rem', marginTop: 2 }}>
                 {c.desc}
               </p>
             </div>
@@ -145,11 +139,7 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         <ShopModal
           language={language}
           points={totalPoints}
-          ownedBackgrounds={ownedBackgrounds}
-          equippedBackground={equippedBackground}
-          missionProgress={missionProgress}
           onBuy={onShopBuy}
-          onEquip={onEquipBackground}
           onClose={() => setShopOpen(false)}
         />
       )}
