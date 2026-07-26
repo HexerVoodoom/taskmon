@@ -1,12 +1,12 @@
-// Arte dos pets — mascotes SVG originais (estilo flat/arredondado), gerados em
-// código e servidos como data-URIs. O mapa STAGE_SPRITES mantém o mesmo
-// contrato de antes (chave da forma → src de imagem), então CompanionHUD,
-// masmorra, página de evolução e onboarding consomem sem mudanças de shape.
+// Arte dos pets — pixel art (Higgsfield) em src/assets/pets, com o SVG gerado
+// em código como fallback. O mapa STAGE_SPRITES mantém o mesmo contrato de
+// antes (chave da forma → src de imagem), então CompanionHUD, masmorra,
+// página de evolução e onboarding consomem sem mudanças de shape.
 //
 // Espécie por pet (cresce em "assinatura" a cada fase):
 //   vix  (roxo)  — Gatoelho-lebrilope: gato + orelhas de lebre + chifres de antílope
 //   momo (rosa)  — Cérbero: cão de 1 → 2 → 3 cabeças + coleira de espinhos
-//   kiwi (verde) — Cachorro-panqueca: corpo achatando a cada fase até virar panqueca
+//   kiwi (madmax)— Cachorro-panqueca: corpo achatando a cada fase até virar panqueca
 //
 // Chaves disponíveis:
 //   'egg'                     — ovo neutro (fallback)
@@ -95,7 +95,14 @@ import enemyGolem from '../assets/enemies/enemy-golem.png';
 import enemyDemon from '../assets/enemies/enemy-demon.png';
 import enemyWraith from '../assets/enemies/enemy-wraith.png';
 
+// Ovos em pixel art (substituem o SVG gerado) — neutro + 1 por pet.
+import eggNeutral from '../assets/pets/egg-neutral.png';
+import eggVix from '../assets/pets/egg-vix.png';
+import eggMomo from '../assets/pets/egg-momo.png';
+import eggKiwi from '../assets/pets/egg-kiwi.png';
+
 const PNG_SPRITES: Record<string, string> = {
+  egg: eggNeutral, 'egg-vix': eggVix, 'egg-momo': eggMomo, 'egg-kiwi': eggKiwi,
   'vix-1': vix1, 'vix-2': vix2, 'vix-3': vix3,
   'shadow-vix-1': shadowVix1, 'shadow-vix-2': shadowVix2, 'shadow-vix-3': shadowVix3,
   'momo-1': momo1, 'momo-2': momo2, 'momo-3': momo3,
@@ -438,9 +445,9 @@ function eggSVG(pet: PetType | null): string {
   );
 }
 
-export const STAGE_SPRITES: Record<string, string> = { egg: uri(eggSVG(null)) };
+export const STAGE_SPRITES: Record<string, string> = { egg: PNG_SPRITES.egg ?? uri(eggSVG(null)) };
 for (const pet of PET_TYPES) {
-  STAGE_SPRITES[`egg-${pet}`] = uri(eggSVG(pet));
+  STAGE_SPRITES[`egg-${pet}`] = PNG_SPRITES[`egg-${pet}`] ?? uri(eggSVG(pet));
   PETS[pet].phases.forEach((formId, i) => {
     const phase = (i + 1) as 1 | 2 | 3;
     STAGE_SPRITES[formId] = PNG_SPRITES[formId] ?? uri(petSVG(pet, phase));
