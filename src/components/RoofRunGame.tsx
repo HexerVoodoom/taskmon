@@ -16,13 +16,9 @@ import rooftopImg from '../assets/roofrun/rooftop.png';
 const GRAVITY = 1900;
 const JUMP_VY = 660;
 const PLAYER_X = 30, PLAYER_S = 44;
-// House-wall body colors (picked once per platform) — fills the rest of the
-// house down past the bottom of the canvas so platforms read as whole
-// houses instead of roofs floating in mid-air.
-const WALL_COLORS = ['#e6c78a', '#d9b26a', '#e0bd7e'];
-const pickWallColor = () => WALL_COLORS[Math.floor(Math.random() * WALL_COLORS.length)];
 
-interface Platform { x: number; width: number; topY: number; wallColor: string }
+interface Platform { x: number; width: number; topY: number }
+interface Cloud { x: number; y: number; scale: number }
 
 export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, onExit }: {
   evolutionStage: string;
@@ -49,7 +45,7 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
   // Physics/game state lives in a ref — the loop never re-renders React.
   const g = useRef({
     y: 0, vy: 0, grounded: true,
-    platforms: [] as Platform[], speed: 0, t: 0, score: 0, bgX: 0,
+    platforms: [] as Platform[], clouds: [] as Cloud[], speed: 0, t: 0, score: 0, bgX: 0,
   });
 
   useEffect(() => {
@@ -78,8 +74,13 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
     const s = g.current;
     const baseY = 150;
     s.platforms = [
-      { x: 0, width: 160, topY: baseY, wallColor: pickWallColor() },
-      { x: 220, width: 120, topY: baseY - 10, wallColor: pickWallColor() },
+      { x: 0, width: 160, topY: baseY },
+      { x: 220, width: 120, topY: baseY - 10 },
+    ];
+    s.clouds = [
+      { x: 40, y: 30, scale: 1 },
+      { x: 180, y: 55, scale: 0.7 },
+      { x: 320, y: 20, scale: 0.85 },
     ];
     s.y = baseY;
     s.vy = 0;
@@ -112,10 +113,9 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
       ctx.restore();
     };
 
-    // Roof thickness (visual band the sprite is drawn over) and how tall the
-    // rooftop art is drawn relative to a platform's width. A house-wall body
-    // fills the rest down past the bottom of the canvas so platforms read as
-    // whole houses instead of roofs floating in mid-air.
+    // How tall the rooftop art is drawn relative to a platform's width — the
+    // roofs float free (no house body below); the clouds sell the "floating
+    // rooftops in the sky" read.
     const ROOF_H = 60;
 
     const spawnPlatform = () => {
@@ -125,7 +125,19 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
       const width = 70 + Math.random() * 90;
       const heightDelta = (Math.random() - 0.5) * 70;
       const topY = Math.min(190, Math.max(70, last.topY + heightDelta));
-      s.platforms.push({ x: last.x + last.width + gap, width, topY, wallColor: pickWallColor() });
+      s.platforms.push({ x: last.x + last.width + gap, width, topY });
+    };
+
+    // Pixel-puff cloud — a few overlapping circles, drawn drifting behind
+    // the rooftops (slower parallax) so the platforms read as floating.
+    const drawCloud = (c: Cloud) => {
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      const r = 11 * c.scale;
+      for (const [dx, dy, dr] of [[0, 0, 1], [1.1, 0.3, 0.8], [-1.1, 0.3, 0.8], [0.5, -0.5, 0.7], [-0.5, -0.4, 0.65]] as const) {
+        ctx.beginPath();
+        ctx.arc(c.x + dx * r, c.y + dy * r, dr * r, 0, Math.PI * 2);
+        ctx.fill();
+      }
     };
 
     const tick = (now: number) => {
@@ -144,6 +156,19 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
       for (const p of s.platforms) p.x -= s.speed * dt;
       s.platforms = s.platforms.filter(p => p.x + p.width > -20);
       while (s.platforms.length < 2 || s.platforms[s.platforms.length - 1].x < canvas.width + 40) spawnPlatform();
+
+      // Clouds drift slower than the platforms (parallax) and respawn off
+      // the right edge once they scroll past the left.
+      for (const c of s.clouds) c.x -= s.speed * 0.35 * dt;
+      s.clouds = s.clouds.filter(c => c.x > -40);
+      while (s.clouds.length < 4) {
+        const rightmost = s.clouds.reduce((m, c) => Math.max(m, c.x), canvas.width * 0.4);
+        s.clouds.push({
+          x: rightmost + 90 + Math.random() * 120,
+          y: 16 + Math.random() * 60,
+          scale: 0.6 + Math.random() * 0.6,
+        });
+      }
 
       // Landing check: falling (vy>=0), feet crossing a platform's topY,
       // horizontally over that platform.
@@ -170,18 +195,10 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
         if (x > 0) x -= bw;
         for (; x < canvas.width; x += bw) ctx.drawImage(bg, x, 0, bw, canvas.height);
       }
+      for (const c of s.clouds) drawCloud(c);
       const roof = roofImgRef.current;
-      for (const p of s.platforms) {
-        // House wall: fills from the underside of the roof down PAST the
-        // canvas bottom, so each platform reads as a whole house standing
-        // below (not a roof slice floating in mid-air).
-        const wallTop = p.topY + ROOF_H * 0.38 - 6;
-        ctx.fillStyle = p.wallColor;
-        ctx.fillRect(p.x, wallTop, p.width, canvas.height - wallTop + 20);
-        ctx.fillStyle = 'rgba(0,0,0,0.12)';
-        ctx.fillRect(p.x, wallTop, 4, canvas.height - wallTop + 20);
-        ctx.fillRect(p.x + p.width - 4, wallTop, 4, canvas.height - wallTop + 20);
-        if (roof?.complete) ctx.drawImage(roof, p.x, p.topY - ROOF_H * 0.62, p.width, ROOF_H);
+      if (roof?.complete) {
+        for (const p of s.platforms) ctx.drawImage(roof, p.x, p.topY - ROOF_H * 0.62, p.width, ROOF_H);
       }
       const pet = petImgRef.current;
       if (pet?.complete) {
