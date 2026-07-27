@@ -16,8 +16,13 @@ import rooftopImg from '../assets/roofrun/rooftop.png';
 const GRAVITY = 1900;
 const JUMP_VY = 660;
 const PLAYER_X = 30, PLAYER_S = 44;
+// House-wall body colors (picked once per platform) — fills the rest of the
+// house down past the bottom of the canvas so platforms read as whole
+// houses instead of roofs floating in mid-air.
+const WALL_COLORS = ['#e6c78a', '#d9b26a', '#e0bd7e'];
+const pickWallColor = () => WALL_COLORS[Math.floor(Math.random() * WALL_COLORS.length)];
 
-interface Platform { x: number; width: number; topY: number }
+interface Platform { x: number; width: number; topY: number; wallColor: string }
 
 export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, onExit }: {
   evolutionStage: string;
@@ -73,8 +78,8 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
     const s = g.current;
     const baseY = 150;
     s.platforms = [
-      { x: 0, width: 160, topY: baseY },
-      { x: 220, width: 120, topY: baseY - 10 },
+      { x: 0, width: 160, topY: baseY, wallColor: pickWallColor() },
+      { x: 220, width: 120, topY: baseY - 10, wallColor: pickWallColor() },
     ];
     s.y = baseY;
     s.vy = 0;
@@ -108,8 +113,10 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
     };
 
     // Roof thickness (visual band the sprite is drawn over) and how tall the
-    // rooftop art is drawn relative to a platform's width.
-    const ROOF_H = 46;
+    // rooftop art is drawn relative to a platform's width. A house-wall body
+    // fills the rest down past the bottom of the canvas so platforms read as
+    // whole houses instead of roofs floating in mid-air.
+    const ROOF_H = 60;
 
     const spawnPlatform = () => {
       const last = s.platforms[s.platforms.length - 1];
@@ -118,7 +125,7 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
       const width = 70 + Math.random() * 90;
       const heightDelta = (Math.random() - 0.5) * 70;
       const topY = Math.min(190, Math.max(70, last.topY + heightDelta));
-      s.platforms.push({ x: last.x + last.width + gap, width, topY });
+      s.platforms.push({ x: last.x + last.width + gap, width, topY, wallColor: pickWallColor() });
     };
 
     const tick = (now: number) => {
@@ -164,10 +171,17 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
         for (; x < canvas.width; x += bw) ctx.drawImage(bg, x, 0, bw, canvas.height);
       }
       const roof = roofImgRef.current;
-      if (roof?.complete) {
-        for (const p of s.platforms) {
-          ctx.drawImage(roof, p.x, p.topY - ROOF_H * 0.62, p.width, ROOF_H);
-        }
+      for (const p of s.platforms) {
+        // House wall: fills from the underside of the roof down PAST the
+        // canvas bottom, so each platform reads as a whole house standing
+        // below (not a roof slice floating in mid-air).
+        const wallTop = p.topY + ROOF_H * 0.38 - 6;
+        ctx.fillStyle = p.wallColor;
+        ctx.fillRect(p.x, wallTop, p.width, canvas.height - wallTop + 20);
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.fillRect(p.x, wallTop, 4, canvas.height - wallTop + 20);
+        ctx.fillRect(p.x + p.width - 4, wallTop, 4, canvas.height - wallTop + 20);
+        if (roof?.complete) ctx.drawImage(roof, p.x, p.topY - ROOF_H * 0.62, p.width, ROOF_H);
       }
       const pet = petImgRef.current;
       if (pet?.complete) {
