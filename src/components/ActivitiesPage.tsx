@@ -117,31 +117,39 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         <button
           key={c.key}
           onClick={() => setOpenGame(c.key)}
-          className={`w-full text-left rounded-2xl p-4 transition-all cursor-pointer active:scale-[0.99] ${
+          className={`w-full text-left rounded-2xl p-4 transition-all cursor-pointer active:scale-[0.97] hover:shadow-xl ${
             isGlitch
               ? 'bg-[#0a0a0a] border-2 border-[#00ffff]/30'
               : isWin98
                 ? 'win98-button bg-white'
-                : 'bg-white shadow-sm ring-1 ring-gray-200/50'
+                : 'bg-white ring-1 ring-gray-200/50'
           }`}
+          style={isGlitch || isWin98 ? undefined : {
+            boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06)',
+          }}
         >
           <div className="flex items-center gap-3">
-            <div style={{
-              width: 52, height: 52, borderRadius: 'var(--tk-radius-sm, 14px)', flexShrink: 0,
-              background: c.badgeBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
+            <div
+              className="hover:scale-105 transition-transform"
+              style={{
+                width: 54, height: 54, borderRadius: 'var(--tk-radius-sm, 14px)', flexShrink: 0,
+                background: c.badgeBg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                overflow: 'hidden', position: 'relative',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.18)',
+              }}
+            >
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg, rgba(255,255,255,0.18), transparent 55%)' }} />
               {c.sprite
-                ? <img src={c.sprite} alt="" style={{ width: 42, height: 42, objectFit: 'contain', imageRendering: 'pixelated' }} />
-                : <span style={{ fontSize: '1.7rem', lineHeight: 1 }}>{c.icon}</span>}
+                ? <img src={c.sprite} alt="" style={{ width: 44, height: 44, objectFit: 'contain', imageRendering: 'pixelated', position: 'relative' }} />
+                : <span style={{ fontSize: '1.75rem', lineHeight: 1, position: 'relative' }}>{c.icon}</span>}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}
-                      style={{ fontSize: '0.9rem', fontWeight: 700 }}>
+                      style={{ fontSize: '0.92rem', fontWeight: 700 }}>
                   {c.title}
                 </span>
-                <span className={`px-2 py-[2px] rounded-full ${isGlitch ? 'bg-[#00ffff]/10 text-[#5fbcbc]' : 'bg-gray-100 text-gray-500'}`}
+                <span className={`px-2 py-[2px] rounded-full font-semibold ${isGlitch ? 'bg-[#00ffff]/10 text-[#5fbcbc]' : 'bg-gray-100 text-gray-500'}`}
                       style={{ fontSize: '0.6rem' }}>
                   {c.pts}
                 </span>
@@ -151,7 +159,16 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
                 {c.desc}
               </p>
             </div>
-            <span className={isGlitch ? 'text-[#00ffff]' : 'text-gray-400'} style={{ fontSize: '1.1rem' }}>›</span>
+            <span
+              className={isGlitch ? 'text-[#00ffff]' : 'text-gray-400'}
+              style={{
+                fontSize: '1rem', flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: isGlitch ? 'transparent' : 'var(--tk-soft, #f3f4f6)',
+              }}
+            >
+              ›
+            </span>
           </div>
         </button>
       ))}

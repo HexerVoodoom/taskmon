@@ -2652,6 +2652,11 @@
     transition-duration: .1s;
   }
 
+  .duration-150 {
+    --tw-duration: .15s;
+    transition-duration: .15s;
+  }
+
   .duration-300 {
     --tw-duration: .3s;
     transition-duration: .3s;
@@ -2679,6 +2684,10 @@
 
   .fade-in {
     --tw-enter-opacity: 0;
+  }
+
+  .zoom-in-95 {
+    --tw-enter-scale: .95;
   }
 
   .slide-in-from-bottom-2 {

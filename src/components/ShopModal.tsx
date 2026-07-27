@@ -25,8 +25,8 @@ export function ShopModal({ language, points, onBuy, onClose }: {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
-      <div style={{
+    <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+      <div className="animate-in fade-in zoom-in-95 duration-150" style={{
         width: '100%', maxWidth: 420, maxHeight: '88vh', display: 'flex', flexDirection: 'column',
         background: 'var(--tk-card, #fff)', borderRadius: 'var(--tk-radius, 20px)',
         boxShadow: '0 12px 40px rgba(0,0,0,0.25)', overflow: 'hidden',

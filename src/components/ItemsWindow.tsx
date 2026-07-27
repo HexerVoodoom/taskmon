@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import type { Language } from '../utils/i18n';
 import { SPECIAL_ITEMS, HEART_HEAL } from '../utils/shop';
 
@@ -40,341 +40,102 @@ function getFoodName(emoji: string, lang: Language): string {
   return lang === 'pt-BR' ? entry.pt : entry.en;
 }
 
-function getFoodDesc(emoji: string, lang: Language): string {
-  const special = SPECIAL_ITEMS[emoji];
-  if (special) return lang === 'pt-BR' ? special.descPt : special.descEn;
-  const entry = FOOD_NAMES[emoji];
-  if (!entry) return '';
-  return lang === 'pt-BR' ? entry.descPt : entry.descEn;
-}
-
-interface Popover {
-  emoji: string;
-  x: number;
-  y: number;
-}
-
 export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US' }: ItemsWindowProps) {
-  const [pos, setPos] = useState({ x: 40, y: -320 });
-  const [dragging, setDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ mx: 0, my: 0, px: 0, py: 0 });
   const [justFed, setJustFed] = useState<string | null>(null);
-  const [popover, setPopover] = useState<Popover | null>(null);
-  const windowRef = useRef<HTMLDivElement>(null);
-
   const isPt = language === 'pt-BR';
   const items = Object.entries(foodInventory).filter(([, c]) => c > 0);
 
-  const onTitleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setDragging(true);
-    setDragStart({ mx: e.clientX, my: e.clientY, px: pos.x, py: pos.y });
-  };
-
-  useEffect(() => {
-    if (!dragging) return;
-    const onMove = (e: MouseEvent) => {
-      setPos({
-        x: dragStart.px + (e.clientX - dragStart.mx),
-        y: dragStart.py + (e.clientY - dragStart.my),
-      });
-    };
-    const onUp = () => setDragging(false);
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-  }, [dragging, dragStart]);
-
-  useEffect(() => {
-    if (!popover) return;
-    const handler = () => setPopover(null);
-    window.addEventListener('mousedown', handler);
-    return () => window.removeEventListener('mousedown', handler);
-  }, [popover]);
-
-  const handleFeed = (emoji: string) => {
+  const feed = (emoji: string) => {
     onFeed(emoji);
     setJustFed(emoji);
-    setPopover(null);
-    setTimeout(() => setJustFed(null), 600);
-  };
-
-  const handleItemClick = (emoji: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (popover?.emoji === emoji) {
-      setPopover(null);
-      return;
-    }
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setPopover({
-      emoji,
-      x: rect.left + rect.width / 2,
-      y: rect.top,
-    });
+    setTimeout(() => setJustFed(null), 500);
+    try { navigator.vibrate?.(20); } catch { /* noop */ }
   };
 
   return (
-    <>
+    <div
+      className="animate-in fade-in duration-150"
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}
+      onClick={onClose}
+    >
       <div
-        ref={windowRef}
-        className="fixed z-[200] select-none tk-keep-mono"
-        style={{ bottom: `calc(0px + ${-pos.y}px)`, left: pos.x, width: 260 }}
+        className="animate-in fade-in zoom-in-95 duration-150"
+        style={{
+          width: '100%', maxWidth: 420, maxHeight: '82vh', display: 'flex', flexDirection: 'column',
+          background: 'var(--tk-card, #fff)', borderRadius: 'var(--tk-radius, 20px)',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.25)', overflow: 'hidden',
+        }}
+        onClick={e => e.stopPropagation()}
       >
-        <div
-          className="flex flex-col"
-          style={{
-            border: '2px solid',
-            borderColor: '#ffffff #808080 #808080 #ffffff',
-            backgroundColor: '#c0c0c0',
-            boxShadow: '2px 2px 0 #000',
-          }}
-        >
-          {/* Title bar */}
-          <div
-            className="flex items-center gap-1 px-1 py-0.5 cursor-move"
-            style={{ background: 'linear-gradient(to right, #000080, #1084d0)', userSelect: 'none' }}
-            onMouseDown={onTitleMouseDown}
-          >
-            <span style={{ fontSize: '0.7rem' }}>📁</span>
-            <span className="text-white flex-1 text-xs font-bold" style={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
-              {isPt ? 'Itens' : 'Items'}
-            </span>
-            <div className="flex gap-0.5">
-              {['_', '□'].map(label => (
-                <button
-                  key={label}
-                  className="flex items-center justify-center text-black font-bold leading-none"
-                  style={{
-                    width: 16, height: 14, fontSize: '0.6rem', fontFamily: 'monospace',
-                    backgroundColor: '#c0c0c0',
-                    border: '1.5px solid',
-                    borderColor: '#ffffff #808080 #808080 #ffffff',
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center text-black font-bold leading-none hover:bg-red-600 hover:text-white"
-                style={{
-                  width: 16, height: 14, fontSize: '0.65rem', fontFamily: 'monospace',
-                  backgroundColor: '#c0c0c0',
-                  border: '1.5px solid',
-                  borderColor: '#ffffff #808080 #808080 #ffffff',
-                  transition: 'background 0.1s',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-          </div>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px',
+          background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff',
+        }}>
+          <span className="tk-display" style={{ fontWeight: 800, fontSize: '1.05rem' }}>
+            🧺 {isPt ? 'ITENS' : 'ITEMS'}
+          </span>
+          <button onClick={onClose}
+            style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: '50%', width: 26, height: 26, color: '#fff', fontWeight: 800, cursor: 'pointer', fontSize: '0.85rem', lineHeight: 1 }}>
+            ✕
+          </button>
+        </div>
 
-          {/* Menu bar */}
-          <div
-            className="flex gap-3 px-2 py-0.5 border-b"
-            style={{ borderColor: '#808080', fontSize: '0.7rem', fontFamily: 'monospace' }}
-          >
-            {[isPt ? 'Arquivo' : 'File', isPt ? 'Editar' : 'Edit', isPt ? 'Ver' : 'View'].map(m => (
-              <span key={m} className="cursor-default hover:bg-[#000080] hover:text-white px-1">{m}</span>
-            ))}
-          </div>
+        <p style={{ color: 'var(--tk-muted, #6b7280)', fontSize: '0.72rem', textAlign: 'center', padding: '10px 16px 0' }}>
+          {isPt ? 'Toque numa comida pra dar pro seu pet.' : 'Tap a food to feed your pet.'}
+        </p>
 
-          {/* Toolbar */}
-          <div
-            className="flex items-center gap-1 px-2 py-1 border-b"
-            style={{ borderColor: '#808080' }}
-          >
-            <div
-              className="flex items-center gap-0.5 px-1"
-              style={{
-                border: '1.5px solid', borderColor: '#808080 #ffffff #ffffff #808080',
-                backgroundColor: '#c0c0c0', fontSize: '0.65rem', fontFamily: 'monospace',
-              }}
-            >
-              <span>📁</span>
-              <span>{isPt ? 'Itens' : 'Items'}</span>
-            </div>
-          </div>
-
-          {/* Content area */}
-          <div
-            className="p-2 overflow-y-auto"
-            style={{
-              minHeight: 100, maxHeight: 180,
-              backgroundColor: '#ffffff',
-              border: '1.5px solid', borderColor: '#808080 #ffffff #ffffff #808080',
-            }}
-            onMouseDown={() => setPopover(null)}
-          >
-            {items.length === 0 ? (
-              <p className="text-gray-500 text-center py-4" style={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
-                {isPt ? '(sem itens)' : '(no items)'}
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-1 p-1">
-                {items.map(([emoji, count]) => {
-                  const isActive = popover?.emoji === emoji;
-                  const isFed = justFed === emoji;
-                  return (
-                    <button
-                      key={emoji}
-                      onMouseDown={e => { e.stopPropagation(); handleItemClick(emoji, e); }}
-                      className="flex flex-col items-center gap-0.5 p-1 rounded-none w-14 transition-none"
-                      style={{
-                        backgroundColor: isActive ? '#000080' : 'transparent',
-                        transform: isFed ? 'scale(0.92)' : 'none',
-                        cursor: 'default',
-                      }}
-                      title={getFoodName(emoji, language)}
+        {/* Item grid */}
+        <div style={{ overflowY: 'auto', padding: 16, flex: 1 }}>
+          {items.length === 0 ? (
+            <p style={{ color: 'var(--tk-muted, #9ca3af)', fontSize: '0.8rem', textAlign: 'center', padding: '32px 0' }}>
+              {isPt ? 'Sem itens ainda — compre comida na loja!' : 'No items yet — buy food in the shop!'}
+            </p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
+              {items.map(([emoji, count]) => {
+                const special = SPECIAL_ITEMS[emoji];
+                const name = getFoodName(emoji, language);
+                const isFed = justFed === emoji;
+                return (
+                  <button
+                    key={emoji}
+                    onClick={() => feed(emoji)}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                      padding: '14px 8px',
+                      borderRadius: 'var(--tk-radius-sm, 14px)',
+                      border: '1px solid var(--tk-border, #e5e7eb)',
+                      background: 'var(--tk-soft, #f9fafb)',
+                      cursor: 'pointer',
+                      transform: isFed ? 'scale(0.94)' : 'scale(1)',
+                      transition: 'transform 0.15s ease',
+                    }}
+                  >
+                    <span style={{ fontSize: '2rem', lineHeight: 1 }}>{emoji}</span>
+                    <span style={{ color: 'var(--tk-text, #111827)', fontWeight: 700, fontSize: '0.78rem', textAlign: 'center' }}>
+                      {name}
+                    </span>
+                    <span style={{ color: 'var(--tk-muted, #9ca3af)', fontSize: '0.65rem' }}>
+                      {special?.kind === 'glitchtama'
+                        ? `⭐+1 ${isPt ? 'dia perfeito' : 'perfect day'}`
+                        : special?.kind === 'heart'
+                          ? `❤️+${HEART_HEAL}`
+                          : `⚡+1 ${isPt ? 'energia' : 'energy'}`}
+                    </span>
+                    <span
+                      className="tk-keep-mono"
+                      style={{ fontSize: '0.68rem', fontWeight: 700, color: '#111', background: '#eafbe7', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999, padding: '1px 8px', marginTop: 2 }}
                     >
-                      <span style={{ fontSize: '1.5rem', imageRendering: 'pixelated', lineHeight: 1 }}>{emoji}</span>
-                      <span
-                        className="text-center leading-tight break-all"
-                        style={{
-                          fontFamily: 'monospace', fontSize: '0.6rem', lineHeight: '1.1',
-                          color: isActive ? '#fff' : '#000',
-                          maxWidth: 52,
-                        }}
-                      >
-                        {getFoodName(emoji, language)}
-                      </span>
-                      <span
-                        style={{
-                          fontFamily: 'monospace', fontSize: '0.6rem',
-                          color: isActive ? '#adf' : '#666',
-                        }}
-                      >
-                        ×{count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Status bar */}
-          <div
-            className="flex items-center px-2 py-0.5 gap-2"
-            style={{ borderTop: '1.5px solid #808080' }}
-          >
-            <div
-              className="flex-1"
-              style={{
-                border: '1.5px solid', borderColor: '#808080 #ffffff #ffffff #808080',
-                padding: '1px 4px', fontSize: '0.65rem', fontFamily: 'monospace',
-              }}
-            >
-              {items.length} {isPt ? 'objeto(s)' : 'object(s)'}
+                      ×{count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* Item detail popover */}
-      {popover && (() => {
-        const name = getFoodName(popover.emoji, language);
-        const desc = getFoodDesc(popover.emoji, language);
-        const special = SPECIAL_ITEMS[popover.emoji];
-
-        return (
-          <div
-            className="fixed z-[300]"
-            style={{
-              left: popover.x,
-              top: popover.y - 160,
-              transform: 'translateX(-50%)',
-              pointerEvents: 'auto',
-              width: 186,
-            }}
-            onMouseDown={e => e.stopPropagation()}
-          >
-            <div
-              style={{
-                border: '2px solid',
-                borderColor: '#ffffff #808080 #808080 #ffffff',
-                backgroundColor: '#c0c0c0',
-                boxShadow: '2px 2px 0 #000',
-              }}
-            >
-              {/* Icon + name + description */}
-              <div style={{ padding: '6px 8px', display: 'flex', gap: 8, alignItems: 'flex-start', borderBottom: '1px solid #808080' }}>
-                <span style={{ fontSize: '1.75rem', lineHeight: 1, flexShrink: 0 }}>{popover.emoji}</span>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontFamily: 'monospace', fontSize: '0.7rem', fontWeight: 'bold', color: '#000' }}>{name}</div>
-                  {desc && (
-                    <div style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#666', marginTop: 2 }}>{desc}</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Special item effect (heart = heal; glitchtama = perfect day).
-                  Comida comum: +1 energia. */}
-              <div style={{ padding: '4px 8px', display: 'flex', gap: 6, borderBottom: '1px solid #808080' }}>
-                {special?.kind === 'glitchtama' ? (
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#8b5cf6', fontWeight: 'bold' }}>
-                    ⭐+1 {isPt ? 'dia perfeito' : 'perfect day'}
-                  </span>
-                ) : special?.kind === 'heart' ? (
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#E94F4F', fontWeight: 'bold' }}>
-                    ❤️+{HEART_HEAL}
-                  </span>
-                ) : (
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#d97706', fontWeight: 'bold' }}>
-                    ⚡+1 {isPt ? 'energia' : 'energy'}
-                  </span>
-                )}
-              </div>
-
-              {/* Buttons */}
-              <div style={{ padding: '4px 6px', display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                <button
-                  onClick={() => setPopover(null)}
-                  style={{
-                    fontFamily: 'monospace', fontSize: '0.65rem',
-                    backgroundColor: '#c0c0c0', padding: '2px 8px',
-                    border: '1.5px solid',
-                    borderColor: '#ffffff #808080 #808080 #ffffff',
-                    cursor: 'default',
-                  }}
-                  onMouseDown={e => e.stopPropagation()}
-                >
-                  {isPt ? 'Cancelar' : 'Cancel'}
-                </button>
-                <button
-                  onClick={() => handleFeed(popover.emoji)}
-                  style={{
-                    fontFamily: 'monospace', fontSize: '0.65rem',
-                    backgroundColor: '#c0c0c0', padding: '2px 8px',
-                    border: '1.5px solid',
-                    borderColor: '#ffffff #808080 #808080 #ffffff',
-                    cursor: 'default',
-                    fontWeight: 'bold',
-                  }}
-                  onMouseDown={e => e.stopPropagation()}
-                >
-                  {isPt ? 'Usar' : 'Use'}
-                </button>
-              </div>
-            </div>
-
-            {/* Down-pointing caret */}
-            <div
-              style={{
-                width: 0, height: 0,
-                borderLeft: '6px solid transparent',
-                borderRight: '6px solid transparent',
-                borderTop: '6px solid #808080',
-                margin: '0 auto',
-              }}
-            />
-          </div>
-        );
-      })()}
-    </>
+    </div>
   );
 }

@@ -35,8 +35,8 @@ export function SettingsModal({
     <>
       {/* Overlay within app container */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-        <div className={`w-full max-w-md max-h-[80vh] overflow-y-auto rounded-lg shadow-2xl ${
-          isGlitch 
+        <div className={`w-full max-w-md max-h-[80vh] overflow-y-auto rounded-lg shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${
+          isGlitch
             ? 'glitch-container' 
             : isWin98 
               ? 'win98-container' 

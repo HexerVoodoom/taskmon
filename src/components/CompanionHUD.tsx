@@ -859,9 +859,9 @@ export const CompanionHUD = memo(function CompanionHUD({
           )}
 
           {/* Desktop icons — top-right of pet area */}
-          <div style={{ position: 'absolute', top: 0, right: 0, zIndex: 30, display: 'flex', gap: '2px' }}>
+          <div style={{ position: 'absolute', top: 6, right: 6, zIndex: 30, display: 'flex', gap: '4px' }}>
             {([
-              !isEarlyStage && { key: 'items', icon: '📁', en: 'Items', pt: 'Itens', onClick: onOpenItems ?? (() => {}), disabled: false, badge: hasNewItems },
+              !isEarlyStage && { key: 'items', icon: '🧺', en: 'Items', pt: 'Itens', onClick: onOpenItems ?? (() => {}), disabled: false, badge: hasNewItems },
               !isEarlyStage && { key: 'bath', icon: '🚿', en: 'Bath', pt: 'Banho', onClick: handleShowerClick, disabled: showerCooldown, badge: false },
               { key: 'sleep', icon: isSleeping ? '☀️' : '💤', en: isSleeping ? 'Wake' : 'Sleep', pt: isSleeping ? 'Acordar' : 'Dormir', onClick: onSleep ?? (() => {}), disabled: false, badge: false },
             ].filter(Boolean) as { key: string; icon: string; en: string; pt: string; onClick: () => void; disabled: boolean; badge: boolean | undefined; sub?: string }[]).map(a => (
@@ -870,37 +870,41 @@ export const CompanionHUD = memo(function CompanionHUD({
                 onClick={a.key === 'bath' ? a.onClick : (a.disabled ? undefined : a.onClick)}
                 disabled={a.key !== 'bath' && a.disabled}
                 title={language === 'pt-BR' ? a.pt : a.en}
+                className="active:scale-95 transition-transform duration-100"
                 style={{
                   position: 'relative',
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '2px',
-                  padding: '4px 8px 5px',
+                  gap: '1px',
+                  padding: '5px 9px 6px',
                   cursor: a.disabled ? 'default' : 'pointer',
-                  opacity: a.disabled ? 0.4 : 1,
-                  background: 'transparent',
-                  border: 'none',
+                  opacity: a.disabled ? 0.45 : 1,
+                  background: 'rgba(15,15,25,0.4)',
+                  backdropFilter: 'blur(3px)',
+                  border: '1px solid rgba(255,255,255,0.18)',
+                  borderRadius: 12,
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
                   userSelect: 'none',
                 }}
               >
                 {a.badge && (
                   <span style={{
                     position: 'absolute',
-                    top: 0, right: 2,
+                    top: -2, right: 0,
                     width: 8, height: 8,
                     borderRadius: '50%',
                     backgroundColor: '#ef4444',
-                    border: '1px solid #000',
+                    border: '1px solid #fff',
                     zIndex: 10,
                   }} />
                 )}
-                <span style={{ fontSize: '1.35rem', lineHeight: 1 }}>{a.icon}</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '0.62rem', color: '#fff', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{a.icon}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
                   {language === 'pt-BR' ? a.pt : a.en}
                 </span>
                 {a.sub && (
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.62rem', color: '#ffd27f', textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000', whiteSpace: 'nowrap', lineHeight: 1 }}>
+                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#ffd27f', whiteSpace: 'nowrap', lineHeight: 1 }}>
                     {a.sub}
                   </span>
                 )}

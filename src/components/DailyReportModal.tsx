@@ -52,8 +52,8 @@ export function DailyReportModal({ report, onClose, language, theme = 'default' 
       : { bg: '#ffffff', border: '1px solid #e5e7eb', text: '#111827', sub: '#6b7280', headBg: '#f9fafb' };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ width: '100%', maxWidth: 320, background: palette.bg, border: palette.border, borderRadius: isWin98 ? 0 : 14, boxShadow: '0 12px 32px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div className="animate-in fade-in zoom-in-95 duration-150" style={{ width: '100%', maxWidth: 320, background: palette.bg, border: palette.border, borderRadius: isWin98 ? 0 : 14, boxShadow: '0 12px 32px rgba(0,0,0,0.4)', overflow: 'hidden' }}>
         {/* Header with close button */}
         <div style={{ position: 'relative', padding: '18px 44px 14px 20px', background: palette.headBg, textAlign: 'center' }}>
           <span style={{ ...mono, fontSize: '1rem', fontWeight: 700, color: isWin98 ? '#ffffff' : palette.text }}>

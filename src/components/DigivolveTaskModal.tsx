@@ -59,7 +59,7 @@ export function DigivolveTaskModal({
 
       {/* Modal */}
       <div
-        className={`relative w-full max-w-md rounded-2xl p-6 shadow-2xl ${
+        className={`relative w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-150 ${
           isGlitch
             ? 'bg-[#0a0a0a] border-2 border-[#00ffff]'
             : isWin98

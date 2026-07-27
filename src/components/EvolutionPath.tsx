@@ -84,8 +84,8 @@ export function EvolutionPath({
     <div className="max-w-md mx-auto">
       {/* Confirmação de regressão */}
       {confirmDegenerate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-2xl p-6 max-w-sm w-full shadow-xl" style={{ backgroundColor: 'var(--tk-card, #fff)' }}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="rounded-2xl p-6 max-w-sm w-full shadow-xl animate-in fade-in zoom-in-95 duration-150" style={{ backgroundColor: 'var(--tk-card, #fff)' }}>
             <h3 className="text-lg mb-4 font-bold" style={{ color: 'var(--tk-text, #111)' }}>
               {confirmDegenerate.isSecondConfirm
                 ? (isPt ? '⚠️ ÚLTIMO AVISO!' : '⚠️ FINAL WARNING!')

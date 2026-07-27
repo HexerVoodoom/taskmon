@@ -15,8 +15,8 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
   const h3Class = `font-bold mb-2 ${isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-[#000080]' : 'text-[#101828]'}`;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className={`w-full max-w-2xl rounded-2xl p-6 max-h-[85vh] overflow-y-auto ${
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className={`w-full max-w-2xl rounded-2xl p-6 max-h-[85vh] overflow-y-auto animate-in fade-in zoom-in-95 duration-150 ${
         isGlitch
           ? 'glitch-activity-card'
           : isWin98
