@@ -22,7 +22,7 @@ npm run build        # vite build + PNG→WebP + wrangler pages functions build 
   `wrangler pages functions build`. NÃO recriar `public/_redirects` (conflita com
   `not_found_handling` e causa "Infinite loop detected").
 - Ao mudar assets estáticos/HTML de forma incompatível, **bump `CACHE_VERSION`**
-  em `public/sw.js` (v16 atual).
+  em `public/sw.js` (v18 atual).
 - KV/secrets (`DIGIAPP_SAVES` etc.) são configurados no dashboard do projeto.
 
 ## Os 3 perfis (hub de casinhas)
