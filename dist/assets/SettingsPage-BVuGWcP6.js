@@ -1,4 +1,4 @@
-import{c as _,r,S as l,j as e,u as K,d as J,e as Q}from"./index-BZnXa6UA.js";import{A as X}from"./AISettingsModal-7wG5fqlV.js";import"./vendor-DDxydHEc.js";/**
+import{c as _,r,S as l,j as e,u as K,d as J,e as Q}from"./index-CrdkFZUm.js";import{A as X}from"./AISettingsModal-DoOBvksw.js";import"./vendor-DDxydHEc.js";/**
  * @license lucide-react v0.487.0 - ISC
  *
  * This source code is licensed under the ISC license.

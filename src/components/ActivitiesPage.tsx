@@ -80,7 +80,7 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         <div className="flex items-center gap-2">
           <span
             className="px-3 py-1 rounded-full tk-keep-mono"
-            style={{ ...bitsStyle, fontSize: '0.85rem', background: '#0a1408', border: '1px solid rgba(57,255,20,0.4)' }}
+            style={{ ...bitsStyle, fontSize: '0.85rem', color: '#fff', background: '#0a1408', border: '1px solid rgba(57,255,20,0.4)' }}
             title={isPt ? 'Bits — moeda dos minijogos (gaste na loja!)' : 'Bits — minigame currency (spend in the shop!)'}
           >
             {totalPoints} Bits
