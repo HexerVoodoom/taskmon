@@ -40,7 +40,10 @@ export function ShopModal({ language, points, onBuy, onClose }: {
             🍽️ {isPt ? 'LOJA' : 'SHOP'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span className="tk-keep-mono" style={{ ...bitsStyle, fontSize: '0.9rem', color: '#fff' }}>
+            <span
+              className="tk-keep-mono"
+              style={{ ...bitsStyle, fontSize: '0.9rem', color: '#111', background: '#eafbe7', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999, padding: '2px 10px' }}
+            >
               {points} Bits
             </span>
             <button onClick={onClose}
@@ -84,7 +87,7 @@ export function ShopModal({ language, points, onBuy, onClose }: {
                 </span>
                 <span
                   className="tk-keep-mono"
-                  style={{ ...bitsStyle, fontSize: '0.75rem', color: affordable ? 'var(--tk-text, #111827)' : 'var(--tk-muted, #9ca3af)' }}
+                  style={{ ...bitsStyle, fontSize: '0.72rem', color: '#111', background: '#eafbe7', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999, padding: '1px 8px' }}
                 >
                   {item.price} Bits
                 </span>
