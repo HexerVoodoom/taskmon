@@ -785,6 +785,13 @@ export const CompanionHUD = memo(function CompanionHUD({
                       🫧
                     </span>
                   ))}
+                  {/* Soap bar scrubbing back and forth over the pet */}
+                  <span
+                    className="absolute text-lg"
+                    style={{ left: '50%', top: '46%', animation: 'soap-scrub 0.4s ease-in-out infinite' }}
+                  >
+                    🧼
+                  </span>
                 </div>
               )}
             </div>
