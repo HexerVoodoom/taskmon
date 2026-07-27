@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getExpressionSprite, LEFT_FACING_STAGES } from '../utils/sprites';
+import { getExpressionSprite } from '../utils/sprites';
 import { playDegenerate, playTaskComplete } from '../utils/sounds';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import type { Language } from '../utils/i18n';
@@ -31,6 +31,7 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scoreElRef = useRef<HTMLSpanElement>(null);
   const petImgRef = useRef<HTMLImageElement | null>(null);
+  const petImg2Ref = useRef<HTMLImageElement | null>(null);
   const roofImgRef = useRef<HTMLImageElement | null>(null);
   const bgImgRef = useRef<HTMLImageElement | null>(null);
   const [phase, setPhase] = useState<'ready' | 'playing' | 'over'>('ready');
@@ -39,8 +40,6 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
   const [finalScore, setFinalScore] = useState(0);
   const [earned, setEarned] = useState(0);
   const [best, setBest] = useState(() => Number(localStorage.getItem(STORAGE_KEYS.ROOF_BEST)) || 0);
-
-  const petNeedsFlip = LEFT_FACING_STAGES.includes(evolutionStage.toLowerCase());
 
   // Physics/game state lives in a ref — the loop never re-renders React.
   const g = useRef({
@@ -52,6 +51,9 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
     const pet = new Image();
     pet.src = getExpressionSprite(evolutionStage, 'walk');
     petImgRef.current = pet;
+    const pet2 = new Image();
+    pet2.src = getExpressionSprite(evolutionStage, 'walk2');
+    petImg2Ref.current = pet2;
     const roof = new Image();
     roof.src = rooftopImg;
     roofImgRef.current = roof;
@@ -200,11 +202,12 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
       if (roof?.complete) {
         for (const p of s.platforms) ctx.drawImage(roof, p.x, p.topY - ROOF_H * 0.62, p.width, ROOF_H);
       }
-      const pet = petImgRef.current;
-      if (pet?.complete) {
-        if (petNeedsFlip) drawFlipped(pet, PLAYER_X, s.y - PLAYER_S, PLAYER_S, PLAYER_S);
-        else ctx.drawImage(pet, PLAYER_X, s.y - PLAYER_S, PLAYER_S, PLAYER_S);
-      }
+      // Alternate between the two walk-cycle frames while grounded (frozen
+      // mid-jump, like a classic runner). The art faces left; flip it so the
+      // pet faces right.
+      const useFrame2 = s.grounded && Math.floor(s.t * 8) % 2 === 1;
+      const pet = (useFrame2 ? petImg2Ref.current : petImgRef.current) ?? petImgRef.current;
+      if (pet?.complete) drawFlipped(pet, PLAYER_X, s.y - PLAYER_S, PLAYER_S, PLAYER_S);
       if (scoreElRef.current) scoreElRef.current.textContent = String(Math.floor(s.score));
 
       if (!dead) { raf = requestAnimationFrame(tick); return; }
@@ -230,7 +233,7 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
     };
     window.addEventListener('keydown', onKey);
     return () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); };
-  }, [phase, jump, onEarnPoints, petNeedsFlip]);
+  }, [phase, jump, onEarnPoints]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--tk-bg)', display: 'flex', flexDirection: 'column', color: 'var(--tk-text)' }}>

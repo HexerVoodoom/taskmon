@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getSpriteForStage, getExpressionSprite, LEFT_FACING_STAGES } from '../utils/sprites';
+import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
 import { playDegenerate, playTaskComplete } from '../utils/sounds';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import type { Language } from '../utils/i18n';
@@ -35,6 +35,7 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const scoreElRef = useRef<HTMLSpanElement>(null);
   const petImgRef = useRef<HTMLImageElement | null>(null);
+  const petImg2Ref = useRef<HTMLImageElement | null>(null);
   const tierImgsRef = useRef<HTMLImageElement[]>([]);
   const [phase, setPhase] = useState<'ready' | 'playing' | 'over'>('ready');
   const phaseRef = useRef(phase);
@@ -44,10 +45,6 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
   const [best, setBest] = useState(() => Number(localStorage.getItem(STORAGE_KEYS.DINO_BEST)) || 0);
   const mono = {}; // theme font applies (was forced monospace)
 
-  // The pet must FACE RIGHT while running; sprites in LEFT_FACING_STAGES are
-  // drawn facing left by default (Tapirmon & friends), so mirror those.
-  const petNeedsFlip = LEFT_FACING_STAGES.includes(evolutionStage.toLowerCase());
-
   // Physics/game state lives in a ref — the loop never re-renders React.
   const g = useRef({ h: 0, vy: 0, obstacles: [] as { x: number; size: number; tier: number }[], speed: 0, t: 0, spawnIn: 0, score: 0 });
 
@@ -55,6 +52,9 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
     const pet = new Image();
     pet.src = getExpressionSprite(evolutionStage, 'walk');
     petImgRef.current = pet;
+    const pet2 = new Image();
+    pet2.src = getExpressionSprite(evolutionStage, 'walk2');
+    petImg2Ref.current = pet2;
     tierImgsRef.current = OBSTACLE_TIERS.map(t => {
       const img = new Image();
       img.src = getSpriteForStage(t.stage);
@@ -148,11 +148,12 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
         const img = tierImgsRef.current[o.tier];
         if (img?.complete) drawFlipped(img, o.x, GROUND - o.size, o.size, o.size);
       }
-      const pet = petImgRef.current;
-      if (pet?.complete) {
-        if (petNeedsFlip) drawFlipped(pet, DINO_X, GROUND - DINO_S - s.h, DINO_S, DINO_S);
-        else ctx.drawImage(pet, DINO_X, GROUND - DINO_S - s.h, DINO_S, DINO_S);
-      }
+      // Alternate between the two walk-cycle frames while grounded (frozen
+      // mid-air, like a classic runner). The art faces left; flip it so the
+      // pet faces right (the direction it's running).
+      const useFrame2 = s.h === 0 && Math.floor(s.t * 8) % 2 === 1;
+      const pet = (useFrame2 ? petImg2Ref.current : petImgRef.current) ?? petImgRef.current;
+      if (pet?.complete) drawFlipped(pet, DINO_X, GROUND - DINO_S - s.h, DINO_S, DINO_S);
       if (scoreElRef.current) scoreElRef.current.textContent = String(Math.floor(s.score));
 
       if (!dead) { raf = requestAnimationFrame(tick); return; }
@@ -179,7 +180,7 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
     };
     window.addEventListener('keydown', onKey);
     return () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); };
-  }, [phase, jump, onEarnPoints, onScore, petNeedsFlip]);
+  }, [phase, jump, onEarnPoints, onScore]);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'var(--tk-bg)', display: 'flex', flexDirection: 'column', color: 'var(--tk-text)' }}>

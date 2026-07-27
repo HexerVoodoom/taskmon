@@ -85,6 +85,15 @@ import kiwi3Walk from '../assets/pets/kiwi-3-walk.png';
 import kiwi3Happy from '../assets/pets/kiwi-3-happy.png';
 import kiwi3Idle2 from '../assets/pets/kiwi-3-idle2.png';
 import kiwi3Sleepy from '../assets/pets/kiwi-3-sleepy.png';
+import vix1Walk2 from '../assets/pets/vix-1-walk2.png';
+import vix2Walk2 from '../assets/pets/vix-2-walk2.png';
+import vix3Walk2 from '../assets/pets/vix-3-walk2.png';
+import momo1Walk2 from '../assets/pets/momo-1-walk2.png';
+import momo2Walk2 from '../assets/pets/momo-2-walk2.png';
+import momo3Walk2 from '../assets/pets/momo-3-walk2.png';
+import kiwi1Walk2 from '../assets/pets/kiwi-1-walk2.png';
+import kiwi2Walk2 from '../assets/pets/kiwi-2-walk2.png';
+import kiwi3Walk2 from '../assets/pets/kiwi-3-walk2.png';
 
 // Monstros criativos da masmorra (além das sombras dos 3 pets): sorteados
 // junto com shadow-<pet>-<fase> em utils/dungeon.ts (ver dungeonEnemies.ts).
@@ -113,21 +122,21 @@ const PNG_SPRITES: Record<string, string> = {
   'enemy-golem': enemyGolem, 'enemy-demon': enemyDemon, 'enemy-wraith': enemyWraith,
 };
 
-export type PetExpression = 'eat' | 'walk' | 'happy' | 'idle2' | 'sleepy';
+export type PetExpression = 'eat' | 'walk' | 'walk2' | 'happy' | 'idle2' | 'sleepy';
 
 // Chave = forma completa ('vix-1', 'momo-2', ...) — cada fase tem sua
 // própria pose (a arte muda bastante entre fases, uma pose só por espécie
 // não bateria direito com fase 2/3).
 const STAGE_EXPRESSIONS: Record<string, Record<PetExpression, string>> = {
-  'vix-1': { eat: vix1Eat, walk: vix1Walk, happy: vix1Happy, idle2: vix1Idle2, sleepy: vix1Sleepy },
-  'vix-2': { eat: vix2Eat, walk: vix2Walk, happy: vix2Happy, idle2: vix2Idle2, sleepy: vix2Sleepy },
-  'vix-3': { eat: vix3Eat, walk: vix3Walk, happy: vix3Happy, idle2: vix3Idle2, sleepy: vix3Sleepy },
-  'momo-1': { eat: momo1Eat, walk: momo1Walk, happy: momo1Happy, idle2: momo1Idle2, sleepy: momo1Sleepy },
-  'momo-2': { eat: momo2Eat, walk: momo2Walk, happy: momo2Happy, idle2: momo2Idle2, sleepy: momo2Sleepy },
-  'momo-3': { eat: momo3Eat, walk: momo3Walk, happy: momo3Happy, idle2: momo3Idle2, sleepy: momo3Sleepy },
-  'kiwi-1': { eat: kiwi1Eat, walk: kiwi1Walk, happy: kiwi1Happy, idle2: kiwi1Idle2, sleepy: kiwi1Sleepy },
-  'kiwi-2': { eat: kiwi2Eat, walk: kiwi2Walk, happy: kiwi2Happy, idle2: kiwi2Idle2, sleepy: kiwi2Sleepy },
-  'kiwi-3': { eat: kiwi3Eat, walk: kiwi3Walk, happy: kiwi3Happy, idle2: kiwi3Idle2, sleepy: kiwi3Sleepy },
+  'vix-1': { eat: vix1Eat, walk: vix1Walk, walk2: vix1Walk2, happy: vix1Happy, idle2: vix1Idle2, sleepy: vix1Sleepy },
+  'vix-2': { eat: vix2Eat, walk: vix2Walk, walk2: vix2Walk2, happy: vix2Happy, idle2: vix2Idle2, sleepy: vix2Sleepy },
+  'vix-3': { eat: vix3Eat, walk: vix3Walk, walk2: vix3Walk2, happy: vix3Happy, idle2: vix3Idle2, sleepy: vix3Sleepy },
+  'momo-1': { eat: momo1Eat, walk: momo1Walk, walk2: momo1Walk2, happy: momo1Happy, idle2: momo1Idle2, sleepy: momo1Sleepy },
+  'momo-2': { eat: momo2Eat, walk: momo2Walk, walk2: momo2Walk2, happy: momo2Happy, idle2: momo2Idle2, sleepy: momo2Sleepy },
+  'momo-3': { eat: momo3Eat, walk: momo3Walk, walk2: momo3Walk2, happy: momo3Happy, idle2: momo3Idle2, sleepy: momo3Sleepy },
+  'kiwi-1': { eat: kiwi1Eat, walk: kiwi1Walk, walk2: kiwi1Walk2, happy: kiwi1Happy, idle2: kiwi1Idle2, sleepy: kiwi1Sleepy },
+  'kiwi-2': { eat: kiwi2Eat, walk: kiwi2Walk, walk2: kiwi2Walk2, happy: kiwi2Happy, idle2: kiwi2Idle2, sleepy: kiwi2Sleepy },
+  'kiwi-3': { eat: kiwi3Eat, walk: kiwi3Walk, walk2: kiwi3Walk2, happy: kiwi3Happy, idle2: kiwi3Idle2, sleepy: kiwi3Sleepy },
 };
 
 /** Pose extra de uma forma (comer/andar/feliz/idle alternativo/sonolento).
