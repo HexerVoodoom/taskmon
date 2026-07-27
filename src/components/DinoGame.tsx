@@ -10,7 +10,7 @@ import type { Language } from '../utils/i18n';
  * difficulty ramps: Slime → Mummy → Golem → Wraith (tier by elapsed time;
  * speed and spawn rate also scale continuously). Jump via the big button
  * BELOW the game box (thumb never covers the action), the box itself, or
- * SPACE. Scoring: 🪙 Bits earned = floor(distance score / 100) per run.
+ * SPACE. Scoring: 🪙 Bits earned = floor(distance score / 50) per run.
  */
 
 // Obstacle tiers: unlocked as the run progresses (start time in seconds).
@@ -160,7 +160,7 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
 
       // Game over
       const score = Math.floor(s.score);
-      const pts = Math.floor(score / 100);
+      const pts = Math.floor(score / 50);
       setFinalScore(score);
       setEarned(pts);
       if (pts > 0) { onEarnPoints(pts); playTaskComplete(); } else { playDegenerate(); }

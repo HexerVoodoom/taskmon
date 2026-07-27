@@ -5,11 +5,11 @@ import type { Language } from '../utils/i18n';
 
 /**
  * Rock-Paper-Scissors vs the pet. First to 3 round-wins takes the match.
- * Scoring: 🪙 +5 Bits on a match victory (luck-based game → flat, modest reward).
+ * Scoring: 🪙 +10 Bits on a match victory (luck-based game → flat, modest reward).
  */
 type Hand = 0 | 1 | 2; // rock, paper, scissors
 const HANDS = ['✊', '✋', '✌️'];
-const MATCH_POINTS = 5;
+const MATCH_POINTS = 10;
 const WINS_NEEDED = 3;
 
 export function RPSGame({ evolutionStage, eggType, language, onEarnPoints, onExit }: {

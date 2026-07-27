@@ -4873,6 +4873,23 @@ html {
   80%      { transform: rotate(4deg); }
 }
 
+@keyframes soap-foam-pulse {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
+}
+
+@keyframes soap-bubble-a {
+  0%   { opacity: 0; transform: translate(0, 6px) scale(0.5); }
+  15%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(10px, -34px) scale(1.15); }
+}
+
+@keyframes soap-bubble-b {
+  0%   { opacity: 0; transform: translate(0, 6px) scale(0.5); }
+  15%  { opacity: 0.9; }
+  100% { opacity: 0; transform: translate(-10px, -34px) scale(1.15); }
+}
+
 /* Rub-to-heal: pet wiggles gently while being rubbed */
 @keyframes pet-rub {
   0%, 100% { transform: rotate(0deg) scaleY(1); }

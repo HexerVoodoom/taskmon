@@ -12,7 +12,7 @@ import type { Language } from '../utils/i18n';
 /**
  * "Atividades" page — interactive minigames hub.
  * All games award 🪙 Bits (GameState.gamePoints), spent in the shop on food.
- * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/100) · RPS +5/match.
+ * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/50) · RPS +10/match.
  */
 export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onEarnPoints, onShopBuy }: {
   evolutionStage: string;
@@ -50,21 +50,21 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       badgeBg: 'linear-gradient(160deg, #ea580c, #7c2d12)',
       title: isPt ? 'Corrida do Dino' : 'Dino Runner',
       desc: isPt ? 'Pule os monstros e corra o máximo que conseguir.' : 'Jump the monsters and run as far as you can.',
-      pts: isPt ? '1 Bit a cada 100 de score' : '1 Bit per 100 score',
+      pts: isPt ? '1 Bit a cada 50 de score' : '1 Bit per 50 score',
     },
     {
       key: 'roofrun', icon: '🏠', sprite: rooftopIcon,
       badgeBg: 'linear-gradient(160deg, #db7a3f, #7c3a12)',
       title: isPt ? 'Corrida nos Telhados' : 'Roof Run',
       desc: isPt ? 'Pule de telhado em telhado sem cair no vão.' : 'Jump from rooftop to rooftop without falling.',
-      pts: isPt ? '1 Bit a cada 100 de score' : '1 Bit per 100 score',
+      pts: isPt ? '1 Bit a cada 50 de score' : '1 Bit per 50 score',
     },
     {
       key: 'rps', icon: '✊',
       badgeBg: 'linear-gradient(160deg, #0369a1, #0c4a6e)',
       title: isPt ? 'Pedra, Papel e Tesoura' : 'Rock, Paper, Scissors',
       desc: isPt ? 'Clássico duelo contra o seu pet. Melhor de 5.' : 'The classic duel against your pet. First to 3.',
-      pts: isPt ? '5 Bits por vitória' : '5 Bits per match win',
+      pts: isPt ? '10 Bits por vitória' : '10 Bits per match win',
     },
   ];
 

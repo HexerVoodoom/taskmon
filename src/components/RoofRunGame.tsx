@@ -10,7 +10,7 @@ import rooftopImg from '../assets/roofrun/rooftop.png';
  * Roof Run — endless runner starring the pet, Dino Runner's cousin: instead
  * of jumping OVER obstacles on flat ground, the pet jumps ACROSS gaps
  * between rooftops at varying heights. Missing a jump = falling through the
- * gap. Same jump physics/economy as Dino Runner: 🪙 Bits = floor(score/100).
+ * gap. Same jump physics/economy as Dino Runner: 🪙 Bits = floor(score/50).
  */
 
 const GRAVITY = 1900;
@@ -214,7 +214,7 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
 
       // Game over
       const score = Math.floor(s.score);
-      const pts = Math.floor(score / 100);
+      const pts = Math.floor(score / 50);
       setFinalScore(score);
       setEarned(pts);
       if (pts > 0) { onEarnPoints(pts); playTaskComplete(); } else { playDegenerate(); }

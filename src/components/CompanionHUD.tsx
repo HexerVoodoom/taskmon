@@ -739,7 +739,7 @@ export const CompanionHUD = memo(function CompanionHUD({
                 </div>
               )}
 
-              {/* Shower water droplets */}
+              {/* Shower water droplets + soap foam */}
               {isShowering && (
                 <div className="absolute inset-0 pointer-events-none z-30">
                   {[0, 1, 2, 3, 4, 5].map(i => (
@@ -761,6 +761,30 @@ export const CompanionHUD = memo(function CompanionHUD({
                   >
                     🚿
                   </span>
+                  {/* Soap suds covering the pet */}
+                  <div
+                    className="absolute"
+                    style={{
+                      inset: '12%',
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(255,255,255,0.85) 0%, rgba(214,238,255,0.55) 60%, rgba(214,238,255,0) 100%)',
+                      animation: 'soap-foam-pulse 0.8s ease-in-out infinite',
+                    }}
+                  />
+                  {/* Soap bubbles drifting up off the foam */}
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <span
+                      key={`bubble-${i}`}
+                      className="absolute text-xs"
+                      style={{
+                        left: `${6 + i * 20}%`,
+                        top: '32%',
+                        animation: `${i % 2 === 0 ? 'soap-bubble-a' : 'soap-bubble-b'} 1.1s ease-out ${i * 0.15}s infinite`,
+                      }}
+                    >
+                      🫧
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
