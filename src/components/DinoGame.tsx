@@ -91,7 +91,8 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
     let last = performance.now();
     let dead = false;
 
-    // Draw an image horizontally mirrored (enemies face left; pet faces right)
+    // Draw an image horizontally mirrored (obstacle art faces right; mirror
+    // so they face the player, i.e. left, since they approach from the right)
     const drawFlipped = (img: HTMLImageElement, x: number, y: number, w: number, h: number) => {
       ctx.save();
       ctx.translate(x + w, y);
@@ -149,11 +150,11 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
         if (img?.complete) drawFlipped(img, o.x, GROUND - o.size, o.size, o.size);
       }
       // Alternate between the two walk-cycle frames while grounded (frozen
-      // mid-air, like a classic runner). The art faces left; flip it so the
-      // pet faces right (the direction it's running).
+      // mid-air, like a classic runner). The pet art already faces right
+      // (the direction it's running) — draw it as-is, no mirroring.
       const useFrame2 = s.h === 0 && Math.floor(s.t * 8) % 2 === 1;
       const pet = (useFrame2 ? petImg2Ref.current : petImgRef.current) ?? petImgRef.current;
-      if (pet?.complete) drawFlipped(pet, DINO_X, GROUND - DINO_S - s.h, DINO_S, DINO_S);
+      if (pet?.complete) ctx.drawImage(pet, DINO_X, GROUND - DINO_S - s.h, DINO_S, DINO_S);
       if (scoreElRef.current) scoreElRef.current.textContent = String(Math.floor(s.score));
 
       if (!dead) { raf = requestAnimationFrame(tick); return; }
