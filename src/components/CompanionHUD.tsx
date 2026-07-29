@@ -797,10 +797,10 @@ export const CompanionHUD = memo(function CompanionHUD({
             </div>
           </div>
 
-          {/* Sleeping overlay */}
+          {/* Sleeping overlay — dims the box like the lights got turned off */}
           {isSleeping && (
             <div className="absolute inset-0 z-20 pointer-events-none">
-              <div className="absolute inset-0 bg-black/40" />
+              <div className="absolute inset-0" style={{ background: 'rgba(4,6,16,0.86)' }} />
               {[0, 1, 2].map(i => (
                 <span
                   key={i}
@@ -880,9 +880,9 @@ export const CompanionHUD = memo(function CompanionHUD({
                   padding: '5px 9px 6px',
                   cursor: a.disabled ? 'default' : 'pointer',
                   opacity: a.disabled ? 0.45 : 1,
-                  background: 'rgba(15,15,25,0.4)',
+                  background: isSleeping ? 'rgba(245,245,250,0.92)' : 'rgba(15,15,25,0.4)',
                   backdropFilter: 'blur(3px)',
-                  border: '1px solid rgba(255,255,255,0.18)',
+                  border: isSleeping ? '1px solid rgba(0,0,0,0.15)' : '1px solid rgba(255,255,255,0.18)',
                   borderRadius: 12,
                   boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
                   userSelect: 'none',
@@ -899,8 +899,8 @@ export const CompanionHUD = memo(function CompanionHUD({
                     zIndex: 10,
                   }} />
                 )}
-                <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>{a.icon}</span>
-                <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', fontWeight: 700, color: '#fff', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '1.25rem', lineHeight: 1, filter: isSleeping ? 'invert(1) hue-rotate(180deg)' : undefined }}>{a.icon}</span>
+                <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', fontWeight: 700, color: isSleeping ? '#111' : '#fff', whiteSpace: 'nowrap' }}>
                   {language === 'pt-BR' ? a.pt : a.en}
                 </span>
                 {a.sub && (

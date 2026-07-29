@@ -155,9 +155,17 @@ export function BubbleGame({ evolutionStage, eggType, language, onEarnPoints, on
         style={{
           flex: 1, margin: '0 16px', borderRadius: 12, border: '1px solid var(--tk-border)',
           position: 'relative', overflow: 'hidden',
-          background: 'linear-gradient(180deg, var(--tk-soft) 0%, var(--tk-card) 100%)',
+          // Fixed dark-sea gradient (not theme-dependent) so the light bubbles
+          // always read clearly against it, in every profile theme.
+          background: 'linear-gradient(180deg, #0c3a56 0%, #082439 45%, #030f1a 100%)',
         }}
       >
+        {/* Soft light filtering down from the surface, underwater feel */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse 70% 45% at 50% -8%, rgba(150,220,255,0.22), transparent 60%)',
+        }} />
+
         {/* Pet blowing bubbles, bottom-left corner */}
         <img
           src={getSpriteForStage(evolutionStage, eggType)}
