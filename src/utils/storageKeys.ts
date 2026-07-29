@@ -31,6 +31,7 @@ const BASE_KEYS = {
   DUNGEON_HEART_DROPS: 'digiapp-dungeon-heart-drops',
   DINO_BEST: 'digiapp-dino-best',
   ROOF_BEST: 'digiapp-roof-best',
+  BUBBLE_BEST: 'digiapp-bubble-best',
   SOUND_MUTED: 'digiapp-sound-muted',
   FCM_TOKEN: 'digiapp-fcm-token',
   LAST_CLOUD_SYNC: 'digiapp-last-cloud-sync',
@@ -67,6 +68,7 @@ const PROFILE_SCOPED_NAMES = new Set<BaseKeyName>([
   'DUNGEON_HEART_DROPS',
   'DINO_BEST',
   'ROOF_BEST',
+  'BUBBLE_BEST',
   'LAST_CLOUD_SYNC',
 ]);
 

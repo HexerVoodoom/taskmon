@@ -166,8 +166,8 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
           <section>
             <h3 className={h3Class}>7. Minigames, Bits &amp; Shop</h3>
             <p>
-              The Activities page has minigames (Dungeon, Dino Runner, Rock-Paper-Scissors)
-              that award <strong>Bits</strong> — spend them in the shop on
+              The Activities page has minigames (Dungeon, Dino Runner, Roof Run,
+              Rock-Paper-Scissors, Bubble Pop) that award <strong>Bits</strong> — spend them in the shop on
               <strong> food</strong> for your pet. The Dungeon is free to play —
               losing costs no real heart.
             </p>

@@ -3,6 +3,7 @@ import { DungeonGame } from './DungeonGame';
 import { DinoGame } from './DinoGame';
 import { RoofRunGame } from './RoofRunGame';
 import { RPSGame } from './RPSGame';
+import { BubbleGame } from './BubbleGame';
 import { ShopModal } from './ShopModal';
 import { bitsStyle } from '../utils/currency';
 import { getSpriteForStage } from '../utils/sprites';
@@ -12,7 +13,7 @@ import type { Language } from '../utils/i18n';
 /**
  * "Atividades" page — interactive minigames hub.
  * All games award 🪙 Bits (GameState.gamePoints), spent in the shop on food.
- * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/50) · RPS +10/match.
+ * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/50) · RPS +10/match · Bubble Pop +1/bolha.
  */
 export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onEarnPoints, onShopBuy }: {
   evolutionStage: string;
@@ -32,10 +33,10 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
   const isGlitch = theme === 'glitch';
-  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | null>(null);
+  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
 
-  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
+  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
     {
       key: 'dungeon', icon: '⚔️', sprite: getSpriteForStage('enemy-wraith'),
       badgeBg: 'linear-gradient(160deg, #4c1d95, #1e1b4b)',
@@ -65,6 +66,13 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       title: isPt ? 'Pedra, Papel e Tesoura' : 'Rock, Paper, Scissors',
       desc: isPt ? 'Clássico duelo contra o seu pet. Melhor de 5.' : 'The classic duel against your pet. First to 3.',
       pts: isPt ? '10 Bits por vitória' : '10 Bits per match win',
+    },
+    {
+      key: 'bubble', icon: '🫧',
+      badgeBg: 'linear-gradient(160deg, #38bdf8, #0e7490)',
+      title: isPt ? 'Estoura Bolhas' : 'Bubble Pop',
+      desc: isPt ? 'Seu pet cospe bolhas — estoure todas antes que fujam! 30 segundos.' : 'Your pet blows bubbles — pop them all before they float away! 30 seconds.',
+      pts: isPt ? '1 Bit por bolha' : '1 Bit per bubble',
     },
   ];
 
@@ -217,6 +225,15 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       )}
       {openGame === 'rps' && (
         <RPSGame
+          evolutionStage={evolutionStage}
+          eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'bubble' && (
+        <BubbleGame
           evolutionStage={evolutionStage}
           eggType={eggType}
           language={language}

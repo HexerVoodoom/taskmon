@@ -4923,6 +4923,30 @@ html {
   100% { background-position: 0 100%; }
 }
 
+/* Bubble Pop minigame: bubbles rise from the bottom and drift sideways as
+   they float past the top (percentage-based so it scales with the box).
+   Two variants (a/b) drift opposite ways for visual variety. */
+@keyframes bubble-rise-a {
+  0%   { bottom: -10%; opacity: 0; transform: translateX(0); }
+  10%  { opacity: 0.95; }
+  50%  { transform: translateX(18px); }
+  100% { bottom: 108%; opacity: 0.9; transform: translateX(-12px); }
+}
+
+@keyframes bubble-rise-b {
+  0%   { bottom: -10%; opacity: 0; transform: translateX(0); }
+  10%  { opacity: 0.95; }
+  50%  { transform: translateX(-18px); }
+  100% { bottom: 108%; opacity: 0.9; transform: translateX(12px); }
+}
+
+/* Quick burst when a bubble is popped. */
+@keyframes bubble-pop-fx {
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.4); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+}
+
 /* Rub-to-heal: hearts EXPLODE from the pet center — quick pop, then radiate
    far outward (like fireworks) and fade. Direction from --tx / --ty. */
 @keyframes rub-heart {

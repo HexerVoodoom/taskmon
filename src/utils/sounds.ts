@@ -138,6 +138,13 @@ export function playMenuOpen(): void {
   });
 }
 
+/** Quick high-pitched blip for popping a bubble */
+export function playBubblePop(): void {
+  play(ctx => {
+    beep(ctx, 950, 0, 0.045, 'sine', 0.11);
+  });
+}
+
 /** Soft descending lullaby notes */
 export function playSleep(): void {
   play(ctx => {

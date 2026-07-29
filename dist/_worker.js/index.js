@@ -291,7 +291,7 @@ async function onRequest2() {
 }
 __name(onRequest2, "onRequest");
 
-// ../.wrangler/tmp/pages-TDwSmB/functionsRoutes-0.30817965625633015.mjs
+// ../.wrangler/tmp/pages-wWOE6l/functionsRoutes-0.8011149228563481.mjs
 var routes = [
   {
     routePath: "/api/chat",
