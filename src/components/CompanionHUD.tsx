@@ -98,6 +98,8 @@ export const CompanionHUD = memo(function CompanionHUD({
   const maxEnergy = maxEnergyPoints ?? maxHealthPoints;
   const [position, setPosition] = useState(10);
   const [direction, setDirection] = useState<'right' | 'left'>('right');
+  const [positionY, setPositionY] = useState(68);
+  const [directionY, setDirectionY] = useState<'up' | 'down'>('up');
   const [showBubble, setShowBubble] = useState(false);
   const [squashFrame, setSquashFrame] = useState(0);
   const [bubbleText, setBubbleText] = useState('');
@@ -253,6 +255,22 @@ export const CompanionHUD = memo(function CompanionHUD({
 
     return () => clearInterval(interval);
   }, [direction, companionMood, isSleeping, isShowering, isMunching, isRubbing]);
+
+  // Vertical wandering — the pet roams the whole scene (bottom to top), not
+  // just a fixed strip, now that the box is a full-height open background.
+  useEffect(() => {
+    const speed = companionMood === 'happy' ? 0.18 : companionMood === 'tired' ? 0.06 : 0.11;
+    const interval = setInterval(() => {
+      if (isSleeping || isShowering || isMunching || isRubbing) return;
+      setPositionY(prev => {
+        const newPos = directionY === 'up' ? prev - speed : prev + speed;
+        if (newPos <= 14) { setDirectionY('down'); return 14; }
+        if (newPos >= 74) { setDirectionY('up'); return 74; }
+        return newPos;
+      });
+    }, 50);
+    return () => clearInterval(interval);
+  }, [directionY, companionMood, isSleeping, isShowering, isMunching, isRubbing]);
 
   // Squash and stretch animation (10% height variation)
   useEffect(() => {
@@ -569,20 +587,11 @@ export const CompanionHUD = memo(function CompanionHUD({
 
   return (
     <div className={
-      isGlitch 
-        ? 'glitch-companion-window' 
-        : isWin98 
-          ? 'win98-companion-window' 
-          : 'rounded-[10px] p-3 relative'
-    }
-    style={
-      !isGlitch && !isWin98 
-        ? { 
-            backgroundColor: 'var(--tk-frame, #6A7282)', 
-            border: '2px solid var(--tk-border, #1F2A39)',
-            boxShadow: '0px 10px 15px -3px rgba(0,0,0,0.12), 0px 4px 6px -4px rgba(0,0,0,0.1)'
-          }
-        : undefined
+      isGlitch
+        ? 'glitch-companion-window'
+        : isWin98
+          ? 'win98-companion-window'
+          : 'relative'
     }>
       {/* Win98 Title Bar */}
       {isWin98 && (
@@ -594,26 +603,21 @@ export const CompanionHUD = memo(function CompanionHUD({
           </div>
         </div>
       )}
-      
-      {/* Ornamento temático do perfil no topo da moldura (tema default) */}
-      {!isWin98 && !isGlitch && (
-        <div className="tk-deco-strip" style={{ marginBottom: 6, borderRadius: 3 }} />
-      )}
 
       {/* Main Container with Companion Area and Energy Bar */}
       <div className="relative">
       <div className={`flex gap-2 ${isWin98 ? 'p-2' : ''}`}>
         {/* Companion Display Area */}
-        <div 
-          className={`relative overflow-hidden p-3 flex-1 border ${ 
-            isGlitch 
-              ? 'border-2 border-[#00ffff]' 
-              : isWin98 
-                ? 'win98-lcd-screen crt-effect' 
-                : 'border-transparent'
+        <div
+          className={`relative overflow-hidden flex-1 ${
+            isGlitch
+              ? 'border-2 border-[#00ffff]'
+              : isWin98
+                ? 'win98-lcd-screen crt-effect border'
+                : 'rounded-[18px]'
           }`}
-          style={{ 
-            height: '185px',
+          style={{
+            height: '360px',
             backgroundImage: isWin98
               ? 'none'
               : (equippedBackground && PET_BACKGROUNDS[equippedBackground]?.css)
@@ -622,7 +626,7 @@ export const CompanionHUD = memo(function CompanionHUD({
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             imageRendering: 'pixelated',
-            borderWidth: '1.1px'
+            boxShadow: isWin98 || isGlitch ? undefined : '0 10px 24px -6px rgba(0,0,0,0.35)',
           }}
         >
           {isWin98 && <div className="scan-line" />}
@@ -657,7 +661,7 @@ export const CompanionHUD = memo(function CompanionHUD({
                 className="absolute pointer-events-none z-30 select-none"
                 style={{
                   left: `${position}%`,
-                  top: 'calc(50% - 8px)',
+                  top: `calc(${positionY}% - 8px)`,
                   fontSize: `${h.size}rem`,
                   ['--tx' as string]: `${h.dx}px`,
                   ['--ty' as string]: `${h.dy}px`,
@@ -672,7 +676,7 @@ export const CompanionHUD = memo(function CompanionHUD({
             {hugBalloon && (
               <div
                 className="absolute z-25 pointer-events-none animate-in fade-in zoom-in-75 duration-150"
-                style={{ left: `${position}%`, top: 'calc(50% - 78px)', transform: 'translateX(-50%)' }}
+                style={{ left: `${position}%`, top: `calc(${positionY}% - 78px)`, transform: 'translateX(-50%)' }}
               >
                 <div className="relative bg-white rounded-full px-2 py-0.5 shadow text-lg leading-none">
                   🤗
@@ -688,7 +692,7 @@ export const CompanionHUD = memo(function CompanionHUD({
                 className="absolute pointer-events-none z-20 text-2xl"
                 style={{
                   left: `${position}%`,
-                  top: '50%',
+                  top: `${positionY}%`,
                   animation: 'float-up 1.5s ease-out forwards',
                 }}
               >
@@ -702,9 +706,9 @@ export const CompanionHUD = memo(function CompanionHUD({
               style={{
                 left: `${position}%`,
                 transform: getHorizontalFlip(),
-                top: '50%',
+                top: `${positionY}%`,
                 marginTop: '-20px',
-                transition: 'left 0.1s ease-linear, transform 0.1s ease-linear',
+                transition: 'left 0.1s ease-linear, top 0.1s ease-linear, transform 0.1s ease-linear',
                 touchAction: 'none', // let the rub gesture own the pointer
               }}
               onClick={() => { if (rubMovedRef.current) { rubMovedRef.current = false; return; } handleDigimonClick(); }}
@@ -911,29 +915,38 @@ export const CompanionHUD = memo(function CompanionHUD({
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Energy Bar - Vertical on Right Side */}
-        <div
-          className={`flex flex-col-reverse items-center justify-end gap-1 rounded-[4px] ${
-            isGlitch
-              ? 'bg-[#0a0a0a] border-2 border-[#00ffff]'
-              : isWin98
-                ? 'win98-lcd-screen'
-                : 'bg-[#1F2A39]'
-          }`}
-          style={{ height: '185px', width: '26px', padding: '11.998px 0', cursor: 'pointer' }}
-          title={language === 'pt-BR'
-            ? `Energia: ${energyPoints}/${maxEnergy} — sobe comendo; cheia no fim do dia = ponto de evolução`
-            : `Energy: ${energyPoints}/${maxEnergy} — fills by eating; full at day's end = evolution point`}
-          onClick={() => speak(
-            language === 'pt-BR'
-              ? `Minha energia: ${energyPoints}/${maxEnergy}! Enche comendo — se estiver cheia no fim do dia, o dia conta pra evolução!`
-              : `My energy: ${energyPoints}/${maxEnergy}! Fills by eating — full at day's end makes the day count for evolution!`,
-            5000,
-          )}
-        >
-          <EnergyBar totalSegments={maxEnergy} filledSegments={energyPoints} />
+          {/* Energy Bar — floats over the background on the right edge, like
+              the other overlay chrome, instead of sitting in its own boxed
+              column beside the scene. */}
+          <div
+            className={`absolute flex flex-col-reverse items-center justify-end gap-1 rounded-full z-10 ${
+              isGlitch
+                ? 'bg-[#0a0a0a] border-2 border-[#00ffff]'
+                : isWin98
+                  ? 'win98-lcd-screen'
+                  : ''
+            }`}
+            style={{
+              top: 78, bottom: 12, right: 8,
+              width: '22px', padding: '10px 0', cursor: 'pointer',
+              background: isGlitch || isWin98 ? undefined : 'rgba(15,15,25,0.4)',
+              backdropFilter: 'blur(3px)',
+              border: isGlitch || isWin98 ? undefined : '1px solid rgba(255,255,255,0.18)',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+            }}
+            title={language === 'pt-BR'
+              ? `Energia: ${energyPoints}/${maxEnergy} — sobe comendo; cheia no fim do dia = ponto de evolução`
+              : `Energy: ${energyPoints}/${maxEnergy} — fills by eating; full at day's end = evolution point`}
+            onClick={() => speak(
+              language === 'pt-BR'
+                ? `Minha energia: ${energyPoints}/${maxEnergy}! Enche comendo — se estiver cheia no fim do dia, o dia conta pra evolução!`
+                : `My energy: ${energyPoints}/${maxEnergy}! Fills by eating — full at day's end makes the day count for evolution!`,
+              5000,
+            )}
+          >
+            <EnergyBar totalSegments={maxEnergy} filledSegments={energyPoints} />
+          </div>
         </div>
       </div>
 
