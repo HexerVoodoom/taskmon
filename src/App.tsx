@@ -1142,7 +1142,16 @@ export default function App() {
   return (
     <div
       className={`fixed inset-0 overflow-hidden flex flex-col ${theme === 'default' ? '' : `${getOuterContainerClass()} ${getContainerClass()}`}`}
-      style={theme === 'default' ? { background: 'var(--tk-bg-full, var(--tk-bg))' } : undefined}
+      style={theme === 'default' ? {
+        // The pet's scene art is the app's continuous backdrop — it runs
+        // behind the header, task list and every floating button instead
+        // of being boxed inside the companion card.
+        backgroundColor: 'var(--tk-bg)',
+        backgroundImage: 'linear-gradient(rgba(0,0,0,0.32), rgba(0,0,0,0.32)), var(--tk-scene)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+        backgroundAttachment: 'fixed',
+      } : undefined}
     >
         {/* Help Modal */}
         <HelpModal

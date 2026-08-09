@@ -101,8 +101,9 @@ export const CompanionHUD = memo(function CompanionHUD({
   const maxEnergy = maxEnergyPoints ?? maxHealthPoints;
   const [position, setPosition] = useState(10);
   const [direction, setDirection] = useState<'right' | 'left'>('right');
-  const [positionY, setPositionY] = useState(68);
-  const [directionY, setDirectionY] = useState<'up' | 'down'>('up');
+  // The pet only walks along the floor line near the bottom of the scene —
+  // it doesn't roam vertically (that read as floating mid-room).
+  const positionY = 84;
   const [showBubble, setShowBubble] = useState(false);
   const [squashFrame, setSquashFrame] = useState(0);
   const [bubbleText, setBubbleText] = useState('');
@@ -258,22 +259,6 @@ export const CompanionHUD = memo(function CompanionHUD({
 
     return () => clearInterval(interval);
   }, [direction, companionMood, isSleeping, isShowering, isMunching, isRubbing]);
-
-  // Vertical wandering — the pet roams the whole scene (bottom to top), not
-  // just a fixed strip, now that the box is a full-height open background.
-  useEffect(() => {
-    const speed = companionMood === 'happy' ? 0.18 : companionMood === 'tired' ? 0.06 : 0.11;
-    const interval = setInterval(() => {
-      if (isSleeping || isShowering || isMunching || isRubbing) return;
-      setPositionY(prev => {
-        const newPos = directionY === 'up' ? prev - speed : prev + speed;
-        if (newPos <= 14) { setDirectionY('down'); return 14; }
-        if (newPos >= 74) { setDirectionY('up'); return 74; }
-        return newPos;
-      });
-    }, 50);
-    return () => clearInterval(interval);
-  }, [directionY, companionMood, isSleeping, isShowering, isMunching, isRubbing]);
 
   // Squash and stretch animation (10% height variation)
   useEffect(() => {
@@ -617,19 +602,23 @@ export const CompanionHUD = memo(function CompanionHUD({
               ? 'border-2 border-[#00ffff]'
               : isWin98
                 ? 'win98-lcd-screen crt-effect border'
-                : 'rounded-[18px]'
+                : ''
           }`}
           style={{
             height: '360px',
+            borderRadius: isGlitch || isWin98 ? undefined : 18,
+            // The app's own background already carries the profile scene
+            // continuously behind everything — this box only paints its own
+            // background for win98/glitch chrome or a purchased shop skin;
+            // otherwise it's transparent so the pet stands directly on the
+            // page's scene instead of a separate boxed-in copy of it.
             backgroundImage: isWin98
               ? 'none'
-              : (equippedBackground && PET_BACKGROUNDS[equippedBackground]?.css)
-                || 'var(--tk-scene)',
+              : (equippedBackground && PET_BACKGROUNDS[equippedBackground]?.css) || undefined,
             backgroundColor: isWin98 ? '#9cbd90' : undefined,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             imageRendering: 'pixelated',
-            boxShadow: isWin98 || isGlitch ? undefined : '0 10px 24px -6px rgba(0,0,0,0.35)',
           }}
         >
           {isWin98 && <div className="scan-line" />}
@@ -710,7 +699,7 @@ export const CompanionHUD = memo(function CompanionHUD({
                 left: `${position}%`,
                 transform: getHorizontalFlip(),
                 top: `${positionY}%`,
-                marginTop: '-20px',
+                marginTop: '-34px',
                 transition: 'left 0.1s ease-linear, top 0.1s ease-linear, transform 0.1s ease-linear',
                 touchAction: 'none', // let the rub gesture own the pointer
               }}
@@ -724,8 +713,10 @@ export const CompanionHUD = memo(function CompanionHUD({
                 <img
                   src={displaySprite}
                   alt={currentStage}
-                  className={`w-20 h-20 object-contain ${getCompanionFilter()}`}
+                  className={`object-contain ${getCompanionFilter()}`}
                   style={{
+                    width: '132px',
+                    height: '132px',
                     transform: `scaleY(${getSquashScale()})`,
                     transformOrigin: 'bottom',
                     animation: isRubbing
@@ -738,9 +729,9 @@ export const CompanionHUD = memo(function CompanionHUD({
                   }}
                 />
               ) : (
-                <div 
-                  className="w-20 h-20 flex items-center justify-center bg-gray-700 rounded border-2 border-gray-600"
-                  style={{ fontFamily: 'monospace' }}
+                <div
+                  className="flex items-center justify-center bg-gray-700 rounded border-2 border-gray-600"
+                  style={{ width: '132px', height: '132px', fontFamily: 'monospace' }}
                 >
                   <span className="text-white" style={{ fontSize: '3rem', fontWeight: 'bold' }}>?</span>
                 </div>
@@ -881,17 +872,14 @@ export const CompanionHUD = memo(function CompanionHUD({
                 style={{
                   position: 'relative',
                   display: 'flex',
-                  flexDirection: 'column',
                   alignItems: 'center',
-                  gap: '1px',
-                  padding: '5px 9px 6px',
+                  justifyContent: 'center',
+                  padding: '4px',
                   cursor: a.disabled ? 'default' : 'pointer',
                   opacity: a.disabled ? 0.45 : 1,
-                  background: isSleeping ? 'rgba(245,245,250,0.92)' : 'rgba(15,15,25,0.4)',
-                  backdropFilter: 'blur(3px)',
-                  border: isSleeping ? '1px solid rgba(0,0,0,0.15)' : '1px solid rgba(255,255,255,0.18)',
-                  borderRadius: 12,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                  background: 'none',
+                  border: 'none',
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.55))',
                   userSelect: 'none',
                 }}
               >
@@ -899,25 +887,17 @@ export const CompanionHUD = memo(function CompanionHUD({
                   <span style={{
                     position: 'absolute',
                     top: -2, right: 0,
-                    width: 8, height: 8,
+                    width: 9, height: 9,
                     borderRadius: '50%',
                     backgroundColor: '#ef4444',
-                    border: '1px solid #fff',
+                    border: '1.5px solid #fff',
                     zIndex: 10,
                   }} />
                 )}
                 {a.iconImg ? (
-                  <img src={a.iconImg} alt="" className="pointer-events-none" style={{ width: '1.35rem', height: '1.35rem', imageRendering: 'pixelated' }} />
+                  <img src={a.iconImg} alt={language === 'pt-BR' ? a.pt : a.en} className="pointer-events-none" style={{ width: '2.5rem', height: '2.5rem', imageRendering: 'pixelated' }} />
                 ) : (
-                  <span style={{ fontSize: '1.25rem', lineHeight: 1, filter: isSleeping ? 'invert(1) hue-rotate(180deg)' : undefined }}>{a.icon}</span>
-                )}
-                <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', fontWeight: 700, color: isSleeping ? '#111' : '#fff', whiteSpace: 'nowrap' }}>
-                  {language === 'pt-BR' ? a.pt : a.en}
-                </span>
-                {a.sub && (
-                  <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', color: '#ffd27f', whiteSpace: 'nowrap', lineHeight: 1 }}>
-                    {a.sub}
-                  </span>
+                  <span style={{ fontSize: '2.15rem', lineHeight: 1 }}>{a.icon}</span>
                 )}
               </button>
             ))}
