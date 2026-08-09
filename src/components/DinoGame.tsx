@@ -150,11 +150,12 @@ export function DinoGame({ evolutionStage, eggType, language, onEarnPoints, onSc
         if (img?.complete) drawFlipped(img, o.x, GROUND - o.size, o.size, o.size);
       }
       // Alternate between the two walk-cycle frames while grounded (frozen
-      // mid-air, like a classic runner). The pet art already faces right
-      // (the direction it's running) — draw it as-is, no mirroring.
+      // mid-air, like a classic runner). The walk-pose art faces left; flip
+      // it so the pet faces right (the direction it's running) — verified
+      // directly on the sprite files, not just from a code comment.
       const useFrame2 = s.h === 0 && Math.floor(s.t * 8) % 2 === 1;
       const pet = (useFrame2 ? petImg2Ref.current : petImgRef.current) ?? petImgRef.current;
-      if (pet?.complete) ctx.drawImage(pet, DINO_X, GROUND - DINO_S - s.h, DINO_S, DINO_S);
+      if (pet?.complete) drawFlipped(pet, DINO_X, GROUND - DINO_S - s.h, DINO_S, DINO_S);
       if (scoreElRef.current) scoreElRef.current.textContent = String(Math.floor(s.score));
 
       if (!dead) { raf = requestAnimationFrame(tick); return; }

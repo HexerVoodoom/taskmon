@@ -107,6 +107,16 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
     let last = performance.now();
     let dead = false;
 
+    // The walk-pose art faces left; flip it so the pet faces right (the
+    // direction it's running) — verified directly on the sprite files.
+    const drawFlipped = (img: HTMLImageElement, x: number, y: number, w: number, h: number) => {
+      ctx.save();
+      ctx.translate(x + w, y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, w, h);
+      ctx.restore();
+    };
+
     // How tall the rooftop art is drawn relative to a platform's width — the
     // roofs float free (no house body below); the clouds sell the "floating
     // rooftops in the sky" read.
@@ -195,11 +205,10 @@ export function RoofRunGame({ evolutionStage, eggType, language, onEarnPoints, o
         for (const p of s.platforms) ctx.drawImage(roof, p.x, p.topY - ROOF_H * 0.62, p.width, ROOF_H);
       }
       // Alternate between the two walk-cycle frames while grounded (frozen
-      // mid-jump, like a classic runner). The pet art already faces right
-      // (the direction it's running) — draw it as-is, no mirroring.
+      // mid-jump, like a classic runner). Flip so the pet faces right.
       const useFrame2 = s.grounded && Math.floor(s.t * 8) % 2 === 1;
       const pet = (useFrame2 ? petImg2Ref.current : petImgRef.current) ?? petImgRef.current;
-      if (pet?.complete) ctx.drawImage(pet, PLAYER_X, s.y - PLAYER_S, PLAYER_S, PLAYER_S);
+      if (pet?.complete) drawFlipped(pet, PLAYER_X, s.y - PLAYER_S, PLAYER_S, PLAYER_S);
       if (scoreElRef.current) scoreElRef.current.textContent = String(Math.floor(s.score));
 
       if (!dead) { raf = requestAnimationFrame(tick); return; }
