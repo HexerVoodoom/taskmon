@@ -7,6 +7,9 @@ import { ChatBox } from './ChatBox';
 import { Language } from '../utils/i18n';
 import { playShower } from '../utils/sounds';
 import { getStageLevel, getPetOfStage, PETS, type PetType } from '../types/progression';
+import iconItems from '../assets/icons/icon-items.png';
+import iconBath from '../assets/icons/icon-bath.png';
+import iconSleep from '../assets/icons/icon-sleep.png';
 
 interface CompanionHUDProps {
   companionMood: 'idle' | 'happy' | 'tired';
@@ -865,10 +868,10 @@ export const CompanionHUD = memo(function CompanionHUD({
           {/* Desktop icons — top-right of pet area */}
           <div style={{ position: 'absolute', top: 6, right: 6, zIndex: 30, display: 'flex', gap: '4px' }}>
             {([
-              !isEarlyStage && { key: 'items', icon: '🧺', en: 'Items', pt: 'Itens', onClick: onOpenItems ?? (() => {}), disabled: false, badge: hasNewItems },
-              !isEarlyStage && { key: 'bath', icon: '🚿', en: 'Bath', pt: 'Banho', onClick: handleShowerClick, disabled: showerCooldown, badge: false },
-              { key: 'sleep', icon: isSleeping ? '☀️' : '💤', en: isSleeping ? 'Wake' : 'Sleep', pt: isSleeping ? 'Acordar' : 'Dormir', onClick: onSleep ?? (() => {}), disabled: false, badge: false },
-            ].filter(Boolean) as { key: string; icon: string; en: string; pt: string; onClick: () => void; disabled: boolean; badge: boolean | undefined; sub?: string }[]).map(a => (
+              !isEarlyStage && { key: 'items', iconImg: iconItems, en: 'Items', pt: 'Itens', onClick: onOpenItems ?? (() => {}), disabled: false, badge: hasNewItems },
+              !isEarlyStage && { key: 'bath', iconImg: iconBath, en: 'Bath', pt: 'Banho', onClick: handleShowerClick, disabled: showerCooldown, badge: false },
+              { key: 'sleep', icon: isSleeping ? '☀️' : undefined, iconImg: isSleeping ? undefined : iconSleep, en: isSleeping ? 'Wake' : 'Sleep', pt: isSleeping ? 'Acordar' : 'Dormir', onClick: onSleep ?? (() => {}), disabled: false, badge: false },
+            ].filter(Boolean) as { key: string; icon?: string; iconImg?: string; en: string; pt: string; onClick: () => void; disabled: boolean; badge: boolean | undefined; sub?: string }[]).map(a => (
               <button
                 key={a.key}
                 onClick={a.key === 'bath' ? a.onClick : (a.disabled ? undefined : a.onClick)}
@@ -903,7 +906,11 @@ export const CompanionHUD = memo(function CompanionHUD({
                     zIndex: 10,
                   }} />
                 )}
-                <span style={{ fontSize: '1.25rem', lineHeight: 1, filter: isSleeping ? 'invert(1) hue-rotate(180deg)' : undefined }}>{a.icon}</span>
+                {a.iconImg ? (
+                  <img src={a.iconImg} alt="" className="pointer-events-none" style={{ width: '1.35rem', height: '1.35rem', imageRendering: 'pixelated' }} />
+                ) : (
+                  <span style={{ fontSize: '1.25rem', lineHeight: 1, filter: isSleeping ? 'invert(1) hue-rotate(180deg)' : undefined }}>{a.icon}</span>
+                )}
                 <span style={{ fontFamily: 'monospace', fontSize: '0.6rem', fontWeight: 700, color: isSleeping ? '#111' : '#fff', whiteSpace: 'nowrap' }}>
                   {language === 'pt-BR' ? a.pt : a.en}
                 </span>
