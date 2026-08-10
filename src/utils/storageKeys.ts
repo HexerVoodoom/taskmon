@@ -32,6 +32,7 @@ const BASE_KEYS = {
   DINO_BEST: 'digiapp-dino-best',
   ROOF_BEST: 'digiapp-roof-best',
   BUBBLE_BEST: 'digiapp-bubble-best',
+  FLOWER_BEST: 'digiapp-flower-best',
   SOUND_MUTED: 'digiapp-sound-muted',
   FCM_TOKEN: 'digiapp-fcm-token',
   LAST_CLOUD_SYNC: 'digiapp-last-cloud-sync',
@@ -69,6 +70,7 @@ const PROFILE_SCOPED_NAMES = new Set<BaseKeyName>([
   'DINO_BEST',
   'ROOF_BEST',
   'BUBBLE_BEST',
+  'FLOWER_BEST',
   'LAST_CLOUD_SYNC',
 ]);
 

@@ -4,6 +4,7 @@ import { DinoGame } from './DinoGame';
 import { RoofRunGame } from './RoofRunGame';
 import { RPSGame } from './RPSGame';
 import { BubbleGame } from './BubbleGame';
+import { FlowerCatchGame } from './FlowerCatchGame';
 import { ShopModal } from './ShopModal';
 import { bitsStyle } from '../utils/currency';
 import { getSpriteForStage } from '../utils/sprites';
@@ -33,10 +34,10 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
   const isGlitch = theme === 'glitch';
-  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | null>(null);
+  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
 
-  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
+  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
     {
       key: 'dungeon', icon: '⚔️', sprite: getSpriteForStage('enemy-wraith'),
       badgeBg: 'linear-gradient(160deg, #4c1d95, #1e1b4b)',
@@ -73,6 +74,13 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       title: isPt ? 'Estoura Bolhas' : 'Bubble Pop',
       desc: isPt ? 'Seu pet cospe bolhas — estoure todas antes que fujam! 30 segundos.' : 'Your pet blows bubbles — pop them all before they float away! 30 seconds.',
       pts: isPt ? '1 Bit por bolha' : '1 Bit per bubble',
+    },
+    {
+      key: 'flower', icon: '🌷',
+      badgeBg: 'linear-gradient(160deg, #f472b6, #7c2d5e)',
+      title: isPt ? 'Chuva de Flores' : 'Flower Catch',
+      desc: isPt ? 'Arraste seu pet pros lados e encha a cesta pegando flores perto do chão! 40 segundos.' : 'Drag your pet side to side and fill the basket catching flowers near the ground! 40 seconds.',
+      pts: isPt ? '1 Bit por flor' : '1 Bit per flower',
     },
   ];
 
@@ -234,6 +242,15 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       )}
       {openGame === 'bubble' && (
         <BubbleGame
+          evolutionStage={evolutionStage}
+          eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'flower' && (
+        <FlowerCatchGame
           evolutionStage={evolutionStage}
           eggType={eggType}
           language={language}
