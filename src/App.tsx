@@ -43,11 +43,12 @@ const StatsPage = lazy(() => import('./components/StatsPage').then(m => ({ defau
 const SettingsPage = lazy(() => import('./components/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const ActivitiesPage = lazy(() => import('./components/ActivitiesPage').then(m => ({ default: m.ActivitiesPage })));
 const OnboardingScreen = lazy(() => import('./components/OnboardingScreen').then(m => ({ default: m.OnboardingScreen })));
+const TogetherHome = lazy(() => import('./components/TogetherHome').then(m => ({ default: m.TogetherHome })));
 const SettingsModal = lazy(() => import('./components/SettingsModal').then(m => ({ default: m.SettingsModal })));
 const EditModal = lazy(() => import('./components/EditModal').then(m => ({ default: m.EditModal })));
 const TaskEditModal = lazy(() => import('./components/TaskEditModal').then(m => ({ default: m.TaskEditModal })));
 
-type ViewType = 'main' | 'evolution' | 'stats' | 'settings' | 'games';
+type ViewType = 'main' | 'evolution' | 'stats' | 'settings' | 'games' | 'together';
 
 export default function App() {
   const { gameState, setGameState } = useGameState();
@@ -1292,6 +1293,10 @@ export default function App() {
                 </>
               )}
             </div>
+          )}
+
+          {currentView === 'together' && (
+            <Suspense fallback={null}><TogetherHome language={language} /></Suspense>
           )}
 
           {currentView === 'evolution' && (

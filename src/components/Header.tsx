@@ -1,7 +1,7 @@
 import svgPaths from '../imports/svg-hfvoappsgk';
 import { getActiveProfile, setActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
 
-type ViewType = 'main' | 'evolution' | 'stats' | 'settings' | 'games';
+type ViewType = 'main' | 'evolution' | 'stats' | 'settings' | 'games' | 'together';
 
 interface HeaderProps {
   currentView: ViewType;
@@ -63,6 +63,19 @@ function switchProfile(index: number, isActive: boolean, onNavigate: (v: ViewTyp
   }
   setActiveProfile(index);
   window.location.reload();
+}
+
+// Ícone da 4ª casinha: os 3 pets juntos (view coletiva, não é um perfil de verdade).
+function TogetherIcon({ active }: { active: boolean }) {
+  const colors = PROFILE_COLORS;
+  const opacity = active ? 1 : 0.55;
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="7" cy="15" r="4" fill={active ? colors[0] : 'none'} stroke={colors[0]} strokeWidth="1.6" opacity={opacity} />
+      <circle cx="17" cy="15" r="4" fill={active ? colors[1] : 'none'} stroke={colors[1]} strokeWidth="1.6" opacity={opacity} />
+      <circle cx="12" cy="8" r="4" fill={active ? colors[2] : 'none'} stroke={colors[2]} strokeWidth="1.6" opacity={opacity} />
+    </svg>
+  );
 }
 
 // Branches Icon
@@ -200,6 +213,10 @@ export function Header({ currentView, onNavigate, theme = 'default' }: HeaderPro
               {i + 1}
             </button>
           ))}
+          <button className={`win98-menu-item ${currentView === 'together' ? 'active' : ''}`} onClick={() => onNavigate('together')} title="Todos os pets">
+            <TogetherIcon active={currentView === 'together'} />
+            All
+          </button>
           <button className={`win98-menu-item ${currentView === 'evolution' ? 'active' : ''}`} onClick={() => onNavigate('evolution')}>
             Evolution
           </button>
@@ -249,6 +266,20 @@ export function Header({ currentView, onNavigate, theme = 'default' }: HeaderPro
                   </button>
                 );
               })}
+
+              {/* 4ª casinha: todos os 3 pets juntos (view coletiva, não troca de perfil) */}
+              <button
+                onClick={() => onNavigate('together')}
+                aria-label="Todos os pets"
+                title="Todos os pets"
+                className="relative rounded-[14px] shrink-0 size-[39.993px] transition-all active:scale-95 flex items-center justify-center"
+                style={{
+                  backgroundColor: currentView === 'together' ? 'var(--tk-soft, #e5e7eb)' : 'transparent',
+                  border: currentView === 'together' ? 'none' : '1px solid var(--tk-border, #e5e7eb)',
+                }}
+              >
+                <TogetherIcon active={currentView === 'together'} />
+              </button>
             </div>
 
             {/* Right: buttons grouped (Games, Evolution, Stats, Config) */}
