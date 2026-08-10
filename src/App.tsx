@@ -16,6 +16,7 @@ import { NotificationManager } from './components/NotificationManager';
 import { DailyReportModal } from './components/DailyReportModal';
 import { ItemsWindow } from './components/ItemsWindow';
 import { HelpModal } from './components/HelpModal';
+import { PET_BACKGROUNDS } from './utils/backgrounds';
 import { Plus, Edit2 } from 'lucide-react';
 import { type ActivityCategory } from './types/attributes';
 import { type CareEvent } from './components/CareSystem';
@@ -1143,11 +1144,14 @@ export default function App() {
     <div
       className={`fixed inset-0 overflow-hidden flex flex-col ${theme === 'default' ? '' : `${getOuterContainerClass()} ${getContainerClass()}`}`}
       style={theme === 'default' ? {
-        // The pet's scene art is the app's continuous backdrop — it runs
-        // behind the header, task list and every floating button instead
-        // of being boxed inside the companion card.
+        // The pet's scene art (or a purchased shop background, if equipped)
+        // is the app's continuous backdrop — it runs behind the header,
+        // task list and every floating button instead of being boxed
+        // inside the companion card.
         backgroundColor: 'var(--tk-bg)',
-        backgroundImage: 'linear-gradient(rgba(0,0,0,0.32), rgba(0,0,0,0.32)), var(--tk-scene)',
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.32), rgba(0,0,0,0.32)), ${
+          (gameState.equippedBackground && PET_BACKGROUNDS[gameState.equippedBackground]?.css) || 'var(--tk-scene)'
+        }`,
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
         backgroundAttachment: 'fixed',

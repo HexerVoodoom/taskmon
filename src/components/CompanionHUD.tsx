@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
-import { PET_BACKGROUNDS } from '../utils/backgrounds';
 import { EnergyBar } from './EnergyBar';
 import { CareSystem, CareEvent } from './CareSystem';
 import { ChatBox } from './ChatBox';
@@ -103,7 +102,7 @@ export const CompanionHUD = memo(function CompanionHUD({
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   // The pet only walks along the floor line near the bottom of the scene —
   // it doesn't roam vertically (that read as floating mid-room).
-  const positionY = 62;
+  const positionY = 70;
   const [showBubble, setShowBubble] = useState(false);
   const [squashFrame, setSquashFrame] = useState(0);
   const [bubbleText, setBubbleText] = useState('');
@@ -607,14 +606,11 @@ export const CompanionHUD = memo(function CompanionHUD({
           style={{
             height: '360px',
             borderRadius: isGlitch || isWin98 ? undefined : 18,
-            // The app's own background already carries the profile scene
-            // continuously behind everything — this box only paints its own
-            // background for win98/glitch chrome or a purchased shop skin;
-            // otherwise it's transparent so the pet stands directly on the
-            // page's scene instead of a separate boxed-in copy of it.
-            backgroundImage: isWin98
-              ? 'none'
-              : (equippedBackground && PET_BACKGROUNDS[equippedBackground]?.css) || undefined,
+            // The app's own background already carries the profile scene (or
+            // a purchased shop skin) continuously behind everything — this
+            // box never paints its own copy, so the pet stands directly on
+            // the page's scene instead of a separate boxed-in duplicate.
+            backgroundImage: 'none',
             backgroundColor: isWin98 ? '#9cbd90' : undefined,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
