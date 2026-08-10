@@ -9,7 +9,7 @@ import { getStageLevel, getPetOfStage, PETS, type PetType } from '../types/progr
 import iconItems from '../assets/icons/icon-items.png';
 import iconBath from '../assets/icons/icon-bath.png';
 import iconSleep from '../assets/icons/icon-sleep.png';
-import { PET_BOX_HEIGHT } from '../utils/petBoxHeight';
+import { PET_BOX_HEIGHT, FLOOR_BOTTOM_PX } from '../utils/petBoxHeight';
 
 interface CompanionHUDProps {
   companionMood: 'idle' | 'happy' | 'tired';
@@ -650,7 +650,10 @@ export const CompanionHUD = memo(function CompanionHUD({
                 className="absolute pointer-events-none z-30 select-none"
                 style={{
                   left: `${position}%`,
-                  top: `calc(${positionY}% - 8px)`,
+                  // Distância fixa (não % de positionY) do fundo da caixa —
+                  // mesmo motivo do sprite: independe da altura da caixa,
+                  // que agora é responsiva (PET_BOX_HEIGHT).
+                  bottom: '109px',
                   fontSize: `${h.size}rem`,
                   ['--tx' as string]: `${h.dx}px`,
                   ['--ty' as string]: `${h.dy}px`,
@@ -665,7 +668,7 @@ export const CompanionHUD = memo(function CompanionHUD({
             {hugBalloon && (
               <div
                 className="absolute z-25 pointer-events-none animate-in fade-in zoom-in-75 duration-150"
-                style={{ left: `${position}%`, top: `calc(${positionY}% - 78px)`, transform: 'translateX(-50%)' }}
+                style={{ left: `${position}%`, bottom: '179px', transform: 'translateX(-50%)' }}
               >
                 <div className="relative bg-white rounded-full px-2 py-0.5 shadow text-lg leading-none">
                   🤗
@@ -681,7 +684,7 @@ export const CompanionHUD = memo(function CompanionHUD({
                 className="absolute pointer-events-none z-20 text-2xl"
                 style={{
                   left: `${position}%`,
-                  top: `${positionY}%`,
+                  bottom: '101px',
                   animation: 'float-up 1.5s ease-out forwards',
                 }}
               >
@@ -695,9 +698,13 @@ export const CompanionHUD = memo(function CompanionHUD({
               style={{
                 left: `${position}%`,
                 transform: getHorizontalFlip(),
-                top: `${positionY}%`,
-                marginTop: '-34px',
-                transition: 'left 0.1s ease-linear, top 0.1s ease-linear, transform 0.1s ease-linear',
+                // Fixo (não % da altura da caixa): o sprite NÃO encolhe
+                // junto com a caixa (agora responsiva via PET_BOX_HEIGHT),
+                // então ancorar por % fazia o pet cortar pela base em
+                // caixas mais baixas. Uma distância fixa do fundo garante
+                // "pé no chão" em qualquer altura, sem nunca cortar.
+                bottom: `${FLOOR_BOTTOM_PX}px`,
+                transition: 'left 0.1s ease-linear, bottom 0.1s ease-linear, transform 0.1s ease-linear',
                 touchAction: 'none', // let the rub gesture own the pointer
               }}
               onClick={() => { if (rubMovedRef.current) { rubMovedRef.current = false; return; } handleDigimonClick(); }}
@@ -912,7 +919,10 @@ export const CompanionHUD = memo(function CompanionHUD({
                   : ''
             }`}
             style={{
-              top: 78, bottom: 12, right: 8,
+              // % (não px fixo) do topo/fundo — a caixa agora é responsiva
+              // (PET_BOX_HEIGHT); com âncoras fixas a barra ficaria cada
+              // vez mais curta, proporcionalmente, em caixas menores.
+              top: '21.7%', bottom: '3.3%', right: 8,
               width: '22px', padding: '10px 0', cursor: 'pointer',
               background: isGlitch || isWin98 ? undefined : 'rgba(15,15,25,0.4)',
               backdropFilter: 'blur(3px)',

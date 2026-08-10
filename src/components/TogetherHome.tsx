@@ -12,7 +12,7 @@ import type { GameState } from '../contexts/GameStateContext';
 import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
 import { HUB_SCENES, type HubSceneId } from '../utils/hubBackground';
-import { PET_BOX_HEIGHT } from '../utils/petBoxHeight';
+import { PET_BOX_HEIGHT, FLOOR_BOTTOM_PX } from '../utils/petBoxHeight';
 
 function loadProfileGameState(index: number): GameState | null {
   try {
@@ -30,10 +30,10 @@ interface TogetherHomeProps {
   onChangeBackground: (id: HubSceneId) => void;
 }
 
-// Mesma altura (responsiva, PET_BOX_HEIGHT) e "chão" das homes normais —
-// os 3 pets dividem esse mesmo palco e podem se cruzar livremente (sem
-// faixa própria travando ninguém).
-const FLOOR_Y_PERCENT = 84;
+// Mesma altura (responsiva, PET_BOX_HEIGHT) e "chão" (FLOOR_BOTTOM_PX,
+// distância fixa da base — não % da altura, senão cortaria o sprite em
+// caixas mais baixas) das homes normais — os 3 pets dividem esse mesmo
+// palco e podem se cruzar livremente (sem faixa própria travando ninguém).
 
 // Sem background próprio: o App já troca o cenário de tela cheia (fixed
 // inset-0 no container raiz) pro cenário escolhido aqui enquanto esta view
@@ -291,7 +291,11 @@ function TogetherPet({
         style={{
           position: 'absolute',
           left: `${startPosition}%`,
-          top: `calc(${FLOOR_Y_PERCENT}% - 96px)`,
+          // bottom fixo (não % da altura, que muda com PET_BOX_HEIGHT): o
+          // círculo de 96px fica a FLOOR_BOTTOM_PX do chão; o valor negativo
+          // compensa a etiqueta+gap abaixo dele (que sobra, sem cortar nada
+          // — este palco não tem overflow:hidden).
+          bottom: -13,
           // width fixo: sem isso, um wrapper `position:absolute` com só
           // `left` (sem `right`) tem largura "auto" calculada por
           // shrink-to-fit, que o navegador limita ao espaço até a borda —
@@ -341,11 +345,12 @@ function TogetherPet({
       style={{
         position: 'absolute',
         left: `${position}%`,
-        // O pé do sprite (não a etiqueta com o nome, que fica abaixo dele)
-        // encosta na linha do chão — por isso o deslocamento fixo em px
-        // (altura do sprite) em vez de um translateY(-100%) no wrapper
-        // inteiro, que empurrava o pet pra cima da linha certa.
-        top: `calc(${FLOOR_Y_PERCENT}% - 132px)`,
+        // bottom fixo (não % da altura): o sprite não encolhe junto com a
+        // caixa (PET_BOX_HEIGHT é responsiva), então ancorar por % cortava
+        // o pet em caixas mais baixas. O pé fica a FLOOR_BOTTOM_PX do chão;
+        // o valor negativo compensa a etiqueta com o nome, que sobra abaixo
+        // dele sem cortar nada (este palco não tem overflow:hidden).
+        bottom: FLOOR_BOTTOM_PX - 14,
         // width fixo pelo mesmo motivo do placeholder de ovo acima: um
         // wrapper absoluto com só `left` shrink-to-fit e amassa o sprite
         // quando `position` chega perto da borda direita do palco.
