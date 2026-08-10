@@ -7,8 +7,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
 import { keyForProfile, PROFILE_COUNT } from '../utils/storageKeys';
+import { getStageLevel, PETS, type PetType } from '../types/progression';
 import type { GameState } from '../contexts/GameStateContext';
-import { PETS, type PetType } from '../types/progression';
 import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
 import { HUB_SCENES, type HubSceneId } from '../utils/hubBackground';
@@ -29,11 +29,18 @@ interface TogetherHomeProps {
   onChangeBackground: (id: HubSceneId) => void;
 }
 
+// Mesma altura de "chão" das homes normais (CompanionHUD: box de 360px,
+// pet ancorado a 72% da altura) — aqui em vez de UMA caixa com UM pet
+// andando de 10% a 90%, cada pet anda dentro da sua própria faixa (1/3 da
+// largura do palco), pra não colidir com os outros dois.
+const STAGE_HEIGHT = 360;
+const FLOOR_Y_PERCENT = 72;
+
 // Sem background próprio: o App já troca o cenário de tela cheia (fixed
 // inset-0 no container raiz) pro cenário escolhido aqui enquanto esta view
 // está ativa — a mesma faixa "topo até o bottom" das homes normais, em vez
 // de uma imagem presa numa caixinha. Este componente só posiciona os 3 pets
-// e o seletor de cenário por cima dela.
+// (andando, na mesma altura das homes) e o seletor de cenário por cima dela.
 export function TogetherHome({ language, background, onChangeBackground }: TogetherHomeProps) {
   const [saves, setSaves] = useState<(GameState | null)[]>(() =>
     Array.from({ length: PROFILE_COUNT }, (_, i) => loadProfileGameState(i))
@@ -45,8 +52,6 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        // Preenche o resto da área de conteúdo (entre o header e o rodapé,
-        // que fica escondido nesta view) em vez de uma caixa de altura fixa.
         minHeight: 'calc(100dvh - 150px)',
       }}
     >
@@ -61,7 +66,7 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
           background: 'rgba(0,0,0,0.35)',
           borderRadius: 999,
           padding: 6,
-          zIndex: 1,
+          zIndex: 2,
         }}
       >
         {HUB_SCENES.map(s => (
@@ -85,19 +90,15 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
         ))}
       </div>
 
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-evenly',
-          gap: 4,
-          padding: '48px 4px 32px',
-        }}
-      >
+      {/* Altura fixa igual à caixa do pet nas homes normais (CompanionHUD:
+          360px, chão a 72%) — grudada embaixo (marginTop: auto), no lugar
+          onde o rodapé normalmente fica, em vez de esticar/flutuar no meio
+          da tela. */}
+      <div style={{ position: 'relative', height: STAGE_HEIGHT, marginTop: 'auto' }}>
         {saves.map((gs, i) => (
           <TogetherPet
             key={i}
+            laneIndex={i}
             profileIndex={i}
             gameState={gs}
             language={language}
@@ -125,16 +126,26 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
 
 // ── Um pet individual dentro da home coletiva ────────────────────────────────
 function TogetherPet({
+  laneIndex,
   profileIndex,
   gameState,
   language,
   onHealed,
 }: {
+  laneIndex: number;
   profileIndex: number;
   gameState: GameState | null;
   language: Language;
   onHealed: (next: GameState) => void;
 }) {
+  const laneWidth = 100 / 3;
+  const laneMin = laneIndex * laneWidth + laneWidth * 0.18;
+  const laneMax = laneIndex * laneWidth + laneWidth * 0.82;
+  const laneCenter = laneIndex * laneWidth + laneWidth / 2;
+
+  const [position, setPosition] = useState(laneCenter);
+  const [direction, setDirection] = useState<'right' | 'left'>(laneIndex % 2 === 0 ? 'right' : 'left');
+  const [squashFrame, setSquashFrame] = useState(0);
   const [isRubbing, setIsRubbing] = useState(false);
   const [hearts, setHearts] = useState<{ id: number; dx: number; dy: number; size: number; emoji: string }[]>([]);
 
@@ -146,6 +157,28 @@ function TogetherPet({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
+
+  // Anda de um lado pro outro dentro da própria faixa — pausa durante o carinho.
+  useEffect(() => {
+    if (!gameState) return;
+    const speed = 0.3;
+    const walk = setInterval(() => {
+      if (isRubbing) return;
+      setPosition(prev => {
+        const next = direction === 'right' ? prev + speed : prev - speed;
+        if (next >= laneMax) { setDirection('left'); return laneMax; }
+        if (next <= laneMin) { setDirection('right'); return laneMin; }
+        return next;
+      });
+    }, 50);
+    return () => clearInterval(walk);
+  }, [direction, isRubbing, gameState, laneMin, laneMax]);
+
+  // Respiração (squash/stretch), independente por pet.
+  useEffect(() => {
+    const breathe = setInterval(() => setSquashFrame(p => (p + 1) % 2), 1200 + laneIndex * 130);
+    return () => clearInterval(breathe);
+  }, [laneIndex]);
 
   const rubHealRef = useRef<{ date: string; healed: number }>(
     (() => {
@@ -236,32 +269,33 @@ function TogetherPet({
     if (intervalRef.current) clearInterval(intervalRef.current);
   }, []);
 
-  const wrapStyle: React.CSSProperties = {
-    position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-    minWidth: 0,
-    maxWidth: '33%',
-  };
-
   if (!gameState) {
     return (
-      <div style={{ ...wrapStyle, opacity: 0.6 }}>
+      <div
+        style={{
+          position: 'absolute',
+          left: `${laneCenter}%`,
+          top: `${FLOOR_Y_PERCENT}%`,
+          transform: 'translate(-50%, -50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 4,
+          opacity: 0.6,
+        }}
+      >
         <div
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 72, height: 72, borderRadius: 999,
+            width: 64, height: 64, borderRadius: 999,
             border: '2px dashed rgba(255,255,255,0.5)',
           }}
         >
-          <span style={{ fontSize: '1.5rem' }}>🥚</span>
+          <span style={{ fontSize: '1.4rem' }}>🥚</span>
         </div>
         <span
           style={{
-            color: 'rgba(255,255,255,0.8)', fontSize: '0.625rem', textAlign: 'center',
+            color: 'rgba(255,255,255,0.8)', fontSize: '0.625rem', textAlign: 'center', whiteSpace: 'nowrap',
             fontFamily: 'monospace', textShadow: '0 1px 3px rgba(0,0,0,0.8)',
           }}
         >
@@ -273,48 +307,64 @@ function TogetherPet({
 
   const pet = (gameState.eggType ?? 'vix') as PetType;
   const stage = gameState.evolutionStage || 'egg';
+  const isEgg = getStageLevel(stage) === 'egg';
   const sprite = isRubbing ? getExpressionSprite(stage, 'happy') : getSpriteForStage(stage, gameState.eggType);
   const petName = PETS[pet]?.name ?? pet;
   const color = PROFILE_COLORS[profileIndex] ?? '#fff';
   const canHeal = gameState.healthPoints < gameState.maxHealthPoints;
+  const flip = !isEgg && direction === 'left' ? 'scaleX(-1)' : 'scaleX(1)';
+  const squashScale = squashFrame === 0 ? 0.94 : 1;
 
   return (
-    <div style={wrapStyle}>
+    <div
+      style={{
+        position: 'absolute',
+        left: `${position}%`,
+        top: `${FLOOR_Y_PERCENT}%`,
+        transform: 'translate(-50%, -100%)',
+        transition: 'left 0.1s linear',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      {hearts.map(h => (
+        <span
+          key={h.id}
+          style={{
+            position: 'absolute',
+            pointerEvents: 'none',
+            left: '50%',
+            top: '30%',
+            fontSize: `${h.size * 1.2}rem`,
+            // @ts-expect-error custom props consumed by the rub-heart keyframe
+            '--tx': `${h.dx}px`,
+            '--ty': `${h.dy}px`,
+            animation: 'rub-heart 1.5s ease-out forwards',
+          }}
+        >
+          {h.emoji}
+        </span>
+      ))}
       <div
-        style={{ position: 'relative', width: 110, height: 110, touchAction: 'none', userSelect: 'none', cursor: canHeal ? 'pointer' : 'default' }}
         onPointerDown={startRub}
         onPointerMove={moveRub}
         onPointerUp={endRub}
         onPointerCancel={endRub}
+        style={{ touchAction: 'none', userSelect: 'none', cursor: canHeal ? 'pointer' : 'default' }}
       >
-        {hearts.map(h => (
-          <span
-            key={h.id}
-            style={{
-              position: 'absolute',
-              pointerEvents: 'none',
-              left: '50%',
-              top: '40%',
-              fontSize: `${h.size * 1.2}rem`,
-              // @ts-expect-error custom props consumed by the rub-heart keyframe
-              '--tx': `${h.dx}px`,
-              '--ty': `${h.dy}px`,
-              animation: 'rub-heart 1.5s ease-out forwards',
-            }}
-          >
-            {h.emoji}
-          </span>
-        ))}
         <img
           src={sprite}
           alt={petName}
           draggable={false}
           style={{
-            width: '100%',
-            height: '100%',
+            width: 84,
+            height: 84,
             objectFit: 'contain',
             imageRendering: 'pixelated',
             filter: `drop-shadow(0 0 8px ${color}aa)`,
+            transform: `${flip} scaleY(${squashScale})`,
+            transformOrigin: 'bottom',
             animation: isRubbing ? 'pet-rub 0.35s ease-in-out infinite' : undefined,
           }}
         />
@@ -322,8 +372,8 @@ function TogetherPet({
       <span
         style={{
           color: 'rgba(255,255,255,0.9)', fontSize: '0.6875rem', fontWeight: 'bold',
-          textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          maxWidth: '100%', fontFamily: 'monospace', textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+          textAlign: 'center', whiteSpace: 'nowrap',
+          fontFamily: 'monospace', textShadow: '0 1px 3px rgba(0,0,0,0.8)',
         }}
       >
         {petName}
