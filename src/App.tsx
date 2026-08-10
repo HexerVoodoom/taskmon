@@ -1411,10 +1411,12 @@ export default function App() {
           </div>
         )}
 
-        {/* Companion HUD - fixo no rodapé como parte do flex */}
+        {/* Companion HUD - fixo no rodapé como parte do flex.
+            Sem backgroundColor próprio: o cenário do app (fixed inset-0 no
+            container raiz) já corre por baixo de tudo, do topo até o bottom;
+            pintar --tk-bg aqui criaria uma faixa sólida cobrindo essa arte. */}
         <div
           className={`flex-shrink-0 ${theme === 'win98' ? 'bg-[#c0c0c0] border-t-2 border-white px-6 pb-3 pt-3' : 'px-6 pb-3 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]'}`}
-          style={theme !== 'win98' ? { backgroundColor: 'var(--tk-bg)' } : undefined}
         >
           <CompanionHUD
             companionMood={getCompanionMood()}
