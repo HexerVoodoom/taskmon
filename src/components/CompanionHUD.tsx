@@ -102,7 +102,7 @@ export const CompanionHUD = memo(function CompanionHUD({
   const [direction, setDirection] = useState<'right' | 'left'>('right');
   // The pet only walks along the floor line near the bottom of the scene —
   // it doesn't roam vertically (that read as floating mid-room).
-  const positionY = 70;
+  const positionY = 72;
   const [showBubble, setShowBubble] = useState(false);
   const [squashFrame, setSquashFrame] = useState(0);
   const [bubbleText, setBubbleText] = useState('');

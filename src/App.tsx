@@ -1154,7 +1154,13 @@ export default function App() {
         }`,
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
-        backgroundAttachment: 'fixed',
+        // NOT background-attachment:fixed — this container is itself
+        // `position: fixed` (see className above), and pairing fixed
+        // attachment with an already-fixed containing block is a known
+        // rendering bug on mobile WebKit: the image only paints within a
+        // small stale rect instead of covering the element. The outer div
+        // never scrolls anyway (only its inner content does), so the
+        // default attachment already looks identical to "fixed" here.
       } : undefined}
     >
         {/* Help Modal */}
