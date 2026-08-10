@@ -138,9 +138,13 @@ function TogetherPet({
   language: Language;
   onHealed: (next: GameState) => void;
 }) {
+  // Sprite grande (mesmo tamanho das homes normais, 132px) numa tela
+  // estreita: 3 faixas de ~1/3 da largura já são menores que o próprio
+  // sprite, então o passeio vira um balanço curto (em vez do 10–90% de
+  // uma home normal) — um leve encontro entre vizinhos é esperado.
   const laneWidth = 100 / 3;
-  const laneMin = laneIndex * laneWidth + laneWidth * 0.18;
-  const laneMax = laneIndex * laneWidth + laneWidth * 0.82;
+  const laneMin = laneIndex * laneWidth + laneWidth * 0.4;
+  const laneMax = laneIndex * laneWidth + laneWidth * 0.6;
   const laneCenter = laneIndex * laneWidth + laneWidth / 2;
 
   const [position, setPosition] = useState(laneCenter);
@@ -287,11 +291,11 @@ function TogetherPet({
         <div
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            width: 64, height: 64, borderRadius: 999,
+            width: 96, height: 96, borderRadius: 999,
             border: '2px dashed rgba(255,255,255,0.5)',
           }}
         >
-          <span style={{ fontSize: '1.4rem' }}>🥚</span>
+          <span style={{ fontSize: '2rem' }}>🥚</span>
         </div>
         <span
           style={{
@@ -358,8 +362,8 @@ function TogetherPet({
           alt={petName}
           draggable={false}
           style={{
-            width: 84,
-            height: 84,
+            width: 132,
+            height: 132,
             objectFit: 'contain',
             imageRendering: 'pixelated',
             filter: `drop-shadow(0 0 8px ${color}aa)`,
