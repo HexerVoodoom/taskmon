@@ -30,9 +30,8 @@ interface TogetherHomeProps {
 }
 
 // Mesma altura de "chão" das homes normais (CompanionHUD: box de 360px,
-// pet ancorado a 72% da altura) — aqui em vez de UMA caixa com UM pet
-// andando de 10% a 90%, cada pet anda dentro da sua própria faixa (1/3 da
-// largura do palco), pra não colidir com os outros dois.
+// pet ancorado a 72% da altura) — os 3 pets dividem esse mesmo palco e
+// podem se cruzar livremente (sem faixa própria travando ninguém).
 const STAGE_HEIGHT = 360;
 const FLOOR_Y_PERCENT = 72;
 
@@ -52,7 +51,12 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 'calc(100dvh - 150px)',
+        // 100% (não uma estimativa em px) do espaço que sobrou na área de
+        // conteúdo depois de esconder o rodapé/banner — uma estimativa fixa
+        // ficava menor que o espaço real, sobrando vão embaixo e empurrando
+        // os pets pra cima.
+        height: '100%',
+        minHeight: '100%',
       }}
     >
       {/* Seletor de cenário — os 3 backgrounds das homes */}
@@ -138,16 +142,16 @@ function TogetherPet({
   language: Language;
   onHealed: (next: GameState) => void;
 }) {
-  // Sprite grande (mesmo tamanho das homes normais, 132px) numa tela
-  // estreita: 3 faixas de ~1/3 da largura já são menores que o próprio
-  // sprite, então o passeio vira um balanço curto (em vez do 10–90% de
-  // uma home normal) — um leve encontro entre vizinhos é esperado.
-  const laneWidth = 100 / 3;
-  const laneMin = laneIndex * laneWidth + laneWidth * 0.4;
-  const laneMax = laneIndex * laneWidth + laneWidth * 0.6;
-  const laneCenter = laneIndex * laneWidth + laneWidth / 2;
+  // Passeiam livres pelo palco inteiro (mesmo raio 10–90% de uma home
+  // normal) — podem se cruzar e passar um pelo outro, sem faixa própria
+  // travando ninguém. Só o ponto de partida e a velocidade variam por pet,
+  // pra não ficarem todos grudados andando em sincronia.
+  const WALK_MIN = 10;
+  const WALK_MAX = 90;
+  const startPosition = 20 + laneIndex * 30;
+  const speed = 0.22 + laneIndex * 0.06;
 
-  const [position, setPosition] = useState(laneCenter);
+  const [position, setPosition] = useState(startPosition);
   const [direction, setDirection] = useState<'right' | 'left'>(laneIndex % 2 === 0 ? 'right' : 'left');
   const [squashFrame, setSquashFrame] = useState(0);
   const [isRubbing, setIsRubbing] = useState(false);
@@ -162,21 +166,20 @@ function TogetherPet({
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
 
-  // Anda de um lado pro outro dentro da própria faixa — pausa durante o carinho.
+  // Anda de um lado pro outro do palco — pausa durante o carinho.
   useEffect(() => {
     if (!gameState) return;
-    const speed = 0.3;
     const walk = setInterval(() => {
       if (isRubbing) return;
       setPosition(prev => {
         const next = direction === 'right' ? prev + speed : prev - speed;
-        if (next >= laneMax) { setDirection('left'); return laneMax; }
-        if (next <= laneMin) { setDirection('right'); return laneMin; }
+        if (next >= WALK_MAX) { setDirection('left'); return WALK_MAX; }
+        if (next <= WALK_MIN) { setDirection('right'); return WALK_MIN; }
         return next;
       });
     }, 50);
     return () => clearInterval(walk);
-  }, [direction, isRubbing, gameState, laneMin, laneMax]);
+  }, [direction, isRubbing, gameState, speed]);
 
   // Respiração (squash/stretch), independente por pet.
   useEffect(() => {
@@ -278,9 +281,14 @@ function TogetherPet({
       <div
         style={{
           position: 'absolute',
-          left: `${laneCenter}%`,
-          top: `${FLOOR_Y_PERCENT}%`,
-          transform: 'translate(-50%, -50%)',
+          left: `${startPosition}%`,
+          top: `calc(${FLOOR_Y_PERCENT}% - 96px)`,
+          // width fixo: sem isso, um wrapper `position:absolute` com só
+          // `left` (sem `right`) tem largura "auto" calculada por
+          // shrink-to-fit, que o navegador limita ao espaço até a borda —
+          // perto da direita isso amassava até a imagem lá dentro.
+          width: 130,
+          transform: 'translateX(-50%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -324,8 +332,16 @@ function TogetherPet({
       style={{
         position: 'absolute',
         left: `${position}%`,
-        top: `${FLOOR_Y_PERCENT}%`,
-        transform: 'translate(-50%, -100%)',
+        // O pé do sprite (não a etiqueta com o nome, que fica abaixo dele)
+        // encosta na linha do chão — por isso o deslocamento fixo em px
+        // (altura do sprite) em vez de um translateY(-100%) no wrapper
+        // inteiro, que empurrava o pet pra cima da linha certa.
+        top: `calc(${FLOOR_Y_PERCENT}% - 132px)`,
+        // width fixo pelo mesmo motivo do placeholder de ovo acima: um
+        // wrapper absoluto com só `left` shrink-to-fit e amassa o sprite
+        // quando `position` chega perto da borda direita do palco.
+        width: 132,
+        transform: 'translateX(-50%)',
         transition: 'left 0.1s linear',
         display: 'flex',
         flexDirection: 'column',
