@@ -12,6 +12,7 @@ import type { GameState } from '../contexts/GameStateContext';
 import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
 import { HUB_SCENES, type HubSceneId } from '../utils/hubBackground';
+import { PET_BOX_HEIGHT } from '../utils/petBoxHeight';
 
 function loadProfileGameState(index: number): GameState | null {
   try {
@@ -29,11 +30,10 @@ interface TogetherHomeProps {
   onChangeBackground: (id: HubSceneId) => void;
 }
 
-// Mesma altura de "chão" das homes normais (CompanionHUD: box de 360px,
-// pet ancorado a 72% da altura) — os 3 pets dividem esse mesmo palco e
-// podem se cruzar livremente (sem faixa própria travando ninguém).
-const STAGE_HEIGHT = 360;
-const FLOOR_Y_PERCENT = 72;
+// Mesma altura (responsiva, PET_BOX_HEIGHT) e "chão" das homes normais —
+// os 3 pets dividem esse mesmo palco e podem se cruzar livremente (sem
+// faixa própria travando ninguém).
+const FLOOR_Y_PERCENT = 84;
 
 // Sem background próprio: o App já troca o cenário de tela cheia (fixed
 // inset-0 no container raiz) pro cenário escolhido aqui enquanto esta view
@@ -57,6 +57,10 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
         // os pets pra cima.
         height: '100%',
         minHeight: '100%',
+        // Reserva o espaço da dica no rodapé (que agora flutua por cima,
+        // absoluta) pra ela não ficar em cima dos pés/nome dos pets.
+        paddingBottom: 22,
+        boxSizing: 'border-box',
       }}
     >
       {/* Seletor de cenário — os 3 backgrounds das homes */}
@@ -95,10 +99,10 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
       </div>
 
       {/* Altura fixa igual à caixa do pet nas homes normais (CompanionHUD:
-          360px, chão a 72%) — grudada embaixo (marginTop: auto), no lugar
-          onde o rodapé normalmente fica, em vez de esticar/flutuar no meio
-          da tela. */}
-      <div style={{ position: 'relative', height: STAGE_HEIGHT, marginTop: 'auto' }}>
+          360px, chão bem mais embaixo) — grudada no fundo de verdade
+          (marginTop: auto + dica flutuando por cima, não mais empurrando
+          a caixa pra cima no fluxo normal). */}
+      <div style={{ position: 'relative', height: PET_BOX_HEIGHT, marginTop: 'auto' }}>
         {saves.map((gs, i) => (
           <TogetherPet
             key={i}
@@ -113,10 +117,15 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
 
       <p
         style={{
+          position: 'absolute',
+          bottom: 4,
+          left: '50%',
+          transform: 'translateX(-50%)',
           textAlign: 'center',
           color: 'rgba(255,255,255,0.85)',
           fontSize: '0.75rem',
-          padding: '0 8px 8px',
+          padding: '0 8px',
+          whiteSpace: 'nowrap',
           fontFamily: 'monospace',
           textShadow: '0 1px 3px rgba(0,0,0,0.8)',
           margin: 0,

@@ -9,6 +9,7 @@ import { getStageLevel, getPetOfStage, PETS, type PetType } from '../types/progr
 import iconItems from '../assets/icons/icon-items.png';
 import iconBath from '../assets/icons/icon-bath.png';
 import iconSleep from '../assets/icons/icon-sleep.png';
+import { PET_BOX_HEIGHT } from '../utils/petBoxHeight';
 
 interface CompanionHUDProps {
   companionMood: 'idle' | 'happy' | 'tired';
@@ -604,7 +605,7 @@ export const CompanionHUD = memo(function CompanionHUD({
                 : ''
           }`}
           style={{
-            height: '360px',
+            height: PET_BOX_HEIGHT,
             borderRadius: isGlitch || isWin98 ? undefined : 18,
             // The app's own background already carries the profile scene (or
             // a purchased shop skin) continuously behind everything — this
