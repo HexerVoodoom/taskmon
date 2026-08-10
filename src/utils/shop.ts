@@ -84,4 +84,10 @@ export const SHOP_ITEMS: ShopItem[] = [
   { id: 'food-cake', kind: 'food', icon: '🍰',
     namePt: 'Bolo', nameEn: 'Cake',
     descPt: 'Comer dá +1 de energia', descEn: 'Eating gives +1 energy', price: 20 },
+  { id: 'food-pancake', kind: 'food', icon: '🥞',
+    namePt: 'Panqueca', nameEn: 'Pancake',
+    descPt: 'Comer dá +1 de energia', descEn: 'Eating gives +1 energy', price: 14 },
+  { id: 'food-soul', kind: 'food', icon: '👻',
+    namePt: 'Alma', nameEn: 'Soul',
+    descPt: 'Comer dá +1 de energia', descEn: 'Eating gives +1 energy', price: 22 },
 ];

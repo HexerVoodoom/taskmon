@@ -129,22 +129,23 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         {isPt ? 'Minijogos para se divertir e acumular Bits com seu pet.' : 'Minigames to have fun and earn Bits with your pet.'}
       </p>
 
-      {cards.map(c => (
-        <button
-          key={c.key}
-          onClick={() => setOpenGame(c.key)}
-          className={`w-full text-left rounded-2xl p-4 transition-all cursor-pointer active:scale-[0.97] hover:shadow-xl ${
-            isGlitch
-              ? 'bg-[#0a0a0a] border-2 border-[#00ffff]/30'
-              : isWin98
-                ? 'win98-button bg-white'
-                : 'bg-white ring-1 ring-gray-200/50'
-          }`}
-          style={isGlitch || isWin98 ? undefined : {
-            boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06)',
-          }}
-        >
-          <div className="flex items-center gap-3">
+      <div className="grid grid-cols-2 gap-3">
+        {cards.map(c => (
+          <button
+            key={c.key}
+            onClick={() => setOpenGame(c.key)}
+            title={c.desc}
+            className={`flex flex-col items-center text-center rounded-2xl p-3 gap-2 transition-all cursor-pointer active:scale-[0.97] hover:shadow-xl ${
+              isGlitch
+                ? 'bg-[#0a0a0a] border-2 border-[#00ffff]/30'
+                : isWin98
+                  ? 'win98-button bg-white'
+                  : 'bg-white ring-1 ring-gray-200/50'
+            }`}
+            style={isGlitch || isWin98 ? undefined : {
+              boxShadow: '0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06)',
+            }}
+          >
             <div
               className="hover:scale-105 transition-transform"
               style={{
@@ -159,35 +160,17 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
                 ? <img src={c.sprite} alt="" style={{ width: 44, height: 44, objectFit: 'contain', imageRendering: 'pixelated', position: 'relative' }} />
                 : <span style={{ fontSize: '1.75rem', lineHeight: 1, position: 'relative' }}>{c.icon}</span>}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}
-                      style={{ fontSize: '0.92rem', fontWeight: 700 }}>
-                  {c.title}
-                </span>
-                <span className={`px-2 py-[2px] rounded-full font-semibold ${isGlitch ? 'bg-[#00ffff]/10 text-[#5fbcbc]' : 'bg-gray-100 text-gray-500'}`}
-                      style={{ fontSize: '0.6rem' }}>
-                  {c.pts}
-                </span>
-              </div>
-              <p className={isGlitch ? 'text-[#5fbcbc]' : isWin98 ? 'text-gray-700' : 'text-gray-500'}
-                 style={{ fontSize: '0.72rem', marginTop: 2 }}>
-                {c.desc}
-              </p>
-            </div>
-            <span
-              className={isGlitch ? 'text-[#00ffff]' : 'text-gray-400'}
-              style={{
-                fontSize: '1rem', flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: isGlitch ? 'transparent' : 'var(--tk-soft, #f3f4f6)',
-              }}
-            >
-              ›
+            <span className={`w-full truncate ${isGlitch ? 'text-[#00ffff]' : isWin98 ? 'text-black' : 'text-gray-900'}`}
+                  style={{ fontSize: '0.85rem', fontWeight: 700 }}>
+              {c.title}
             </span>
-          </div>
-        </button>
-      ))}
+            <span className={`px-2 py-[2px] rounded-full font-semibold ${isGlitch ? 'bg-[#00ffff]/10 text-[#5fbcbc]' : 'bg-gray-100 text-gray-500'}`}
+                  style={{ fontSize: '0.6rem' }}>
+              {c.pts}
+            </span>
+          </button>
+        ))}
+      </div>
 
       {shopOpen && (
         <ShopModal
