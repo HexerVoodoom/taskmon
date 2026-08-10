@@ -17,6 +17,7 @@ import { DailyReportModal } from './components/DailyReportModal';
 import { ItemsWindow } from './components/ItemsWindow';
 import { HelpModal } from './components/HelpModal';
 import { PET_BACKGROUNDS } from './utils/backgrounds';
+import { getHubBackground, getHubSceneImg, setHubBackground, type HubSceneId } from './utils/hubBackground';
 import { Plus, Edit2 } from 'lucide-react';
 import { type ActivityCategory } from './types/attributes';
 import { type CareEvent } from './components/CareSystem';
@@ -53,6 +54,14 @@ type ViewType = 'main' | 'evolution' | 'stats' | 'settings' | 'games' | 'togethe
 export default function App() {
   const { gameState, setGameState } = useGameState();
   const [currentView, setCurrentView] = useState<ViewType>('main');
+  // Cenário da 4ª casinha ("todos os pets juntos") — vive no App pra poder
+  // virar o backdrop de tela inteira (o mesmo mecanismo do cenário do
+  // perfil), não uma imagem presa dentro de uma caixinha.
+  const [hubBackground, setHubBackgroundState] = useState<HubSceneId>(getHubBackground);
+  const changeHubBackground = useCallback((id: HubSceneId) => {
+    setHubBackground(id);
+    setHubBackgroundState(id);
+  }, []);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [taskEditModalOpen, setTaskEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -1151,7 +1160,9 @@ export default function App() {
         // inside the companion card.
         backgroundColor: 'var(--tk-bg)',
         backgroundImage: `linear-gradient(rgba(0,0,0,0.32), rgba(0,0,0,0.32)), ${
-          (gameState.equippedBackground && PET_BACKGROUNDS[gameState.equippedBackground]?.css) || 'var(--tk-scene)'
+          currentView === 'together'
+            ? `url(${getHubSceneImg(hubBackground)})`
+            : (gameState.equippedBackground && PET_BACKGROUNDS[gameState.equippedBackground]?.css) || 'var(--tk-scene)'
         }`,
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
@@ -1296,7 +1307,13 @@ export default function App() {
           )}
 
           {currentView === 'together' && (
-            <Suspense fallback={null}><TogetherHome language={language} /></Suspense>
+            <Suspense fallback={null}>
+              <TogetherHome
+                language={language}
+                background={hubBackground}
+                onChangeBackground={changeHubBackground}
+              />
+            </Suspense>
           )}
 
           {currentView === 'evolution' && (
@@ -1391,8 +1408,10 @@ export default function App() {
           )}
         </div>
 
-        {/* HP risk banner — dismissible strip above companion */}
-        {gameState.healthPoints <= 1 && gameState.healthPoints > 0 && dailyDone < Math.ceil(FORM_REQUIREMENTS[getStageLevel(gameState.evolutionStage)].required / 2) && !hpBannerDismissed && (
+        {/* HP risk banner — dismissible strip above companion.
+            Escondido na 4ª casinha: é sobre o HP do perfil ATIVO, que não
+            tem relação com a view coletiva dos 3 pets. */}
+        {currentView !== 'together' && gameState.healthPoints <= 1 && gameState.healthPoints > 0 && dailyDone < Math.ceil(FORM_REQUIREMENTS[getStageLevel(gameState.evolutionStage)].required / 2) && !hpBannerDismissed && (
           <div className={`flex-shrink-0 flex items-center gap-2 px-4 py-1.5 animate-pulse ${
             theme === 'win98'
               ? 'bg-[#800000] border-t border-[#ff0000] text-white'
@@ -1419,7 +1438,10 @@ export default function App() {
         {/* Companion HUD - fixo no rodapé como parte do flex.
             Sem backgroundColor próprio: o cenário do app (fixed inset-0 no
             container raiz) já corre por baixo de tudo, do topo até o bottom;
-            pintar --tk-bg aqui criaria uma faixa sólida cobrindo essa arte. */}
+            pintar --tk-bg aqui criaria uma faixa sólida cobrindo essa arte.
+            Escondido na 4ª casinha: é o pet do perfil ATIVO, e a view
+            coletiva já mostra os 3 — duplicar confundia (parecia um 4º pet). */}
+        {currentView !== 'together' && (
         <div
           className={`flex-shrink-0 ${theme === 'win98' ? 'bg-[#c0c0c0] border-t-2 border-white px-6 pb-3 pt-3' : 'px-6 pb-3 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]'}`}
         >
@@ -1463,6 +1485,7 @@ export default function App() {
             feedAnim={feedAnim}
           />
         </div>
+        )}
 
       {editModalOpen && (
         <Suspense fallback={null}>

@@ -11,19 +11,7 @@ import type { GameState } from '../contexts/GameStateContext';
 import { PETS, type PetType } from '../types/progression';
 import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
-import gothicScene from '../assets/scenes/gothic.png';
-import greekScene from '../assets/scenes/greek.png';
-import madmaxScene from '../assets/scenes/madmax.png';
-
-const HUB_BACKGROUND_KEY = 'digiapp-hub-background';
-
-type SceneId = 'gothic' | 'greek' | 'madmax';
-
-const SCENES: { id: SceneId; namePt: string; nameEn: string; img: string; color: string }[] = [
-  { id: 'gothic', namePt: 'Gótico', nameEn: 'Gothic', img: gothicScene, color: PROFILE_COLORS[0] },
-  { id: 'greek', namePt: 'Grécia Antiga', nameEn: 'Ancient Greece', img: greekScene, color: PROFILE_COLORS[1] },
-  { id: 'madmax', namePt: 'Mad Max', nameEn: 'Mad Max', img: madmaxScene, color: PROFILE_COLORS[2] },
-];
+import { HUB_SCENES, type HubSceneId } from '../utils/hubBackground';
 
 function loadProfileGameState(index: number): GameState | null {
   try {
@@ -37,44 +25,74 @@ function loadProfileGameState(index: number): GameState | null {
 
 interface TogetherHomeProps {
   language: Language;
+  background: HubSceneId;
+  onChangeBackground: (id: HubSceneId) => void;
 }
 
-export function TogetherHome({ language }: TogetherHomeProps) {
-  const [background, setBackground] = useState<SceneId>(() => {
-    const saved = localStorage.getItem(HUB_BACKGROUND_KEY);
-    return saved === 'greek' || saved === 'madmax' ? saved : 'gothic';
-  });
+// Sem background próprio: o App já troca o cenário de tela cheia (fixed
+// inset-0 no container raiz) pro cenário escolhido aqui enquanto esta view
+// está ativa — a mesma faixa "topo até o bottom" das homes normais, em vez
+// de uma imagem presa numa caixinha. Este componente só posiciona os 3 pets
+// e o seletor de cenário por cima dela.
+export function TogetherHome({ language, background, onChangeBackground }: TogetherHomeProps) {
   const [saves, setSaves] = useState<(GameState | null)[]>(() =>
     Array.from({ length: PROFILE_COUNT }, (_, i) => loadProfileGameState(i))
   );
-
-  const chooseBackground = (id: SceneId) => {
-    setBackground(id);
-    localStorage.setItem(HUB_BACKGROUND_KEY, id);
-  };
-
-  const scene = SCENES.find(s => s.id === background) ?? SCENES[0];
 
   return (
     <div
       style={{
         position: 'relative',
-        minHeight: 420,
-        borderRadius: 20,
-        overflow: 'hidden',
-        backgroundImage: `linear-gradient(rgba(0,0,0,0.28), rgba(0,0,0,0.28)), url(${scene.img})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center top',
+        display: 'flex',
+        flexDirection: 'column',
+        // Preenche o resto da área de conteúdo (entre o header e o rodapé,
+        // que fica escondido nesta view) em vez de uma caixa de altura fixa.
+        minHeight: 'calc(100dvh - 150px)',
       }}
     >
+      {/* Seletor de cenário — os 3 backgrounds das homes */}
       <div
         style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
           display: 'flex',
-          alignItems: 'flex-end',
-          justifyContent: 'center',
-          gap: 8,
-          padding: '56px 8px 40px',
-          minHeight: 420,
+          gap: 6,
+          background: 'rgba(0,0,0,0.35)',
+          borderRadius: 999,
+          padding: 6,
+          zIndex: 1,
+        }}
+      >
+        {HUB_SCENES.map(s => (
+          <button
+            key={s.id}
+            onClick={() => onChangeBackground(s.id)}
+            title={language === 'pt-BR' ? s.namePt : s.nameEn}
+            aria-label={language === 'pt-BR' ? s.namePt : s.nameEn}
+            style={{
+              width: 26,
+              height: 26,
+              flexShrink: 0,
+              borderRadius: 999,
+              border: background === s.id ? '2px solid #fff' : '2px solid rgba(255,255,255,0.5)',
+              backgroundImage: `url(${s.img})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              cursor: 'pointer',
+            }}
+          />
+        ))}
+      </div>
+
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-evenly',
+          gap: 4,
+          padding: '48px 4px 32px',
         }}
       >
         {saves.map((gs, i) => (
@@ -88,50 +106,12 @@ export function TogetherHome({ language }: TogetherHomeProps) {
         ))}
       </div>
 
-      {/* Seletor de cenário — os 3 backgrounds das homes */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          display: 'flex',
-          gap: 6,
-          background: 'rgba(0,0,0,0.35)',
-          borderRadius: 999,
-          padding: 6,
-        }}
-      >
-        {SCENES.map(s => (
-          <button
-            key={s.id}
-            onClick={() => chooseBackground(s.id)}
-            title={language === 'pt-BR' ? s.namePt : s.nameEn}
-            aria-label={language === 'pt-BR' ? s.namePt : s.nameEn}
-            style={{
-              width: 26,
-              height: 26,
-              flexShrink: 0,
-              borderRadius: 999,
-              border: background === s.id ? `2px solid ${s.color}` : '2px solid rgba(255,255,255,0.6)',
-              backgroundImage: `url(${s.img})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              cursor: 'pointer',
-            }}
-          />
-        ))}
-      </div>
-
       <p
         style={{
-          position: 'absolute',
-          bottom: 8,
-          left: '50%',
-          transform: 'translateX(-50%)',
+          textAlign: 'center',
           color: 'rgba(255,255,255,0.85)',
           fontSize: '0.75rem',
-          padding: '0 8px',
-          textAlign: 'center',
+          padding: '0 8px 8px',
           fontFamily: 'monospace',
           textShadow: '0 1px 3px rgba(0,0,0,0.8)',
           margin: 0,
@@ -301,7 +281,7 @@ function TogetherPet({
   return (
     <div style={wrapStyle}>
       <div
-        style={{ position: 'relative', width: 96, height: 96, touchAction: 'none', userSelect: 'none', cursor: canHeal ? 'pointer' : 'default' }}
+        style={{ position: 'relative', width: 110, height: 110, touchAction: 'none', userSelect: 'none', cursor: canHeal ? 'pointer' : 'default' }}
         onPointerDown={startRub}
         onPointerMove={moveRub}
         onPointerUp={endRub}
