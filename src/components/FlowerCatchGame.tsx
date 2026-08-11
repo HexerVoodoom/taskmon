@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { getSpriteForStage } from '../utils/sprites';
 import { playBubblePop, playTaskComplete } from '../utils/sounds';
+import { startFlowerMusic, stopMusic } from '../utils/music';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import type { Language } from '../utils/i18n';
 
@@ -116,6 +117,13 @@ export function FlowerCatchGame({ evolutionStage, eggType, language, onEarnPoint
     setCatchFx(prev => [...prev, fx]);
     setTimeout(() => setCatchFx(prev => prev.filter(c => c.id !== fx.id)), 500);
   };
+
+  // Trilha sonora só toca durante a rodada — para sozinha ao pausar/sair.
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    startFlowerMusic();
+    return stopMusic;
+  }, [phase]);
 
   // Game loop: falls every flower, checks the catch zone, drops missed ones.
   useEffect(() => {

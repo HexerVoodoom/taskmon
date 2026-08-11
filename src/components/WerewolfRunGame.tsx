@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { playImpact, playTaskComplete } from '../utils/sounds';
+import { startWerewolfMusic, stopMusic } from '../utils/music';
 import { STORAGE_KEYS } from '../utils/storageKeys';
 import type { Language } from '../utils/i18n';
 import carPetsImg from '../assets/werewolf/car-pets.png';
@@ -101,6 +102,13 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
     };
     setPhase('playing');
   };
+
+  // Trilha sonora só toca durante a rodada — para sozinha ao pausar/sair.
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    startWerewolfMusic();
+    return stopMusic;
+  }, [phase]);
 
   useEffect(() => {
     if (phase !== 'playing') return;
