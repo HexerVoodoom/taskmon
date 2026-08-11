@@ -5,6 +5,8 @@ import { RoofRunGame } from './RoofRunGame';
 import { RPSGame } from './RPSGame';
 import { BubbleGame } from './BubbleGame';
 import { FlowerCatchGame } from './FlowerCatchGame';
+import { WerewolfRunGame } from './WerewolfRunGame';
+import werewolfIcon from '../assets/werewolf/werewolf.png';
 import { ShopModal } from './ShopModal';
 import { bitsStyle } from '../utils/currency';
 import { getSpriteForStage } from '../utils/sprites';
@@ -34,10 +36,10 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
   const isGlitch = theme === 'glitch';
-  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | null>(null);
+  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
 
-  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
+  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
     {
       key: 'dungeon', icon: '⚔️', sprite: getSpriteForStage('enemy-wraith'),
       badgeBg: 'linear-gradient(160deg, #4c1d95, #1e1b4b)',
@@ -81,6 +83,13 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       title: isPt ? 'Chuva de Flores' : 'Flower Catch',
       desc: isPt ? 'Arraste seu pet pros lados e encha a cesta pegando flores perto do chão! 40 segundos.' : 'Drag your pet side to side and fill the basket catching flowers near the ground! 40 seconds.',
       pts: isPt ? '1 Bit por flor' : '1 Bit per flower',
+    },
+    {
+      key: 'werewolf', icon: '🐺', sprite: werewolfIcon,
+      badgeBg: 'linear-gradient(160deg, #4b5563, #111827)',
+      title: isPt ? 'Atropela Lobisomem' : 'Werewolf Run',
+      desc: isPt ? 'Os 3 pets saem pra um passeio noturno — mude de faixa e atropele os lobisomens! 40 segundos.' : 'All 3 pets go for a night drive — switch lanes and run over the werewolves! 40 seconds.',
+      pts: isPt ? '1 Bit por lobisomem' : '1 Bit per werewolf',
     },
   ];
 
@@ -236,6 +245,13 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         <FlowerCatchGame
           evolutionStage={evolutionStage}
           eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'werewolf' && (
+        <WerewolfRunGame
           language={language}
           onEarnPoints={onEarnPoints}
           onExit={() => setOpenGame(null)}

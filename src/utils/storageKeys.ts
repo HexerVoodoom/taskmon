@@ -33,6 +33,7 @@ const BASE_KEYS = {
   ROOF_BEST: 'digiapp-roof-best',
   BUBBLE_BEST: 'digiapp-bubble-best',
   FLOWER_BEST: 'digiapp-flower-best',
+  WEREWOLF_BEST: 'digiapp-werewolf-best',
   SOUND_MUTED: 'digiapp-sound-muted',
   FCM_TOKEN: 'digiapp-fcm-token',
   LAST_CLOUD_SYNC: 'digiapp-last-cloud-sync',
@@ -71,6 +72,7 @@ const PROFILE_SCOPED_NAMES = new Set<BaseKeyName>([
   'ROOF_BEST',
   'BUBBLE_BEST',
   'FLOWER_BEST',
+  'WEREWOLF_BEST',
   'LAST_CLOUD_SYNC',
 ]);
 

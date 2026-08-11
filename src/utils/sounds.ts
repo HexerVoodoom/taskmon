@@ -153,3 +153,21 @@ export function playSleep(): void {
     beep(ctx, 349, 0.44, 0.25, 'sine', 0.05);
   });
 }
+
+/** Short, punchy thud — car hitting an obstacle (Werewolf Run) */
+export function playImpact(): void {
+  play(ctx => {
+    const osc = ctx.createOscillator();
+    const vol = ctx.createGain();
+    osc.connect(vol);
+    vol.connect(ctx.destination);
+    osc.type = 'triangle';
+    const t = ctx.currentTime;
+    osc.frequency.setValueAtTime(160, t);
+    osc.frequency.exponentialRampToValueAtTime(50, t + 0.12);
+    vol.gain.setValueAtTime(0.22, t);
+    vol.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    osc.start(t);
+    osc.stop(t + 0.14);
+  });
+}
