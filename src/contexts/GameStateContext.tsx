@@ -94,6 +94,8 @@ export interface GameState {
   dungeonRunsCompleted?: number;
   dinoBest?: number;
   totalPerfectDays?: number;
+  /** Lifetime werewolves run over across every Werewolf Run round. */
+  werewolfKills?: number;
   /** Summary of the previous day, written at the daily reset and shown once as a report. */
   lastDayReport?: {
     date: string;

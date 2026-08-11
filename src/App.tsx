@@ -920,6 +920,10 @@ export default function App() {
     setGameState(prev => (score > (prev.dinoBest ?? 0) ? { ...prev, dinoBest: score } : prev));
   }, []);
 
+  const handleWerewolfKill = useCallback(() => {
+    setGameState(prev => ({ ...prev, werewolfKills: (prev.werewolfKills ?? 0) + 1 }));
+  }, []);
+
   // 🪙 Bits — minigame currency; accumulates in GameState (cloud-synced), spent in the shop.
   const handleEarnGamePoints = useCallback((pts: number) => {
     if (pts <= 0) return;
@@ -1401,6 +1405,8 @@ export default function App() {
                 onGlitchtama={handleGlitchtama}
                 onDungeonEnemyDefeated={handleDungeonEnemyDefeated}
                 onDinoScore={handleDinoScore}
+                onWerewolfKill={handleWerewolfKill}
+                werewolfKillsTotal={gameState.werewolfKills ?? 0}
                 onEarnPoints={handleEarnGamePoints}
                 onShopBuy={handleShopBuy}
               />

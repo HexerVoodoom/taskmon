@@ -43,9 +43,13 @@ let nextWolfId = 0;
 let nextTreeId = 0;
 let nextFxId = 0;
 
-export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
+export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, onExit }: {
   language: Language;
   onEarnPoints: (pts: number) => void;
+  /** Bumps the lifetime "werewolves run over" counter (GameState.werewolfKills) — once per hit. */
+  onKill: () => void;
+  /** Current lifetime total, for display (owned by the caller, cloud-synced with GameState). */
+  killsTotal: number;
   onExit: () => void;
 }) {
   const isPt = language === 'pt-BR';
@@ -170,6 +174,7 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
           w.hit = true; w.hitT = 0;
           s.score += HIT_POINTS;
           onEarnPoints(HIT_POINTS);
+          onKill();
           playImpact();
           try { navigator.vibrate?.(25); } catch { /* noop */ }
           s.shake = 1;
@@ -342,7 +347,7 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
     };
     window.addEventListener('keydown', onKey);
     return () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', onKey); };
-  }, [phase, onEarnPoints, setLane]);
+  }, [phase, onEarnPoints, onKill, setLane]);
 
   const mono = { fontFamily: 'monospace' as const };
 
@@ -357,8 +362,11 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
         </button>
       </div>
 
-      <div style={{ ...mono, display: 'flex', justifyContent: 'space-between', padding: '0 20px 6px', fontSize: '0.8rem', color: 'var(--tk-muted)' }}>
+      <div style={{ ...mono, display: 'flex', justifyContent: 'space-between', padding: '0 20px 2px', fontSize: '0.8rem', color: 'var(--tk-muted)' }}>
         <span>{isPt ? 'Recorde' : 'Best'}: {best}</span>
+        <span>🐺 {isPt ? 'Total' : 'Total'}: {killsTotal}</span>
+      </div>
+      <div style={{ ...mono, display: 'flex', justifyContent: 'space-between', padding: '0 20px 6px', fontSize: '0.8rem', color: 'var(--tk-muted)' }}>
         <span>{isPt ? 'Atropelados' : 'Squashed'}: <span ref={scoreElRef}>0</span></span>
         <span>{isPt ? 'Tempo' : 'Time'}: <span ref={timeElRef}>{ROUND_SECONDS}</span>s</span>
       </div>

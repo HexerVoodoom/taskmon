@@ -18,7 +18,7 @@ import type { Language } from '../utils/i18n';
  * All games award 🪙 Bits (GameState.gamePoints), spent in the shop on food.
  * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/50) · RPS +10/match · Bubble Pop +1/bolha.
  */
-export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onEarnPoints, onShopBuy }: {
+export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onWerewolfKill, werewolfKillsTotal, onEarnPoints, onShopBuy }: {
   evolutionStage: string;
   eggType?: string;
   language: Language;
@@ -30,6 +30,8 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   onGlitchtama: () => void;
   onDungeonEnemyDefeated: () => void;
   onDinoScore: (score: number) => void;
+  onWerewolfKill: () => void;
+  werewolfKillsTotal: number;
   onEarnPoints: (pts: number) => void;
   onShopBuy: (itemId: string) => boolean;
 }) {
@@ -254,6 +256,8 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         <WerewolfRunGame
           language={language}
           onEarnPoints={onEarnPoints}
+          onKill={onWerewolfKill}
+          killsTotal={werewolfKillsTotal}
           onExit={() => setOpenGame(null)}
         />
       )}
