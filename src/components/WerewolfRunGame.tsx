@@ -5,6 +5,17 @@ import type { Language } from '../utils/i18n';
 import carPetsImg from '../assets/werewolf/car-pets.png';
 import werewolfImg from '../assets/werewolf/werewolf.png';
 import moonImg from '../assets/werewolf/moon.png';
+import treeRoundImg from '../assets/werewolf/tree-round.png';
+import treePineImg from '../assets/werewolf/tree-pine.png';
+import treeLayeredImg from '../assets/werewolf/tree-layered.png';
+import bushFlowerImg from '../assets/werewolf/bush-flower.png';
+import bushPlainImg from '../assets/werewolf/bush-plain.png';
+import cloudBigImg from '../assets/werewolf/cloud-big.png';
+import cloudMedImg from '../assets/werewolf/cloud-med.png';
+import cloudSmallImg from '../assets/werewolf/cloud-small.png';
+
+const SCENERY_SRCS = [treeRoundImg, treePineImg, treeLayeredImg, bushFlowerImg, bushPlainImg];
+const CLOUD_SRCS = [cloudBigImg, cloudMedImg, cloudSmallImg];
 
 /**
  * Werewolf Run — night drive starring all 3 pets together in the car (the
@@ -24,7 +35,7 @@ const HIT_T_MIN = 0.85; // must be this close before it counts as a hit
 const LANES = [-1, 0, 1] as const;
 
 interface Wolf { id: number; lane: number; t: number; speed: number; hit: boolean; hitT: number }
-interface Tree { id: number; side: -1 | 1; t: number; jitter: number; kind: 0 | 1; speed: number }
+interface Tree { id: number; side: -1 | 1; t: number; jitter: number; kind: number; speed: number }
 interface ImpactFx { id: number; x: number; y: number; t: number }
 
 let nextWolfId = 0;
@@ -43,6 +54,8 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
   const carImgRef = useRef<HTMLImageElement | null>(null);
   const wolfImgRef = useRef<HTMLImageElement | null>(null);
   const moonImgRef = useRef<HTMLImageElement | null>(null);
+  const sceneryImgsRef = useRef<HTMLImageElement[]>([]);
+  const cloudImgsRef = useRef<HTMLImageElement[]>([]);
 
   const [phase, setPhase] = useState<'ready' | 'playing' | 'over'>('ready');
   const phaseRef = useRef(phase);
@@ -70,6 +83,8 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
     const car = new Image(); car.src = carPetsImg; carImgRef.current = car;
     const wolf = new Image(); wolf.src = werewolfImg; wolfImgRef.current = wolf;
     const moon = new Image(); moon.src = moonImg; moonImgRef.current = moon;
+    sceneryImgsRef.current = SCENERY_SRCS.map(src => { const img = new Image(); img.src = src; return img; });
+    cloudImgsRef.current = CLOUD_SRCS.map(src => { const img = new Image(); img.src = src; return img; });
   }, []);
 
   const setLane = useCallback((dir: -1 | 1) => {
@@ -133,7 +148,7 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
       // Spawn roadside trees (purely decorative parallax)
       s.treeSpawnIn -= dt;
       if (s.treeSpawnIn <= 0) {
-        s.trees.push({ id: nextTreeId++, side: Math.random() < 0.5 ? -1 : 1, t: 0, jitter: Math.random() * 0.35, kind: Math.random() < 0.5 ? 0 : 1, speed: 1 / 2.6 });
+        s.trees.push({ id: nextTreeId++, side: Math.random() < 0.5 ? -1 : 1, t: 0, jitter: Math.random() * 0.35, kind: Math.floor(Math.random() * SCENERY_SRCS.length), speed: 1 / 2.6 });
         s.treeSpawnIn = 0.35 + Math.random() * 0.35;
       }
       for (const tr of s.trees) tr.t += dt * tr.speed;
@@ -184,16 +199,20 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
         ctx.drawImage(moon, W * 0.68, H * 0.04, ms, ms);
       }
 
-      // Clouds — soft parallax blobs, slow drift
-      ctx.fillStyle = 'rgba(200,205,235,0.18)';
-      for (let i = 0; i < 3; i++) {
-        const cx = ((s.cloudPhase * (8 + i * 4) + i * 140) % (W + 160)) - 80;
-        const cy = H * (0.08 + i * 0.07);
-        const r = 22 + i * 6;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, r, r * 0.5, 0, 0, Math.PI * 2);
-        ctx.ellipse(cx + r * 0.7, cy + 2, r * 0.7, r * 0.4, 0, 0, Math.PI * 2);
-        ctx.fill();
+      // Clouds — real sprites drifting slowly across the sky (parallax)
+      const clouds = cloudImgsRef.current;
+      if (clouds.length) {
+        ctx.globalAlpha = 0.8;
+        for (let i = 0; i < 3; i++) {
+          const img = clouds[i % clouds.length];
+          if (!img.complete || !img.naturalWidth) continue;
+          const cw = W * (0.32 - i * 0.06);
+          const ch = cw * (img.naturalHeight / img.naturalWidth);
+          const cx = ((s.cloudPhase * (7 + i * 3) + i * 160) % (W + cw * 2)) - cw;
+          const cy = H * (0.05 + i * 0.07);
+          ctx.drawImage(img, cx, cy, cw, ch);
+        }
+        ctx.globalAlpha = 1;
       }
 
       // Distant hills / grass beyond the road
@@ -239,26 +258,18 @@ export function WerewolfRunGame({ language, onEarnPoints, onExit }: {
         }
       }
 
-      // Roadside trees (parallax scenery), simple canvas shapes
+      // Roadside trees/bushes (parallax scenery) — real sprites
+      const scenery = sceneryImgsRef.current;
       const sortedTrees = [...s.trees].sort((a, b) => a.t - b.t);
       for (const tr of sortedTrees) {
+        const img = scenery[tr.kind % Math.max(1, scenery.length)];
+        if (!img?.complete || !img.naturalWidth) continue;
         const z = tr.t * tr.t;
         const x = laneX(tr.side * (1.85 + tr.jitter), z);
         const y = depthY(z);
-        const size = 10 + z * 46;
-        ctx.fillStyle = '#4b2e1a';
-        ctx.fillRect(x - size * 0.06, y - size * 0.15, size * 0.12, size * 0.2);
-        ctx.fillStyle = tr.kind === 0 ? '#1f7a3d' : '#256b34';
-        ctx.beginPath();
-        if (tr.kind === 0) {
-          ctx.arc(x, y - size * 0.45, size * 0.4, 0, Math.PI * 2);
-        } else {
-          ctx.moveTo(x, y - size * 0.85);
-          ctx.lineTo(x - size * 0.32, y - size * 0.1);
-          ctx.lineTo(x + size * 0.32, y - size * 0.1);
-        }
-        ctx.closePath();
-        ctx.fill();
+        const h = 12 + z * 130;
+        const w = h * (img.naturalWidth / img.naturalHeight);
+        ctx.drawImage(img, x - w / 2, y - h, w, h);
       }
 
       // Werewolves — farthest first so nearer ones draw on top
