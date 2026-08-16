@@ -6,6 +6,8 @@ import { RPSGame } from './RPSGame';
 import { BubbleGame } from './BubbleGame';
 import { FlowerCatchGame } from './FlowerCatchGame';
 import { WerewolfRunGame } from './WerewolfRunGame';
+import { FeirinhaGame } from './FeirinhaGame';
+import { LetterHuntGame } from './LetterHuntGame';
 import werewolfIcon from '../assets/werewolf/werewolf.png';
 import { ShopModal } from './ShopModal';
 import { bitsStyle } from '../utils/currency';
@@ -47,10 +49,10 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
   const isGlitch = theme === 'glitch';
-  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf' | null>(null);
+  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf' | 'feirinha' | 'letters' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
 
-  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
+  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf' | 'feirinha' | 'letters'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
     {
       key: 'dungeon', icon: '⚔️', sprite: getSpriteForStage('enemy-wraith'),
       badgeBg: 'linear-gradient(160deg, #4c1d95, #1e1b4b)',
@@ -101,6 +103,24 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       title: isPt ? 'Atropela Lobisomem' : 'Werewolf Run',
       desc: isPt ? 'Os 3 pets saem pra um passeio noturno — mude de faixa e atropele os lobisomens! 40 segundos.' : 'All 3 pets go for a night drive — switch lanes and run over the werewolves! 40 seconds.',
       pts: isPt ? '1 Bit por lobisomem' : '1 Bit per werewolf',
+    },
+    {
+      key: 'feirinha', icon: '🧺',
+      badgeBg: 'linear-gradient(160deg, #65a30d, #1a2e1a)',
+      title: isPt ? 'Feirinha dos Pets' : 'Pet Market',
+      desc: isPt
+        ? 'Seu pet abre a banquinha e os pets da família vêm comprar! Conte frutinhas ou pague com moedas — jogo de matemática com voz.'
+        : 'Your pet opens a stall and the family pets come shopping! Count fruits or pay with coins — a math game with voice.',
+      pts: isPt ? 'Educativo · 2 Bits por pedido' : 'Educational · 2 Bits per order',
+    },
+    {
+      key: 'letters', icon: '🔤',
+      badgeBg: 'linear-gradient(160deg, #7c3aed, #1e1b4b)',
+      title: isPt ? 'Caça-Letras' : 'Letter Hunt',
+      desc: isPt
+        ? 'Ouça e ache a letra, ou complete a palavra! Jogo de alfabetização com voz — perfeito pra quem está aprendendo a ler.'
+        : 'Listen and find the letter, or complete the word! A literacy game with voice — great for new readers.',
+      pts: isPt ? 'Educativo · 2 Bits por acerto' : 'Educational · 2 Bits per hit',
     },
   ];
 
@@ -281,6 +301,22 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
           onEarnPoints={onEarnPoints}
           onKill={onWerewolfKill}
           killsTotal={werewolfKillsTotal}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'feirinha' && (
+        <FeirinhaGame
+          eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'letters' && (
+        <LetterHuntGame
+          eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
           onExit={() => setOpenGame(null)}
         />
       )}

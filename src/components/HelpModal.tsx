@@ -83,6 +83,20 @@ const SECTIONS = [
         descPt: 'A aba Prêmios da loja tem recompensas do mundo real definidas pelo responsável (escolher o filme, história extra…). Resgatar mostra um cartão — apresente pra ganhar o prêmio!',
       },
       {
+        icon: '🧺',
+        labelEn: 'Family picnic',
+        labelPt: 'Piquenique da família',
+        descEn: 'In the together house: the real tasks completed by all 3 profiles add up each week. Reaching the goal (15) unlocks a picnic where the 3 pets celebrate together. Teamwork, never a ranking!',
+        descPt: 'Na casinha coletiva: as tarefas reais dos 3 perfis somam durante a semana. Bater a meta (15) libera um piquenique onde os 3 pets celebram juntos. Trabalho em equipe, nunca ranking!',
+      },
+      {
+        icon: '🎓',
+        labelEn: 'Educational games',
+        labelPt: 'Jogos educativos',
+        descEn: 'Pet Market (math and coins) and Letter Hunt (letters and words), both with voice narration and a mode for little ones and another for big kids. 2 Bits per hit.',
+        descPt: 'Feirinha dos Pets (matemática e moedas) e Caça-Letras (letras e palavras), os dois com narração por voz e um modo pros pequenos e outro pros grandes. 2 Bits por acerto.',
+      },
+      {
         icon: '🛡️',
         labelEn: 'Weekly shield',
         labelPt: 'Escudo semanal',

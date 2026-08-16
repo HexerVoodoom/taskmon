@@ -13,6 +13,29 @@ import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
 import { HUB_SCENES, type HubSceneId } from '../utils/hubBackground';
 import { PET_BOX_HEIGHT, FLOOR_BOTTOM_PX } from '../utils/petBoxHeight';
+import { weekKey } from '../utils/economy';
+
+// 🧺 Piquenique da Família — meta COOPERATIVA semanal (dossiê R09/R29: nunca
+// ranking entre as irmãs; o vetor social certo é a soma). As tarefas reais
+// concluídas pelos 3 perfis na semana somam num contador; ao bater a meta, os
+// 3 pets fazem piquenique juntos aqui na casinha coletiva. Leitura pura dos 3
+// saves — nenhuma escrita cruzada.
+const FAMILY_WEEK_GOAL = 15;
+
+function countFamilyTasksThisWeek(saves: (GameState | null)[]): number {
+  const thisWeek = weekKey(new Date());
+  return saves.reduce((sum, gs) => {
+    if (!gs) return sum;
+    const fromHistory = (gs.completedTasks ?? []).filter(ct => {
+      const d = new Date(ct.completedAt);
+      return !isNaN(d.getTime()) && weekKey(d) === thisWeek;
+    }).length;
+    // Tarefas de HOJE ainda na lista (migram pro histórico ao concluir; as
+    // marcadas agora mesmo ficam ~3s em `tasks`) — evita dupla contagem não
+    // contando `tasks.completed`, já que elas entram no histórico em seguida.
+    return sum + fromHistory;
+  }, 0);
+}
 
 function loadProfileGameState(index: number): GameState | null {
   try {
@@ -44,6 +67,10 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
   const [saves, setSaves] = useState<(GameState | null)[]>(() =>
     Array.from({ length: PROFILE_COUNT }, (_, i) => loadProfileGameState(i))
   );
+
+  // 🧺 Meta cooperativa da semana (soma dos 3 perfis, leitura pura).
+  const familyTasks = countFamilyTasksThisWeek(saves);
+  const picnicUnlocked = familyTasks >= FAMILY_WEEK_GOAL;
 
   return (
     <div
@@ -98,11 +125,65 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
         ))}
       </div>
 
+      {/* 🧺 Medidor do Piquenique da Família — meta semanal cooperativa */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          zIndex: 2,
+          background: 'rgba(0,0,0,0.45)',
+          borderRadius: 12,
+          padding: '6px 10px',
+          maxWidth: 180,
+        }}
+      >
+        <p style={{ margin: 0, color: '#fff', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>
+          🧺 {language === 'pt-BR' ? 'Piquenique da família' : 'Family picnic'}
+        </p>
+        <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.25)', marginTop: 4, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${Math.min(100, (familyTasks / FAMILY_WEEK_GOAL) * 100)}%`,
+            background: picnicUnlocked ? '#facc15' : '#4ade80',
+            borderRadius: 999,
+            transition: 'width 0.4s',
+          }} />
+        </div>
+        <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.62rem', fontFamily: 'monospace' }}>
+          {picnicUnlocked
+            ? (language === 'pt-BR' ? 'Conseguimos! 🎉' : 'We did it! 🎉')
+            : (language === 'pt-BR'
+              ? `${familyTasks}/${FAMILY_WEEK_GOAL} tarefas da família na semana`
+              : `${familyTasks}/${FAMILY_WEEK_GOAL} family tasks this week`)}
+        </p>
+      </div>
+
       {/* Altura fixa igual à caixa do pet nas homes normais (CompanionHUD:
           360px, chão bem mais embaixo) — grudada no fundo de verdade
           (marginTop: auto + dica flutuando por cima, não mais empurrando
           a caixa pra cima no fluxo normal). */}
       <div style={{ position: 'relative', height: PET_BOX_HEIGHT, marginTop: 'auto' }}>
+        {/* 🧺 Piquenique desbloqueado: toalha e comidinhas no chão entre os
+            pets — a celebração coletiva da meta da semana. */}
+        {picnicUnlocked && (
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              left: '50%',
+              bottom: FLOOR_BOTTOM_PX - 6,
+              transform: 'translateX(-50%)',
+              textAlign: 'center',
+              zIndex: 0,
+              pointerEvents: 'none',
+            }}
+          >
+            <div className="animate-pulse" style={{ fontSize: '1.1rem', letterSpacing: 2 }}>🎈 🎵 🎈</div>
+            <div style={{ fontSize: '1.5rem', letterSpacing: 4 }}>🧺🍰🍎🥪🧃</div>
+            <div style={{ width: 150, height: 14, margin: '2px auto 0', borderRadius: 4, background: 'repeating-linear-gradient(45deg, #dc2626 0 8px, #fff 8px 16px)', opacity: 0.9 }} />
+          </div>
+        )}
         {saves.map((gs, i) => (
           <TogetherPet
             key={i}
