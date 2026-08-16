@@ -25,7 +25,7 @@ import { FORM_REQUIREMENTS, getStageLevel, canSelectWeekdays, getMaxEnergyForSta
 import { type Language, useTranslation } from './utils/i18n';
 import { DigiWidget } from './plugins/DigiWidgetPlugin';
 import { useGameState, getMaxHPForStage, type GameState, type Activity, type Task, type Step } from './contexts/GameStateContext';
-import { STORAGE_KEYS, getActiveProfile } from './utils/storageKeys';
+import { STORAGE_KEYS, getActiveProfile, keyForProfile } from './utils/storageKeys';
 import { getNextEvolution } from './utils/dailyReset';
 import { isMuted, setMuted, playTaskComplete, playFeed, playPoopClean, playDigivolve, playDegenerate, playSleep } from './utils/sounds';
 import { requestNotificationPermission, showNotification } from './utils/notifications';
@@ -75,10 +75,12 @@ export default function App() {
   const [messageTrigger, setMessageTrigger] = useState(0);
   const [feedAnim, setFeedAnim] = useState<{ emoji: string; n: number } | null>(null);
   // 🎉 Confete + "+N Bits" na conclusão de tarefa real (n = re-dispara a animação)
-  const [celebration, setCelebration] = useState<{ n: number; bits: number } | null>(null);
+  // + elogio de PROCESSO (nunca de atributo — dossiê R23: "você se esforçou",
+  // não "você é inteligente"), mostrado e falado em voz alta.
+  const [celebration, setCelebration] = useState<{ n: number; bits: number; praise: string } | null>(null);
   useEffect(() => {
     if (!celebration) return;
-    const t = setTimeout(() => setCelebration(null), 1800);
+    const t = setTimeout(() => setCelebration(null), 2100);
     return () => clearTimeout(t);
   }, [celebration]);
   const [careEvent, setCareEvent] = useState<CareEvent | null>(null);
@@ -116,6 +118,25 @@ export default function App() {
     const saved = localStorage.getItem(STORAGE_KEYS.LANGUAGE);
     return saved === 'pt-BR' ? 'pt-BR' : 'en-US';
   });
+
+  // Dispara a celebração de tarefa (estado declarado junto do feedAnim acima):
+  // sorteia o elogio de processo, mostra no overlay e fala em voz alta.
+  const celebrateTask = useCallback(() => {
+    const PRAISE = language === 'pt-BR'
+      ? ['Você conseguiu!', 'Que capricho!', 'Você se esforçou muito!', 'Mandou bem!', 'Você não desistiu!', 'Que ajuda boa!', 'Cada dia melhor!']
+      : ['You did it!', 'Great effort!', 'You worked so hard!', 'Nice going!', 'You didn\'t give up!', 'What a big help!', 'Better every day!'];
+    const praise = PRAISE[Math.floor(Math.random() * PRAISE.length)];
+    setCelebration(prev => ({ n: (prev?.n ?? 0) + 1, bits: TASK_BITS, praise }));
+    if (!isMuted()) {
+      try {
+        window.speechSynthesis?.cancel();
+        const u = new SpeechSynthesisUtterance(praise);
+        u.lang = language === 'pt-BR' ? 'pt-BR' : 'en-US';
+        u.rate = 0.95;
+        window.speechSynthesis?.speak(u);
+      } catch { /* noop */ }
+    }
+  }, [language]);
   // Onboarding removido: entra direto no jogo. Marca o flag (por perfil) na
   // primeira vez pra manter o storage consistente; GameStateContext já cuida
   // de dar o pet certo (vix/momo/kiwi) de cara pra quem nunca teve save.
@@ -361,7 +382,7 @@ export default function App() {
       // 🎉 Celebração (confete + Bits) quando a ATIVIDADE inteira fechou —
       // computado fora do updater (StrictMode) simulando o passo recém-marcado.
       if (activity && activity.steps.length > 0 && activity.steps.every(s => s.completed || s.id === stepId)) {
-        setCelebration(prev => ({ n: (prev?.n ?? 0) + 1, bits: TASK_BITS }));
+        celebrateTask();
       }
 
       // Check if this is the first task/step ever completed and show popup
@@ -600,8 +621,8 @@ export default function App() {
     if (!task.completed) {
       playTaskComplete();
       // 🎉 Juice: a conclusão da tarefa real é o momento mais importante do
-      // app (dossiê U3) — confete + Bits voando, não só um check silencioso.
-      setCelebration(prev => ({ n: (prev?.n ?? 0) + 1, bits: TASK_BITS }));
+      // app (dossiê U3) — confete + Bits + elogio de processo falado.
+      celebrateTask();
 
       // Mark task as completed first — 💠 tarefa real → +TASK_BITS na hora
       // (entrega imediata, requisito da economia de fichas; dossiê R21).
@@ -990,6 +1011,33 @@ export default function App() {
   const handleSaveRewards = useCallback((rewards: RealReward[]) => {
     setGameState(prev => ({ ...prev, realRewards: rewards }));
   }, []);
+
+  // 🎀 Presente entre pets (casinha coletiva): transfere uma comida do
+  // inventário do perfil ATIVO pro inventário do pet de outra irmã. O alvo é
+  // sempre um perfil INATIVO (o React não segura o estado dele), então
+  // escrever direto no localStorage dele é seguro — mesmo padrão do carinho
+  // cross-profile do TogetherHome. A escrita fica FORA do updater (StrictMode).
+  const handleGiftFood = useCallback((targetProfile: number, emoji: string): boolean => {
+    if (targetProfile === getActiveProfile()) return false;
+    if ((gameState.foodInventory[emoji] ?? 0) <= 0) return false;
+    try {
+      const key = keyForProfile('GAME_STATE', targetProfile);
+      const raw = localStorage.getItem(key);
+      if (!raw) return false;
+      const target = JSON.parse(raw);
+      target.foodInventory = { ...(target.foodInventory ?? {}), [emoji]: ((target.foodInventory ?? {})[emoji] ?? 0) + 1 };
+      localStorage.setItem(key, JSON.stringify(target));
+    } catch { return false; }
+    setGameState(prev => {
+      const count = prev.foodInventory[emoji] ?? 0;
+      if (count <= 0) return prev;
+      const inv = { ...prev.foodInventory, [emoji]: count - 1 };
+      if (inv[emoji] === 0) delete inv[emoji];
+      return { ...prev, foodInventory: inv };
+    });
+    playFeed();
+    return true;
+  }, [gameState.foodInventory]);
 
   // 🛒 Shop purchase — charges points, adds the food to the Items folder (same
   // +1-energy feed as task-completion food; see handleFeed).
@@ -1382,6 +1430,8 @@ export default function App() {
                 language={language}
                 background={hubBackground}
                 onChangeBackground={changeHubBackground}
+                activeFoodInventory={gameState.foodInventory}
+                onGiftFood={handleGiftFood}
               />
             </Suspense>
           )}
@@ -1508,6 +1558,7 @@ export default function App() {
               />
             ))}
             <span className="tk-bits-pop tk-keep-mono">+{celebration.bits} 💠</span>
+            <span className="tk-praise-pop">{celebration.praise}</span>
           </div>
         )}
 

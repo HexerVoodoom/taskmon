@@ -5236,3 +5236,28 @@ html.tk-theme .bg-teal-500 { background: var(--tk-btn-bg) !important; }
   .tk-confetti { display: none; }
   .tk-bits-pop { animation-duration: 0.6s; }
 }
+
+/* Frase de elogio de processo sob o "+10 Bits" da celebração */
+.tk-praise-pop {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  transform: translateX(-50%);
+  font-family: monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.55), 0 2px 10px rgba(0,0,0,0.45);
+  white-space: nowrap;
+  opacity: 0;
+  animation: tk-praise-pop 2s ease-out forwards;
+}
+@keyframes tk-praise-pop {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(10px); }
+  18%  { opacity: 1; transform: translateX(-50%) translateY(0); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-18px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tk-praise-pop { animation-duration: 0.8s; }
+}

@@ -6,7 +6,7 @@
 // (STORAGE_KEYS.RUB_HEAL_DAY por perfil) usado na home normal.
 import { useEffect, useRef, useState } from 'react';
 import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
-import { keyForProfile, PROFILE_COUNT } from '../utils/storageKeys';
+import { keyForProfile, getActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
 import { getStageLevel, PETS, type PetType } from '../types/progression';
 import type { GameState } from '../contexts/GameStateContext';
 import { PROFILE_COLORS } from './Header';
@@ -22,19 +22,19 @@ import { weekKey } from '../utils/economy';
 // saves — nenhuma escrita cruzada.
 const FAMILY_WEEK_GOAL = 15;
 
-function countFamilyTasksThisWeek(saves: (GameState | null)[]): number {
+// Tarefas da semana POR PERFIL — cada uma é exibida como contribuição pra
+// meta somada (equipe), nunca como ranking. Tarefas de HOJE ainda na lista
+// (migram pro histórico ~3s após concluir) não são contadas pra evitar dupla
+// contagem — entram no histórico em seguida.
+function countWeekTasksByProfile(saves: (GameState | null)[]): number[] {
   const thisWeek = weekKey(new Date());
-  return saves.reduce((sum, gs) => {
-    if (!gs) return sum;
-    const fromHistory = (gs.completedTasks ?? []).filter(ct => {
+  return saves.map(gs => {
+    if (!gs) return 0;
+    return (gs.completedTasks ?? []).filter(ct => {
       const d = new Date(ct.completedAt);
       return !isNaN(d.getTime()) && weekKey(d) === thisWeek;
     }).length;
-    // Tarefas de HOJE ainda na lista (migram pro histórico ao concluir; as
-    // marcadas agora mesmo ficam ~3s em `tasks`) — evita dupla contagem não
-    // contando `tasks.completed`, já que elas entram no histórico em seguida.
-    return sum + fromHistory;
-  }, 0);
+  });
 }
 
 function loadProfileGameState(index: number): GameState | null {
@@ -51,6 +51,10 @@ interface TogetherHomeProps {
   language: Language;
   background: HubSceneId;
   onChangeBackground: (id: HubSceneId) => void;
+  /** Inventário de comida do perfil ATIVO — fonte dos presentes 🎀. */
+  activeFoodInventory: Record<string, number>;
+  /** Transfere 1 comida do perfil ativo pro inventário do perfil alvo. */
+  onGiftFood: (targetProfile: number, emoji: string) => boolean;
 }
 
 // Mesma altura (responsiva, PET_BOX_HEIGHT) e "chão" (FLOOR_BOTTOM_PX,
@@ -63,14 +67,33 @@ interface TogetherHomeProps {
 // está ativa — a mesma faixa "topo até o bottom" das homes normais, em vez
 // de uma imagem presa numa caixinha. Este componente só posiciona os 3 pets
 // (andando, na mesma altura das homes) e o seletor de cenário por cima dela.
-export function TogetherHome({ language, background, onChangeBackground }: TogetherHomeProps) {
+export function TogetherHome({ language, background, onChangeBackground, activeFoodInventory, onGiftFood }: TogetherHomeProps) {
   const [saves, setSaves] = useState<(GameState | null)[]>(() =>
     Array.from({ length: PROFILE_COUNT }, (_, i) => loadProfileGameState(i))
   );
 
   // 🧺 Meta cooperativa da semana (soma dos 3 perfis, leitura pura).
-  const familyTasks = countFamilyTasksThisWeek(saves);
+  const weekByProfile = countWeekTasksByProfile(saves);
+  const familyTasks = weekByProfile.reduce((a, b) => a + b, 0);
   const picnicUnlocked = familyTasks >= FAMILY_WEEK_GOAL;
+
+  // 🎀 Presente: perfil alvo com o seletor de comida aberto (null = fechado).
+  const activeProfile = getActiveProfile();
+  const [giftTarget, setGiftTarget] = useState<number | null>(null);
+  const [giftFlash, setGiftFlash] = useState<number | null>(null);
+  const giftableFoods = Object.entries(activeFoodInventory)
+    .filter(([emoji, n]) => n > 0 && emoji !== '💗' && emoji !== '🌀')
+    .slice(0, 6);
+
+  const sendGift = (target: number, emoji: string) => {
+    if (onGiftFood(target, emoji)) {
+      setGiftTarget(null);
+      setGiftFlash(target);
+      // Recarrega o save do alvo pro pet "receber" na hora.
+      setSaves(prev => prev.map((p, idx) => (idx === target ? loadProfileGameState(target) : p)));
+      setTimeout(() => setGiftFlash(null), 1600);
+    }
+  };
 
   return (
     <div
@@ -157,6 +180,19 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
               ? `${familyTasks}/${FAMILY_WEEK_GOAL} tarefas da família na semana`
               : `${familyTasks}/${FAMILY_WEEK_GOAL} family tasks this week`)}
         </p>
+        {/* Contribuição de cada pet — ordem fixa dos perfis, pesos visuais
+            iguais: soma de equipe, nunca ranking (dossiê R29). */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          {saves.map((gs, i) => {
+            const pet = PETS[(gs?.eggType ?? 'vix') as PetType];
+            return (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontFamily: 'monospace', fontSize: '0.62rem', color: '#fff' }}>
+                <span style={{ width: 7, height: 7, borderRadius: 999, background: PROFILE_COLORS[i], display: 'inline-block' }} />
+                {gs ? `${pet.name} ${weekByProfile[i]}` : '—'}
+              </span>
+            );
+          })}
+        </div>
       </div>
 
       {/* Altura fixa igual à caixa do pet nas homes normais (CompanionHUD:
@@ -195,6 +231,89 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
           />
         ))}
       </div>
+
+      {/* 🎀 Barra de presente: manda uma comidinha do SEU estoque pro pet de
+          outra irmã. Botões fixos (os pets andam — botão flutuante seria
+          impossível de acertar com dedo pequeno). */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 22,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(0,0,0,0.45)',
+          borderRadius: 999,
+          padding: '5px 10px',
+          zIndex: 2,
+        }}
+      >
+        {giftTarget === null ? (
+          <>
+            <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: '0.68rem', fontWeight: 700 }}>🎀</span>
+            {saves.map((gs, i) => {
+              if (i === activeProfile || !gs) return null;
+              const pet = PETS[(gs.eggType ?? 'vix') as PetType];
+              return (
+                <button
+                  key={i}
+                  onClick={() => setGiftTarget(i)}
+                  disabled={giftableFoods.length === 0}
+                  title={language === 'pt-BR' ? `Mandar presente pro ${pet.name}` : `Send a gift to ${pet.name}`}
+                  style={{
+                    fontFamily: 'monospace', fontSize: '0.7rem', fontWeight: 800, cursor: giftableFoods.length ? 'pointer' : 'default',
+                    border: `1.5px solid ${PROFILE_COLORS[i]}`, borderRadius: 999, padding: '3px 10px',
+                    background: 'rgba(255,255,255,0.12)', color: '#fff', opacity: giftableFoods.length ? 1 : 0.5,
+                  }}
+                >
+                  {pet.name}
+                </button>
+              );
+            })}
+            {giftableFoods.length === 0 && (
+              <span style={{ color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', fontSize: '0.6rem' }}>
+                {language === 'pt-BR' ? 'sem comida pra dar' : 'no food to give'}
+              </span>
+            )}
+          </>
+        ) : (
+          <>
+            {giftableFoods.map(([emoji, n]) => (
+              <button
+                key={emoji}
+                onClick={() => sendGift(giftTarget, emoji)}
+                title={`×${n}`}
+                style={{ border: 'none', background: 'rgba(255,255,255,0.15)', borderRadius: 999, width: 34, height: 34, fontSize: '1.05rem', cursor: 'pointer' }}
+              >
+                {emoji}
+              </button>
+            ))}
+            <button
+              onClick={() => setGiftTarget(null)}
+              aria-label={language === 'pt-BR' ? 'Cancelar' : 'Cancel'}
+              style={{ border: 'none', background: 'transparent', color: '#fff', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem' }}
+            >
+              ✕
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* 💝 Confirmação do presente enviado */}
+      {giftFlash !== null && (
+        <p
+          className="animate-pulse"
+          style={{
+            position: 'absolute', bottom: 62, left: '50%', transform: 'translateX(-50%)',
+            color: '#fff', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 800,
+            textShadow: '0 1px 3px rgba(0,0,0,0.8)', margin: 0, zIndex: 2, whiteSpace: 'nowrap',
+          }}
+        >
+          {language === 'pt-BR' ? 'Presente enviado! 💝' : 'Gift sent! 💝'}
+        </p>
+      )}
 
       <p
         style={{
