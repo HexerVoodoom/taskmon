@@ -14,14 +14,13 @@ import type { Language } from '../utils/i18n';
 import { HUB_SCENES, type HubSceneId } from '../utils/hubBackground';
 import { PET_BOX_HEIGHT, FLOOR_BOTTOM_PX } from '../utils/petBoxHeight';
 import { weekKey } from '../utils/economy';
+import { readBasket, isBasketFull, canClaimPicnic, FAMILY_BASKET_GOAL } from '../utils/familyBasket';
 
 // 🧺 Piquenique da Família — meta COOPERATIVA semanal (dossiê R09/R29: nunca
 // ranking entre as irmãs; o vetor social certo é a soma). As tarefas reais
 // concluídas pelos 3 perfis na semana somam num contador; ao bater a meta, os
 // 3 pets fazem piquenique juntos aqui na casinha coletiva. Leitura pura dos 3
 // saves — nenhuma escrita cruzada.
-const FAMILY_WEEK_GOAL = 15;
-
 // Tarefas da semana POR PERFIL — cada uma é exibida como contribuição pra
 // meta somada (equipe), nunca como ranking. Tarefas de HOJE ainda na lista
 // (migram pro histórico ~3s após concluir) não são contadas pra evitar dupla
@@ -51,10 +50,8 @@ interface TogetherHomeProps {
   language: Language;
   background: HubSceneId;
   onChangeBackground: (id: HubSceneId) => void;
-  /** Inventário de comida do perfil ATIVO — fonte dos presentes 🎀. */
-  activeFoodInventory: Record<string, number>;
-  /** Transfere 1 comida do perfil ativo pro inventário do perfil alvo. */
-  onGiftFood: (targetProfile: number, emoji: string) => boolean;
+  /** Pega o presente do piquenique pro perfil ativo (null se não puder). */
+  onClaimPicnic: () => string | null;
 }
 
 // Mesma altura (responsiva, PET_BOX_HEIGHT) e "chão" (FLOOR_BOTTOM_PX,
@@ -67,33 +64,30 @@ interface TogetherHomeProps {
 // está ativa — a mesma faixa "topo até o bottom" das homes normais, em vez
 // de uma imagem presa numa caixinha. Este componente só posiciona os 3 pets
 // (andando, na mesma altura das homes) e o seletor de cenário por cima dela.
-export function TogetherHome({ language, background, onChangeBackground, activeFoodInventory, onGiftFood }: TogetherHomeProps) {
+export function TogetherHome({ language, background, onChangeBackground, onClaimPicnic }: TogetherHomeProps) {
   const [saves, setSaves] = useState<(GameState | null)[]>(() =>
     Array.from({ length: PROFILE_COUNT }, (_, i) => loadProfileGameState(i))
   );
 
-  // 🧺 Meta cooperativa da semana (soma dos 3 perfis, leitura pura).
+  // 🧺 Cesta da família: enche com uma CÓPIA de cada comidinha ganha em
+  // tarefa real pelas 3 (utils/familyBasket). A contribuição por pet vem das
+  // tarefas da semana — mostra quem juntou o quê, sem virar ranking.
+  const [basket, setBasket] = useState(() => readBasket());
   const weekByProfile = countWeekTasksByProfile(saves);
-  const familyTasks = weekByProfile.reduce((a, b) => a + b, 0);
-  const picnicUnlocked = familyTasks >= FAMILY_WEEK_GOAL;
+  const collected = basket.foods.length;
+  const picnicUnlocked = isBasketFull(basket);
+  const canClaim = canClaimPicnic(basket, getActiveProfile());
+  const [claimedNow, setClaimedNow] = useState<string | null>(null);
 
-  // 🎀 Presente: perfil alvo com o seletor de comida aberto (null = fechado).
-  const activeProfile = getActiveProfile();
-  const [giftTarget, setGiftTarget] = useState<number | null>(null);
-  const [giftFlash, setGiftFlash] = useState<number | null>(null);
-  const giftableFoods = Object.entries(activeFoodInventory)
-    .filter(([emoji, n]) => n > 0 && emoji !== '💗' && emoji !== '🌀')
-    .slice(0, 6);
-
-  const sendGift = (target: number, emoji: string) => {
-    if (onGiftFood(target, emoji)) {
-      setGiftTarget(null);
-      setGiftFlash(target);
-      // Recarrega o save do alvo pro pet "receber" na hora.
-      setSaves(prev => prev.map((p, idx) => (idx === target ? loadProfileGameState(target) : p)));
-      setTimeout(() => setGiftFlash(null), 1600);
+  const claim = () => {
+    const gift = onClaimPicnic();
+    if (gift) {
+      setBasket(readBasket());
+      setClaimedNow(gift);
+      setTimeout(() => setClaimedNow(null), 2600);
     }
   };
+
 
   return (
     <div
@@ -167,7 +161,7 @@ export function TogetherHome({ language, background, onChangeBackground, activeF
         <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.25)', marginTop: 4, overflow: 'hidden' }}>
           <div style={{
             height: '100%',
-            width: `${Math.min(100, (familyTasks / FAMILY_WEEK_GOAL) * 100)}%`,
+            width: `${Math.min(100, (collected / FAMILY_BASKET_GOAL) * 100)}%`,
             background: picnicUnlocked ? '#facc15' : '#4ade80',
             borderRadius: 999,
             transition: 'width 0.4s',
@@ -175,11 +169,18 @@ export function TogetherHome({ language, background, onChangeBackground, activeF
         </div>
         <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.62rem', fontFamily: 'monospace' }}>
           {picnicUnlocked
-            ? (language === 'pt-BR' ? 'Conseguimos! 🎉' : 'We did it! 🎉')
+            ? (language === 'pt-BR' ? 'Cesta cheia! 🎉' : 'Basket full! 🎉')
             : (language === 'pt-BR'
-              ? `${familyTasks}/${FAMILY_WEEK_GOAL} tarefas da família na semana`
-              : `${familyTasks}/${FAMILY_WEEK_GOAL} family tasks this week`)}
+              ? `${collected}/${FAMILY_BASKET_GOAL} comidinhas na cesta`
+              : `${collected}/${FAMILY_BASKET_GOAL} treats in the basket`)}
         </p>
+
+        {/* As comidinhas de verdade que a família juntou (últimas 10) */}
+        {collected > 0 && (
+          <p style={{ margin: '2px 0 0', fontSize: '0.72rem', lineHeight: 1.2, letterSpacing: '0.02em', maxWidth: 170 }}>
+            {basket.foods.slice(-10).join('')}
+          </p>
+        )}
         {/* Contribuição dos TRÊS pets — sempre os 3 aparecem, mesmo que uma
             casinha ainda não tenha save (conta 0 em vez de sumir): a meta é
             da família inteira. Ordem fixa dos perfis, pesos visuais iguais:
@@ -236,87 +237,32 @@ export function TogetherHome({ language, background, onChangeBackground, activeF
         ))}
       </div>
 
-      {/* 🎀 Barra de presente: manda uma comidinha do SEU estoque pro pet de
-          outra irmã. Botões fixos (os pets andam — botão flutuante seria
-          impossível de acertar com dedo pequeno). Só perfis COM save podem
-          receber: escrever num save inexistente criaria um perfil fantasma. */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 22,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'rgba(0,0,0,0.45)',
-          borderRadius: 999,
-          padding: '5px 10px',
-          zIndex: 2,
-        }}
-      >
-        {giftTarget === null ? (
-          <>
-            <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: '0.68rem', fontWeight: 700 }}>🎀</span>
-            {saves.map((gs, i) => {
-              if (i === activeProfile || !gs) return null;
-              const pet = PETS[(gs.eggType ?? PET_TYPES[i] ?? 'vix') as PetType];
-              return (
-                <button
-                  key={i}
-                  onClick={() => setGiftTarget(i)}
-                  disabled={giftableFoods.length === 0}
-                  title={language === 'pt-BR' ? `Mandar presente pro ${pet.name}` : `Send a gift to ${pet.name}`}
-                  style={{
-                    fontFamily: 'monospace', fontSize: '0.7rem', fontWeight: 800, cursor: giftableFoods.length ? 'pointer' : 'default',
-                    border: `1.5px solid ${PROFILE_COLORS[i]}`, borderRadius: 999, padding: '3px 10px',
-                    background: 'rgba(255,255,255,0.12)', color: '#fff', opacity: giftableFoods.length ? 1 : 0.5,
-                  }}
-                >
-                  {pet.name}
-                </button>
-              );
-            })}
-            {giftableFoods.length === 0 && (
-              <span style={{ color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', fontSize: '0.6rem' }}>
-                {language === 'pt-BR' ? 'sem comida pra dar' : 'no food to give'}
-              </span>
-            )}
-          </>
-        ) : (
-          <>
-            {giftableFoods.map(([emoji, n]) => (
-              <button
-                key={emoji}
-                onClick={() => sendGift(giftTarget, emoji)}
-                title={`×${n}`}
-                style={{ border: 'none', background: 'rgba(255,255,255,0.15)', borderRadius: 999, width: 34, height: 34, fontSize: '1.05rem', cursor: 'pointer' }}
-              >
-                {emoji}
-              </button>
-            ))}
-            <button
-              onClick={() => setGiftTarget(null)}
-              aria-label={language === 'pt-BR' ? 'Cancelar' : 'Cancel'}
-              style={{ border: 'none', background: 'transparent', color: '#fff', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem' }}
-            >
-              ✕
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* 💝 Confirmação do presente enviado */}
-      {giftFlash !== null && (
-        <p
+      {/* 🎁 Cesta cheia → cada pet pega o presente dela (1×/semana por perfil).
+          Doar itens agora mora na mochila (ItemsWindow → Usar/Doar). */}
+      {canClaim && (
+        <button
+          onClick={claim}
           className="animate-pulse"
           style={{
-            position: 'absolute', bottom: 62, left: '50%', transform: 'translateX(-50%)',
-            color: '#fff', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 800,
-            textShadow: '0 1px 3px rgba(0,0,0,0.8)', margin: 0, zIndex: 2, whiteSpace: 'nowrap',
+            position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 3, border: 'none', borderRadius: 999, padding: '10px 20px',
+            background: '#facc15', color: '#422006', fontFamily: 'monospace',
+            fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
           }}
         >
-          {language === 'pt-BR' ? 'Presente enviado! 💝' : 'Gift sent! 💝'}
+          🎁 {language === 'pt-BR' ? 'Pegar meu presente!' : 'Get my treat!'}
+        </button>
+      )}
+      {claimedNow && (
+        <p
+          style={{
+            position: 'absolute', bottom: 62, left: '50%', transform: 'translateX(-50%)',
+            color: '#fff', fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 800,
+            textShadow: '0 1px 3px rgba(0,0,0,0.8)', margin: 0, zIndex: 3, whiteSpace: 'nowrap',
+          }}
+        >
+          {language === 'pt-BR' ? `Você ganhou ${claimedNow} no piquenique!` : `You got ${claimedNow} at the picnic!`}
         </p>
       )}
 

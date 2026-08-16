@@ -37,6 +37,7 @@ const DIGIVOLVE_SEGMENTS: Record<string, number> = {
 };
 import { CATEGORY_EMOJIS, AI_CATEGORY_MAP, STAGE_NAMES, FOOD_BY_CATEGORY } from './constants/labels';
 import { TASK_BITS, gameBitsCapFor, type RealReward } from './utils/economy';
+import { addToBasket, claimPicnicGift } from './utils/familyBasket';
 import type { AISettings } from './components/AISettingsModal';
 
 const EvolutionPath = lazy(() => import('./components/EvolutionPath').then(m => ({ default: m.EvolutionPath })));
@@ -383,6 +384,9 @@ export default function App() {
       // computado fora do updater (StrictMode) simulando o passo recém-marcado.
       if (activity && activity.steps.length > 0 && activity.steps.every(s => s.completed || s.id === stepId)) {
         celebrateTask();
+        // 🧺 Uma CÓPIA da comidinha vai pra cesta da família (extra, não sai
+        // do inventário de ninguém). Fora do updater — escreve localStorage.
+        addToBasket(FOOD_BY_CATEGORY[activity.category as keyof typeof FOOD_BY_CATEGORY]?.emoji ?? '🍎');
       }
 
       // Check if this is the first task/step ever completed and show popup
@@ -623,6 +627,8 @@ export default function App() {
       // 🎉 Juice: a conclusão da tarefa real é o momento mais importante do
       // app (dossiê U3) — confete + Bits + elogio de processo falado.
       celebrateTask();
+      // 🧺 Cópia da comidinha pra cesta da família (extra, ninguém perde nada).
+      addToBasket(FOOD_BY_CATEGORY[task.category as keyof typeof FOOD_BY_CATEGORY]?.emoji ?? '🍎');
 
       // Mark task as completed first — 💠 tarefa real → +TASK_BITS na hora
       // (entrega imediata, requisito da economia de fichas; dossiê R21).
@@ -1017,6 +1023,19 @@ export default function App() {
   // sempre um perfil INATIVO (o React não segura o estado dele), então
   // escrever direto no localStorage dele é seguro — mesmo padrão do carinho
   // cross-profile do TogetherHome. A escrita fica FORA do updater (StrictMode).
+  // 🧺 Presente do piquenique: quando a cesta da família enche, cada pet pega
+  // o dela uma vez na semana (o módulo marca o resgate; aqui só creditamos).
+  const handleClaimPicnic = useCallback((): string | null => {
+    const gift = claimPicnicGift(getActiveProfile());
+    if (!gift) return null;
+    setGameState(prev => ({
+      ...prev,
+      foodInventory: { ...prev.foodInventory, [gift]: (prev.foodInventory[gift] ?? 0) + 1 },
+    }));
+    playTaskComplete();
+    return gift;
+  }, []);
+
   const handleGiftFood = useCallback((targetProfile: number, emoji: string): boolean => {
     if (targetProfile === getActiveProfile()) return false;
     if ((gameState.foodInventory[emoji] ?? 0) <= 0) return false;
@@ -1308,6 +1327,7 @@ export default function App() {
             onFeed={handleFeed}
             onClose={() => setShowItemsWindow(false)}
             language={language}
+            onGiftFood={handleGiftFood}
           />
         )}
 
@@ -1430,8 +1450,7 @@ export default function App() {
                 language={language}
                 background={hubBackground}
                 onChangeBackground={changeHubBackground}
-                activeFoodInventory={gameState.foodInventory}
-                onGiftFood={handleGiftFood}
+                onClaimPicnic={handleClaimPicnic}
               />
             </Suspense>
           )}
