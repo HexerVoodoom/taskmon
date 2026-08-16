@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
 import { keyForProfile, getActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
-import { getStageLevel, PETS, type PetType } from '../types/progression';
+import { getStageLevel, PETS, PET_TYPES, type PetType } from '../types/progression';
 import type { GameState } from '../contexts/GameStateContext';
 import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
@@ -180,15 +180,19 @@ export function TogetherHome({ language, background, onChangeBackground, activeF
               ? `${familyTasks}/${FAMILY_WEEK_GOAL} tarefas da família na semana`
               : `${familyTasks}/${FAMILY_WEEK_GOAL} family tasks this week`)}
         </p>
-        {/* Contribuição de cada pet — ordem fixa dos perfis, pesos visuais
-            iguais: soma de equipe, nunca ranking (dossiê R29). */}
+        {/* Contribuição dos TRÊS pets — sempre os 3 aparecem, mesmo que uma
+            casinha ainda não tenha save (conta 0 em vez de sumir): a meta é
+            da família inteira. Ordem fixa dos perfis, pesos visuais iguais:
+            soma de equipe, nunca ranking (dossiê R29). */}
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          {saves.map((gs, i) => {
-            const pet = PETS[(gs?.eggType ?? 'vix') as PetType];
+          {Array.from({ length: PROFILE_COUNT }, (_, i) => {
+            // Identidade do pet vem da casinha (PET_TYPES[i]); o save só
+            // sobrescreve se o perfil escolheu outro bichinho no ovo.
+            const pet = PETS[(saves[i]?.eggType ?? PET_TYPES[i] ?? 'vix') as PetType];
             return (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontFamily: 'monospace', fontSize: '0.62rem', color: '#fff' }}>
                 <span style={{ width: 7, height: 7, borderRadius: 999, background: PROFILE_COLORS[i], display: 'inline-block' }} />
-                {gs ? `${pet.name} ${weekByProfile[i]}` : '—'}
+                {pet.name} {weekByProfile[i]}
               </span>
             );
           })}
@@ -232,10 +236,89 @@ export function TogetherHome({ language, background, onChangeBackground, activeF
         ))}
       </div>
 
-      {/* 🎀 Presentes entre pets: DESATIVADO a pedido. A lógica continua
-          disponível (handleGiftFood no App + sendGift/giftableFoods aqui) —
-          pra religar, basta restaurar a barra de botões que ficava aqui,
-          logo antes da dica de carinho do rodapé. */}
+      {/* 🎀 Barra de presente: manda uma comidinha do SEU estoque pro pet de
+          outra irmã. Botões fixos (os pets andam — botão flutuante seria
+          impossível de acertar com dedo pequeno). Só perfis COM save podem
+          receber: escrever num save inexistente criaria um perfil fantasma. */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: 22,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'rgba(0,0,0,0.45)',
+          borderRadius: 999,
+          padding: '5px 10px',
+          zIndex: 2,
+        }}
+      >
+        {giftTarget === null ? (
+          <>
+            <span style={{ color: '#fff', fontFamily: 'monospace', fontSize: '0.68rem', fontWeight: 700 }}>🎀</span>
+            {saves.map((gs, i) => {
+              if (i === activeProfile || !gs) return null;
+              const pet = PETS[(gs.eggType ?? PET_TYPES[i] ?? 'vix') as PetType];
+              return (
+                <button
+                  key={i}
+                  onClick={() => setGiftTarget(i)}
+                  disabled={giftableFoods.length === 0}
+                  title={language === 'pt-BR' ? `Mandar presente pro ${pet.name}` : `Send a gift to ${pet.name}`}
+                  style={{
+                    fontFamily: 'monospace', fontSize: '0.7rem', fontWeight: 800, cursor: giftableFoods.length ? 'pointer' : 'default',
+                    border: `1.5px solid ${PROFILE_COLORS[i]}`, borderRadius: 999, padding: '3px 10px',
+                    background: 'rgba(255,255,255,0.12)', color: '#fff', opacity: giftableFoods.length ? 1 : 0.5,
+                  }}
+                >
+                  {pet.name}
+                </button>
+              );
+            })}
+            {giftableFoods.length === 0 && (
+              <span style={{ color: 'rgba(255,255,255,0.75)', fontFamily: 'monospace', fontSize: '0.6rem' }}>
+                {language === 'pt-BR' ? 'sem comida pra dar' : 'no food to give'}
+              </span>
+            )}
+          </>
+        ) : (
+          <>
+            {giftableFoods.map(([emoji, n]) => (
+              <button
+                key={emoji}
+                onClick={() => sendGift(giftTarget, emoji)}
+                title={`×${n}`}
+                style={{ border: 'none', background: 'rgba(255,255,255,0.15)', borderRadius: 999, width: 34, height: 34, fontSize: '1.05rem', cursor: 'pointer' }}
+              >
+                {emoji}
+              </button>
+            ))}
+            <button
+              onClick={() => setGiftTarget(null)}
+              aria-label={language === 'pt-BR' ? 'Cancelar' : 'Cancel'}
+              style={{ border: 'none', background: 'transparent', color: '#fff', fontWeight: 800, cursor: 'pointer', fontSize: '0.8rem' }}
+            >
+              ✕
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* 💝 Confirmação do presente enviado */}
+      {giftFlash !== null && (
+        <p
+          className="animate-pulse"
+          style={{
+            position: 'absolute', bottom: 62, left: '50%', transform: 'translateX(-50%)',
+            color: '#fff', fontFamily: 'monospace', fontSize: '0.75rem', fontWeight: 800,
+            textShadow: '0 1px 3px rgba(0,0,0,0.8)', margin: 0, zIndex: 2, whiteSpace: 'nowrap',
+          }}
+        >
+          {language === 'pt-BR' ? 'Presente enviado! 💝' : 'Gift sent! 💝'}
+        </p>
+      )}
 
       <p
         style={{
