@@ -157,22 +157,25 @@ export function FeirinhaGame({ eggType, language, onEarnPoints, onExit }: {
       </div>
     </div>
 
-    {/* Balão do pedido */}
-    <div style={{ background: '#fff', borderRadius: 16, padding: '12px 18px', textAlign: 'center', minWidth: 240 }}>
+    {/* Balão do pedido — a PERGUNTA é o elemento mais importante da tela:
+        fonte bem grande, com o número em destaque ainda maior. */}
+    <div style={{ background: '#fff', borderRadius: 18, padding: '16px 20px', textAlign: 'center', minWidth: 260, maxWidth: '94vw' }}>
       {mode === 'count' ? (
-        <p style={{ ...mono, color: '#111', fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
-          {isPt ? `Quero ${order.qty} ${order.fruit}, por favor!` : `I want ${order.qty} ${order.fruit}, please!`}
+        <p style={{ ...mono, color: '#111', fontSize: '1.5rem', lineHeight: 1.25, fontWeight: 800, margin: 0 }}>
+          {isPt ? 'Quero' : 'I want'} <span style={{ fontSize: '2.4rem', color: '#4d7c0f' }}>{order.qty}</span> <span style={{ fontSize: '2rem' }}>{order.fruit}</span>
+          {isPt ? ', por favor!' : ', please!'}
         </p>
       ) : (
-        <p style={{ ...mono, color: '#111', fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
-          {order.qty} {order.fruit} = <span style={{ color: '#4d7c0f' }}>{order.price} Bits</span>
+        <p style={{ ...mono, color: '#111', fontSize: '2rem', lineHeight: 1.25, fontWeight: 800, margin: 0 }}>
+          {order.qty} {order.fruit} = <span style={{ color: '#4d7c0f' }}>{order.price}</span>
+          <span style={{ fontSize: '1.3rem' }}> Bits</span>
         </p>
       )}
       <button onClick={() => (mode === 'count'
         ? speakLine(isPt ? `Quero ${order.qty} frutas` : `I want ${order.qty} fruits`, language)
         : speakLine(isPt ? `Custa ${order.price} Bits` : `It costs ${order.price} Bits`, language))}
         aria-label={isPt ? 'Ouvir pedido' : 'Hear order'}
-        style={{ border: 'none', background: 'transparent', fontSize: '1.3rem', cursor: 'pointer' }}>🔊</button>
+        style={{ border: 'none', background: 'transparent', fontSize: '1.8rem', cursor: 'pointer', marginTop: 4 }}>🔊</button>
     </div>
 
     {feedback && (

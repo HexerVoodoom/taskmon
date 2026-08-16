@@ -183,22 +183,24 @@ export function LetterHuntGame({ eggType, language, onEarnPoints, onExit }: {
 
     <img src={getSpriteForStage(`${myPet}-1`)} alt="" style={{ width: 112, height: 112, imageRendering: 'pixelated', transform: feedback === 'ok' ? 'scale(1.15)' : 'none', transition: 'transform 0.2s' }} />
 
+    {/* A PERGUNTA é o elemento mais importante da tela — fonte bem grande,
+        com a letra/palavra alvo em destaque ainda maior. */}
     {mode === 'letter' ? (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <p style={{ ...mono, color: '#fff', fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
-          {isPt ? 'Onde está a letra' : 'Where is the letter'} <span style={{ fontSize: '2.2rem', color: '#facc15' }}>{target}</span>?
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap', maxWidth: '94vw' }}>
+        <p style={{ ...mono, color: '#fff', fontSize: '1.6rem', lineHeight: 1.25, fontWeight: 800, margin: 0, textAlign: 'center' }}>
+          {isPt ? 'Onde está a letra' : 'Where is the letter'} <span style={{ fontSize: '3.2rem', color: '#facc15' }}>{target}</span>?
         </p>
         <button onClick={() => speakLine(isPt ? `Onde está a letra ${target}?` : `Where is the letter ${target}?`, gameLang)}
           aria-label={isPt ? 'Ouvir de novo' : 'Hear again'}
-          style={{ border: 'none', background: 'transparent', fontSize: '1.7rem', cursor: 'pointer' }}>🔊</button>
+          style={{ border: 'none', background: 'transparent', fontSize: '2.2rem', cursor: 'pointer' }}>🔊</button>
       </div>
     ) : (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <p style={{ ...mono, color: '#fff', fontSize: '2.5rem', fontWeight: 800, letterSpacing: '0.15em', margin: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap', maxWidth: '94vw' }}>
+        <p style={{ ...mono, color: '#fff', fontSize: '3.4rem', lineHeight: 1.2, fontWeight: 800, letterSpacing: '0.12em', margin: 0 }}>
           {word.split('').map((l, i) => (i === gapIndex ? (feedback === 'ok' ? l : '_') : l)).join('')}
         </p>
         <button onClick={() => speakLine(word, gameLang)} aria-label={isPt ? 'Ouvir a palavra' : 'Hear the word'}
-          style={{ border: 'none', background: 'transparent', fontSize: '1.7rem', cursor: 'pointer' }}>🔊</button>
+          style={{ border: 'none', background: 'transparent', fontSize: '2.2rem', cursor: 'pointer' }}>🔊</button>
       </div>
     )}
 

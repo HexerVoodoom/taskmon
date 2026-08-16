@@ -90,13 +90,6 @@ const SECTIONS = [
         descPt: 'Na casinha coletiva: as tarefas reais dos 3 perfis somam durante a semana. Bater a meta (15) libera um piquenique onde os 3 pets celebram juntos. Trabalho em equipe, nunca ranking!',
       },
       {
-        icon: '🎀',
-        labelEn: 'Gifts between pets',
-        labelPt: 'Presentes entre pets',
-        descEn: 'In the together house, send a food from YOUR stock to a sibling\'s pet — it lands in their inventory as a surprise. Kindness counts!',
-        descPt: 'Na casinha coletiva, mande uma comida do SEU estoque pro pet de uma irmã — ela chega no inventário dela de surpresa. Gentileza conta!',
-      },
-      {
         icon: '🎓',
         labelEn: 'Educational games',
         labelPt: 'Jogos educativos',
