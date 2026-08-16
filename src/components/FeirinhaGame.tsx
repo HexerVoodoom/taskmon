@@ -106,23 +106,23 @@ export function FeirinhaGame({ eggType, language, onEarnPoints, onExit }: {
   };
 
   const panel = (children: React.ReactNode) => (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: '#1a2e1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 14 }} className="tk-keep-mono">
-      <button onClick={onExit} aria-label={isPt ? 'Sair' : 'Exit'} style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 32, height: 32, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>✕</button>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: '#1a2e1a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 16 }} className="tk-keep-mono">
+      <button onClick={onExit} aria-label={isPt ? 'Sair' : 'Exit'} style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 38, height: 38, color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer' }}>✕</button>
       {children}
     </div>
   );
 
   if (!mode) {
     return panel(<>
-      <span style={{ fontSize: '2.4rem' }}>🧺</span>
-      <h2 style={{ ...mono, color: '#a3e635', fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>{isPt ? 'Feirinha dos Pets' : 'Pet Market'}</h2>
-      <p style={{ ...mono, color: '#d9f99d', fontSize: '0.8rem', textAlign: 'center', maxWidth: 300, margin: 0 }}>
+      <span style={{ fontSize: '3.2rem' }}>🧺</span>
+      <h2 style={{ ...mono, color: '#a3e635', fontSize: '1.4rem', fontWeight: 800, margin: 0 }}>{isPt ? 'Feirinha dos Pets' : 'Pet Market'}</h2>
+      <p style={{ ...mono, color: '#d9f99d', fontSize: '0.92rem', textAlign: 'center', maxWidth: 300, margin: 0 }}>
         {isPt ? 'Seu pet abriu uma banquinha — e os pets da família vêm comprar!' : 'Your pet opened a stall — and the family pets come shopping!'}
       </p>
-      <button onClick={() => start('count')} style={{ ...mono, minWidth: 240, minHeight: 64, borderRadius: 16, border: 'none', background: '#65a30d', color: '#fff', fontSize: '1rem', fontWeight: 800, cursor: 'pointer' }}>
+      <button onClick={() => start('count')} style={{ ...mono, minWidth: 260, minHeight: 76, borderRadius: 18, border: 'none', background: '#65a30d', color: '#fff', fontSize: '1.15rem', fontWeight: 800, cursor: 'pointer' }}>
         🐣 {isPt ? 'Contar frutinhas' : 'Count the fruits'}
       </button>
-      <button onClick={() => start('pay')} style={{ ...mono, minWidth: 240, minHeight: 64, borderRadius: 16, border: 'none', background: '#4d7c0f', color: '#fff', fontSize: '1rem', fontWeight: 800, cursor: 'pointer' }}>
+      <button onClick={() => start('pay')} style={{ ...mono, minWidth: 260, minHeight: 76, borderRadius: 18, border: 'none', background: '#4d7c0f', color: '#fff', fontSize: '1.15rem', fontWeight: 800, cursor: 'pointer' }}>
         🦸 {isPt ? 'Pagar com moedas' : 'Pay with coins'}
       </button>
     </>);
@@ -130,41 +130,41 @@ export function FeirinhaGame({ eggType, language, onEarnPoints, onExit }: {
 
   if (done) {
     return panel(<>
-      <span style={{ fontSize: '2.4rem' }}>🎉</span>
-      <h2 style={{ ...mono, color: '#a3e635', fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>{isPt ? 'Feira encerrada!' : 'Market closed!'}</h2>
-      <p style={{ ...mono, color: '#d9f99d', fontSize: '0.95rem', margin: 0 }}>
+      <span style={{ fontSize: '3.2rem' }}>🎉</span>
+      <h2 style={{ ...mono, color: '#a3e635', fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>{isPt ? 'Feira encerrada!' : 'Market closed!'}</h2>
+      <p style={{ ...mono, color: '#d9f99d', fontSize: '1.1rem', margin: 0 }}>
         {isPt ? `${hits}/${ROUNDS} pedidos certos · +${hits * HIT_BITS} Bits` : `${hits}/${ROUNDS} orders right · +${hits * HIT_BITS} Bits`}
       </p>
-      <button onClick={() => setMode(null)} style={{ ...mono, minWidth: 200, minHeight: 52, borderRadius: 14, border: 'none', background: '#65a30d', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>
+      <button onClick={() => setMode(null)} style={{ ...mono, minWidth: 220, minHeight: 60, borderRadius: 16, border: 'none', background: '#65a30d', color: '#fff', fontSize: '1.05rem', fontWeight: 800, cursor: 'pointer' }}>
         {isPt ? 'Jogar de novo' : 'Play again'}
       </button>
     </>);
   }
 
   return panel(<>
-    <p style={{ ...mono, color: '#d9f99d', fontSize: '0.75rem', margin: 0 }}>{isPt ? 'Pedido' : 'Order'} {round + 1}/{ROUNDS} · ⭐ {hits}</p>
+    <p style={{ ...mono, color: '#d9f99d', fontSize: '0.85rem', margin: 0 }}>{isPt ? 'Pedido' : 'Order'} {round + 1}/{ROUNDS} · ⭐ {hits}</p>
 
     {/* A banquinha: freguês de um lado, vendedor do outro */}
-    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 16 }}>
       <div style={{ textAlign: 'center' }}>
-        <img src={getSpriteForStage(`${customer}-1`)} alt={customerName} style={{ width: 84, height: 84, imageRendering: 'pixelated' }} />
-        <p style={{ ...mono, color: '#fff', fontSize: '0.7rem', margin: 0 }}>{customerName}</p>
+        <img src={getSpriteForStage(`${customer}-1`)} alt={customerName} style={{ width: 108, height: 108, imageRendering: 'pixelated' }} />
+        <p style={{ ...mono, color: '#fff', fontSize: '0.82rem', margin: 0 }}>{customerName}</p>
       </div>
-      <div style={{ fontSize: '2rem', paddingBottom: 22 }}>🛒</div>
+      <div style={{ fontSize: '2.4rem', paddingBottom: 26 }}>🛒</div>
       <div style={{ textAlign: 'center' }}>
-        <img src={getSpriteForStage(`${myPet}-1`)} alt="" style={{ width: 84, height: 84, imageRendering: 'pixelated', transform: 'scaleX(-1)' }} />
-        <p style={{ ...mono, color: '#fff', fontSize: '0.7rem', margin: 0 }}>{isPt ? 'sua banquinha' : 'your stall'}</p>
+        <img src={getSpriteForStage(`${myPet}-1`)} alt="" style={{ width: 108, height: 108, imageRendering: 'pixelated', transform: 'scaleX(-1)' }} />
+        <p style={{ ...mono, color: '#fff', fontSize: '0.82rem', margin: 0 }}>{isPt ? 'sua banquinha' : 'your stall'}</p>
       </div>
     </div>
 
     {/* Balão do pedido */}
-    <div style={{ background: '#fff', borderRadius: 14, padding: '10px 16px', textAlign: 'center', minWidth: 220 }}>
+    <div style={{ background: '#fff', borderRadius: 16, padding: '12px 18px', textAlign: 'center', minWidth: 240 }}>
       {mode === 'count' ? (
-        <p style={{ ...mono, color: '#111', fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>
+        <p style={{ ...mono, color: '#111', fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
           {isPt ? `Quero ${order.qty} ${order.fruit}, por favor!` : `I want ${order.qty} ${order.fruit}, please!`}
         </p>
       ) : (
-        <p style={{ ...mono, color: '#111', fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>
+        <p style={{ ...mono, color: '#111', fontSize: '1.05rem', fontWeight: 800, margin: 0 }}>
           {order.qty} {order.fruit} = <span style={{ color: '#4d7c0f' }}>{order.price} Bits</span>
         </p>
       )}
@@ -172,38 +172,38 @@ export function FeirinhaGame({ eggType, language, onEarnPoints, onExit }: {
         ? speakLine(isPt ? `Quero ${order.qty} frutas` : `I want ${order.qty} fruits`, language)
         : speakLine(isPt ? `Custa ${order.price} Bits` : `It costs ${order.price} Bits`, language))}
         aria-label={isPt ? 'Ouvir pedido' : 'Hear order'}
-        style={{ border: 'none', background: 'transparent', fontSize: '1rem', cursor: 'pointer' }}>🔊</button>
+        style={{ border: 'none', background: 'transparent', fontSize: '1.3rem', cursor: 'pointer' }}>🔊</button>
     </div>
 
     {feedback && (
-      <p style={{ ...mono, fontSize: '1.4rem', fontWeight: 800, color: feedback === 'ok' ? '#a3e635' : '#f87171', margin: 0 }}>
+      <p style={{ ...mono, fontSize: '1.7rem', fontWeight: 800, color: feedback === 'ok' ? '#a3e635' : '#f87171', margin: 0 }}>
         {feedback === 'ok' ? (isPt ? 'Isso! 🎉' : 'Yes! 🎉') : (isPt ? 'Quase! 💚' : 'Almost! 💚')}
       </p>
     )}
 
     {mode === 'count' ? (<>
       {/* Cesta com contagem falada — alvos grandes (≥75px, NN/g) */}
-      <div style={{ ...mono, color: '#fff', fontSize: '1.3rem', minHeight: 34 }}>
+      <div style={{ ...mono, color: '#fff', fontSize: '1.6rem', minHeight: 40 }}>
         {Array.from({ length: basket }, () => order.fruit).join(' ')}
       </div>
-      <div style={{ display: 'flex', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 14 }}>
         <button onClick={addFruit} disabled={!!feedback}
-          style={{ width: 84, height: 84, borderRadius: 20, border: 'none', background: '#365314', fontSize: '2.2rem', cursor: 'pointer' }}>
+          style={{ width: 100, height: 100, borderRadius: 22, border: 'none', background: '#365314', fontSize: '2.6rem', cursor: 'pointer' }}>
           {order.fruit}
         </button>
         <button onClick={() => resolve(basket === order.qty)} disabled={!!feedback || basket === 0}
-          style={{ ...mono, width: 110, height: 84, borderRadius: 20, border: 'none', background: '#65a30d', color: '#fff', fontSize: '0.95rem', fontWeight: 800, cursor: 'pointer' }}>
+          style={{ ...mono, width: 130, height: 100, borderRadius: 22, border: 'none', background: '#65a30d', color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer' }}>
           {isPt ? 'Entregar!' : 'Deliver!'}
         </button>
       </div>
     </>) : (<>
-      <p style={{ ...mono, color: '#fff', fontSize: '1rem', margin: 0 }}>
+      <p style={{ ...mono, color: '#fff', fontSize: '1.15rem', margin: 0 }}>
         {isPt ? 'Pago' : 'Paid'}: <strong>{paid}</strong> / {order.price}
       </p>
-      <div style={{ display: 'flex', gap: 12 }}>
+      <div style={{ display: 'flex', gap: 14 }}>
         {[1, 5, 10].map(v => (
           <button key={v} onClick={() => addCoin(v)} disabled={!!feedback}
-            style={{ ...mono, width: 78, height: 78, borderRadius: '50%', border: '3px solid #facc15', background: '#a16207', color: '#fff', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer' }}>
+            style={{ ...mono, width: 92, height: 92, borderRadius: '50%', border: '3px solid #facc15', background: '#a16207', color: '#fff', fontSize: '1.3rem', fontWeight: 800, cursor: 'pointer' }}>
             {v}
           </button>
         ))}
