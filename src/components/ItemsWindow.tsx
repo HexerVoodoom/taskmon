@@ -79,12 +79,14 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
   const [chosen, setChosen] = useState<string | null>(null);
   // 2º passo: escolher PRA QUEM presentear (só depois de tocar "Presentear").
   const [pickingPet, setPickingPet] = useState(false);
+  // 3º passo: pet escolhido, aguardando confirmação do envio.
+  const [confirmTarget, setConfirmTarget] = useState<{ index: number; name: string; sprite: string } | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const isPt = language === 'pt-BR';
   const items = Object.entries(foodInventory).filter(([, c]) => c > 0);
   const targets = onGiftFood ? giftTargets() : [];
 
-  const closePanel = () => { setChosen(null); setPickingPet(false); };
+  const closePanel = () => { setChosen(null); setPickingPet(false); setConfirmTarget(null); };
 
   const feed = (emoji: string) => {
     onFeed(emoji);
@@ -94,9 +96,10 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
     try { navigator.vibrate?.(20); } catch { /* noop */ }
   };
 
-  const donate = (targetProfile: number, name: string) => {
-    if (!chosen || !onGiftFood) return;
-    if (onGiftFood(targetProfile, chosen)) {
+  const donate = () => {
+    if (!chosen || !confirmTarget || !onGiftFood) return;
+    const { index, name } = confirmTarget;
+    if (onGiftFood(index, chosen)) {
       closePanel();
       setSentTo(name);
       setTimeout(() => setSentTo(null), 1800);
@@ -145,14 +148,20 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
         {chosen && (
           <div style={{ margin: '10px 16px 0', padding: 12, borderRadius: 'var(--tk-radius-sm, 14px)', border: '1px solid var(--tk-border, #e5e7eb)', background: 'var(--tk-soft, #f9fafb)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>{chosen}</span>
+              {/* A comidinha só aparece ao escolher na pasta e na confirmação —
+                  no meio do caminho ela é ruído. */}
+              {!pickingPet && <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>{chosen}</span>}
               <span style={{ flex: 1, color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.9rem' }}>
                 {pickingPet
                   ? (isPt ? 'Presentear quem?' : 'Gift to whom?')
                   : getFoodName(chosen, language)}
               </span>
               <button
-                onClick={() => (pickingPet ? setPickingPet(false) : closePanel())}
+                onClick={() => {
+                  if (confirmTarget) setConfirmTarget(null);
+                  else if (pickingPet) setPickingPet(false);
+                  else closePanel();
+                }}
                 aria-label={pickingPet ? (isPt ? 'Voltar' : 'Back') : (isPt ? 'Cancelar' : 'Cancel')}
                 style={{ border: 'none', background: 'transparent', color: 'var(--tk-muted, #6b7280)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}
               >
@@ -160,7 +169,27 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
               </button>
             </div>
 
-            {!pickingPet ? (
+            {confirmTarget ? (
+              // Passo 3: confirmar o envio — aqui a comidinha reaparece,
+              // junto do pet que vai receber, pra não errar o presente.
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>{chosen}</span>
+                  <span style={{ fontSize: '1.4rem', color: 'var(--tk-muted, #6b7280)' }}>→</span>
+                  <img src={confirmTarget.sprite} alt="" style={{ width: 56, height: 56, imageRendering: 'pixelated' }} />
+                </div>
+                <button
+                  onClick={donate}
+                  style={{
+                    width: '100%', minHeight: 56, borderRadius: 12, border: 'none',
+                    background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff',
+                    fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer',
+                  }}
+                >
+                  ✅ {isPt ? `Enviar pro ${confirmTarget.name}!` : `Send to ${confirmTarget.name}!`}
+                </button>
+              </div>
+            ) : !pickingPet ? (
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={() => feed(chosen)}
                   style={{ flex: 1, minHeight: 56, borderRadius: 12, border: 'none', background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer' }}>
@@ -185,7 +214,7 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
               // Cada opção mostra o SPRITE do pet que vai receber
               <div style={{ display: 'flex', gap: 10 }}>
                 {targets.map(t => (
-                  <button key={t.index} onClick={() => donate(t.index, t.name)}
+                  <button key={t.index} onClick={() => setConfirmTarget(t)}
                     title={isPt ? `Presentear ${t.name}` : `Gift to ${t.name}`}
                     style={{
                       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
