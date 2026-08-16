@@ -3,6 +3,7 @@ import type { Language } from '../utils/i18n';
 import { SPECIAL_ITEMS, HEART_HEAL } from '../utils/shop';
 import { PETS, PET_TYPES, type PetType } from '../types/progression';
 import { keyForProfile, getActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
+import { getSpriteForStage } from '../utils/sprites';
 import { PROFILE_COLORS } from './Header';
 
 interface ItemsWindowProps {
@@ -14,20 +15,29 @@ interface ItemsWindowProps {
   onGiftFood?: (targetProfile: number, emoji: string) => boolean;
 }
 
-/** Nome do pet de cada casinha, pra rotular os alvos da doação. Perfis sem
- *  save ficam de fora: escrever num save inexistente criaria perfil fantasma. */
-function giftTargets(): { index: number; name: string }[] {
+/** Pets das outras casinhas (nome + sprite) pra escolher quem recebe o
+ *  presente. Perfis sem save ficam de fora: escrever num save inexistente
+ *  criaria um perfil fantasma. */
+function giftTargets(): { index: number; name: string; sprite: string }[] {
   const active = getActiveProfile();
-  const out: { index: number; name: string }[] = [];
+  const out: { index: number; name: string; sprite: string }[] = [];
   for (let i = 0; i < PROFILE_COUNT; i++) {
     if (i === active) continue;
     let eggType: string | undefined;
+    let stage: string | undefined;
     try {
       const raw = localStorage.getItem(keyForProfile('GAME_STATE', i));
       if (!raw) continue;
-      eggType = JSON.parse(raw)?.eggType;
+      const save = JSON.parse(raw);
+      eggType = save?.eggType;
+      stage = save?.evolutionStage;
     } catch { continue; }
-    out.push({ index: i, name: PETS[(eggType ?? PET_TYPES[i] ?? 'vix') as PetType].name });
+    const pet = (eggType ?? PET_TYPES[i] ?? 'vix') as PetType;
+    out.push({
+      index: i,
+      name: PETS[pet].name,
+      sprite: getSpriteForStage(stage ?? `${pet}-1`, pet),
+    });
   }
   return out;
 }
@@ -65,17 +75,21 @@ function getFoodName(emoji: string, lang: Language): string {
 
 export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US', onGiftFood }: ItemsWindowProps) {
   const [justFed, setJustFed] = useState<string | null>(null);
-  // Item tocado → escolher entre Usar e Doar (null = grade normal).
+  // Item tocado → escolher entre Usar e Presentear (null = grade normal).
   const [chosen, setChosen] = useState<string | null>(null);
+  // 2º passo: escolher PRA QUEM presentear (só depois de tocar "Presentear").
+  const [pickingPet, setPickingPet] = useState(false);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const isPt = language === 'pt-BR';
   const items = Object.entries(foodInventory).filter(([, c]) => c > 0);
   const targets = onGiftFood ? giftTargets() : [];
 
+  const closePanel = () => { setChosen(null); setPickingPet(false); };
+
   const feed = (emoji: string) => {
     onFeed(emoji);
     setJustFed(emoji);
-    setChosen(null);
+    closePanel();
     setTimeout(() => setJustFed(null), 500);
     try { navigator.vibrate?.(20); } catch { /* noop */ }
   };
@@ -83,7 +97,7 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
   const donate = (targetProfile: number, name: string) => {
     if (!chosen || !onGiftFood) return;
     if (onGiftFood(targetProfile, chosen)) {
-      setChosen(null);
+      closePanel();
       setSentTo(name);
       setTimeout(() => setSentTo(null), 1800);
       try { navigator.vibrate?.(25); } catch { /* noop */ }
@@ -127,34 +141,64 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
               : (isPt ? 'Toque numa comida pra dar pro seu pet.' : 'Tap a food to feed your pet.')}
         </p>
 
-        {/* Usar × Doar — aparece ao tocar um item */}
+        {/* Passo 1: Usar × Presentear · Passo 2: escolher o pet (com sprite) */}
         {chosen && (
           <div style={{ margin: '10px 16px 0', padding: 12, borderRadius: 'var(--tk-radius-sm, 14px)', border: '1px solid var(--tk-border, #e5e7eb)', background: 'var(--tk-soft, #f9fafb)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>{chosen}</span>
               <span style={{ flex: 1, color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.9rem' }}>
-                {getFoodName(chosen, language)}
+                {pickingPet
+                  ? (isPt ? 'Presentear quem?' : 'Gift to whom?')
+                  : getFoodName(chosen, language)}
               </span>
-              <button onClick={() => setChosen(null)} aria-label={isPt ? 'Cancelar' : 'Cancel'}
-                style={{ border: 'none', background: 'transparent', color: 'var(--tk-muted, #6b7280)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}>✕</button>
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button onClick={() => feed(chosen)}
-                style={{ flex: '1 1 100px', minHeight: 52, borderRadius: 12, border: 'none', background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff', fontWeight: 800, fontSize: '0.9rem', cursor: 'pointer' }}>
-                🍽️ {isPt ? 'Usar' : 'Use'}
+              <button
+                onClick={() => (pickingPet ? setPickingPet(false) : closePanel())}
+                aria-label={pickingPet ? (isPt ? 'Voltar' : 'Back') : (isPt ? 'Cancelar' : 'Cancel')}
+                style={{ border: 'none', background: 'transparent', color: 'var(--tk-muted, #6b7280)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}
+              >
+                {pickingPet ? '←' : '✕'}
               </button>
-              {targets.map(t => (
-                <button key={t.index} onClick={() => donate(t.index, t.name)}
-                  title={isPt ? `Doar pro ${t.name}` : `Gift to ${t.name}`}
-                  style={{ flex: '1 1 100px', minHeight: 52, borderRadius: 12, border: `2px solid ${PROFILE_COLORS[t.index]}`, background: 'transparent', color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.85rem', cursor: 'pointer' }}>
-                  🎀 {t.name}
-                </button>
-              ))}
             </div>
-            {targets.length === 0 && onGiftFood && (
-              <p style={{ color: 'var(--tk-muted, #9ca3af)', fontSize: '0.7rem', margin: '8px 0 0', textAlign: 'center' }}>
-                {isPt ? 'Nenhuma outra casinha tem pet ainda pra receber doação.' : 'No other house has a pet to receive gifts yet.'}
-              </p>
+
+            {!pickingPet ? (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => feed(chosen)}
+                  style={{ flex: 1, minHeight: 56, borderRadius: 12, border: 'none', background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer' }}>
+                  🍽️ {isPt ? 'Usar' : 'Use'}
+                </button>
+                <button
+                  onClick={() => setPickingPet(true)}
+                  disabled={targets.length === 0}
+                  title={targets.length === 0
+                    ? (isPt ? 'Nenhuma outra casinha tem pet ainda' : 'No other house has a pet yet')
+                    : undefined}
+                  style={{
+                    flex: 1, minHeight: 56, borderRadius: 12, border: '2px solid var(--tk-accent, #7c3aed)',
+                    background: 'transparent', color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.95rem',
+                    cursor: targets.length === 0 ? 'default' : 'pointer', opacity: targets.length === 0 ? 0.5 : 1,
+                  }}
+                >
+                  🎀 {isPt ? 'Presentear' : 'Gift'}
+                </button>
+              </div>
+            ) : (
+              // Cada opção mostra o SPRITE do pet que vai receber
+              <div style={{ display: 'flex', gap: 10 }}>
+                {targets.map(t => (
+                  <button key={t.index} onClick={() => donate(t.index, t.name)}
+                    title={isPt ? `Presentear ${t.name}` : `Gift to ${t.name}`}
+                    style={{
+                      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                      padding: '10px 6px', borderRadius: 12,
+                      border: `2px solid ${PROFILE_COLORS[t.index]}`,
+                      background: 'var(--tk-card, #fff)', cursor: 'pointer',
+                    }}
+                  >
+                    <img src={t.sprite} alt="" style={{ width: 64, height: 64, imageRendering: 'pixelated' }} />
+                    <span style={{ color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.85rem' }}>{t.name}</span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         )}
