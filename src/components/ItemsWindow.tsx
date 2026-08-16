@@ -186,7 +186,7 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
                     fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer',
                   }}
                 >
-                  ✅ {isPt ? `Enviar pro ${confirmTarget.name}!` : `Send to ${confirmTarget.name}!`}
+                  {isPt ? `Enviar pro ${confirmTarget.name}!` : `Send to ${confirmTarget.name}!`}
                 </button>
               </div>
             ) : !pickingPet ? (
@@ -254,7 +254,7 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                       padding: '14px 8px',
                       borderRadius: 'var(--tk-radius-sm, 14px)',
-                      border: chosen === emoji ? '2px solid var(--tk-accent, #7c3aed)' : '1px solid var(--tk-border, #e5e7eb)',
+                      border: '1px solid var(--tk-border, #e5e7eb)',
                       background: 'var(--tk-soft, #f9fafb)',
                       cursor: 'pointer',
                       transform: isFed ? 'scale(0.94)' : 'scale(1)',
