@@ -12,13 +12,14 @@ import { bitsStyle } from '../utils/currency';
 import { getSpriteForStage } from '../utils/sprites';
 import rooftopIcon from '../assets/roofrun/rooftop.png';
 import type { Language } from '../utils/i18n';
+import type { RealReward, RewardRedemption } from '../utils/economy';
 
 /**
  * "Atividades" page — interactive minigames hub.
  * All games award 🪙 Bits (GameState.gamePoints), spent in the shop on food.
  * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/50) · RPS +10/match · Bubble Pop +1/bolha.
  */
-export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onWerewolfKill, werewolfKillsTotal, onEarnPoints, onShopBuy }: {
+export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onWerewolfKill, werewolfKillsTotal, onEarnPoints, onShopBuy, gameBitsToday, gameBitsCap, realRewards, rewardRedemptions, onRedeemReward, onSaveRewards }: {
   evolutionStage: string;
   eggType?: string;
   language: Language;
@@ -34,6 +35,14 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   werewolfKillsTotal: number;
   onEarnPoints: (pts: number) => void;
   onShopBuy: (itemId: string) => boolean;
+  /** Bits de minijogo já ganhos hoje (teto diário escala com tarefas). */
+  gameBitsToday: number;
+  /** Teto diário atual de Bits de minijogo. */
+  gameBitsCap: number;
+  realRewards?: RealReward[];
+  rewardRedemptions: RewardRedemption[];
+  onRedeemReward: (reward: RealReward) => boolean;
+  onSaveRewards: (rewards: RealReward[]) => void;
 }) {
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
@@ -140,6 +149,16 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
         {isPt ? 'Minijogos para se divertir e acumular Bits com seu pet.' : 'Minigames to have fun and earn Bits with your pet.'}
       </p>
 
+      {/* 💠 Teto diário de Bits de minijogo — escala com as tarefas reais do dia.
+          Pill com fundo próprio: o texto solto sumia sobre o cenário escuro. */}
+      <p style={{ textAlign: 'center', margin: '2px 0 8px' }}>
+        <span className="tk-keep-mono" style={{ ...bitsStyle, fontSize: '0.68rem', color: '#111', background: '#eafbe7', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999, padding: '3px 10px', display: 'inline-block' }}>
+          {isPt
+            ? `Bits de jogo hoje: ${Math.min(gameBitsToday, gameBitsCap)}/${gameBitsCap} · tarefas aumentam o limite!`
+            : `Game Bits today: ${Math.min(gameBitsToday, gameBitsCap)}/${gameBitsCap} · tasks raise the cap!`}
+        </span>
+      </p>
+
       <div className="grid grid-cols-2 gap-3">
         {cards.map(c => (
           <button
@@ -189,6 +208,10 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
           points={totalPoints}
           onBuy={onShopBuy}
           onClose={() => setShopOpen(false)}
+          realRewards={realRewards}
+          rewardRedemptions={rewardRedemptions}
+          onRedeemReward={onRedeemReward}
+          onSaveRewards={onSaveRewards}
         />
       )}
 

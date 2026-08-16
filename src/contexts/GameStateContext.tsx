@@ -83,6 +83,16 @@ export interface GameState {
   poopPenaltyClockAt: number;
   /** Bits: minigame currency earned in the Activities games, spent in the shop. */
   gamePoints: number;
+  /** Bits ganhos em MINIJOGOS hoje (teto diário = gameBitsCapFor(tarefas do dia); reseta na virada). */
+  gameBitsToday?: number;
+  /** 🛡️ Semana (weekKey) em que o escudo automático foi consumido ('' = disponível). */
+  shieldUsedWeek?: string;
+  /** 💤 Modo dorminhoco: HP chegou a 0 na virada — o pet dorme (não regride mais de fase). */
+  sleepyMode?: boolean;
+  /** 🎁 Prêmios de verdade: catálogo editável pelo responsável (aba Prêmios da loja). */
+  realRewards?: import('../utils/economy').RealReward[];
+  /** 🎁 Resgates feitos (cartões pra mostrar pro responsável). */
+  rewardRedemptions?: import('../utils/economy').RewardRedemption[];
   /** Shop: pet-box backgrounds owned (ids from utils/shop.ts). */
   ownedBackgrounds: string[];
   /** Shop: equipped pet-box background id, or null for the default. */
@@ -107,6 +117,10 @@ export interface GameState {
     energyWasFull?: boolean;
     perfectDays: number;
     degenerated: boolean;
+    /** 🛡️ O escudo semanal absorveu as perdas deste dia. */
+    shieldUsed?: boolean;
+    /** 💤 O pet entrou em modo dorminhoco (HP chegou a 0). */
+    sleepy?: boolean;
   };
 }
 
@@ -187,6 +201,11 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
         poopEventsShown: migrated.poopEventsShown ?? [],
         poopPenaltyClockAt: migrated.poopPenaltyClockAt ?? 0,
         gamePoints: migrated.gamePoints ?? 0,
+        gameBitsToday: migrated.gameBitsToday ?? 0,
+        shieldUsedWeek: migrated.shieldUsedWeek ?? '',
+        sleepyMode: migrated.sleepyMode ?? false,
+        realRewards: migrated.realRewards ?? undefined,
+        rewardRedemptions: migrated.rewardRedemptions ?? [],
         ownedBackgrounds: migrated.ownedBackgrounds ?? [],
         equippedBackground: migrated.equippedBackground ?? null,
       } as GameState;
@@ -226,6 +245,10 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
       poopEventsShown: [],
       poopPenaltyClockAt: 0,
       gamePoints: 0,
+      gameBitsToday: 0,
+      shieldUsedWeek: '',
+      sleepyMode: false,
+      rewardRedemptions: [],
       ownedBackgrounds: [],
       equippedBackground: null,
     };

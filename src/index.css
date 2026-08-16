@@ -5199,3 +5199,40 @@ html.tk-theme .rounded-\[10px\] { border-radius: var(--tk-radius-sm) !important;
 /* Botões de destaque ganham o gradiente do tema */
 html.tk-theme .bg-gray-900 { background: var(--tk-btn-bg) !important; }
 html.tk-theme .bg-teal-500 { background: var(--tk-btn-bg) !important; }
+
+/* ── 🎉 Celebração de tarefa real (Onda 1 do dossiê) ─────────────────────── */
+.tk-confetti {
+  position: absolute;
+  top: -12px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: tk-confetti-fall 1.5s cubic-bezier(0.25, 0.4, 0.6, 1) forwards;
+}
+@keyframes tk-confetti-fall {
+  0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+  100% { opacity: 0; transform: translateY(105vh) rotate(540deg); }
+}
+.tk-bits-pop {
+  position: absolute;
+  left: 50%;
+  top: 38%;
+  transform: translateX(-50%);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #16a34a;
+  text-shadow: 0 1px 0 #fff, 0 2px 8px rgba(0,0,0,0.25);
+  opacity: 0;
+  animation: tk-bits-pop 1.4s ease-out forwards;
+}
+@keyframes tk-bits-pop {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(12px) scale(0.6); }
+  20%  { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.15); }
+  45%  { transform: translateX(-50%) translateY(-6px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-46px) scale(0.95); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tk-confetti { display: none; }
+  .tk-bits-pop { animation-duration: 0.6s; }
+}

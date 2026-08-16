@@ -36,6 +36,7 @@ const DIGIVOLVE_SEGMENTS: Record<string, number> = {
   egg: 1, 'fase-1': 3, 'fase-2': 5, 'fase-3': 999,
 };
 import { CATEGORY_EMOJIS, AI_CATEGORY_MAP, STAGE_NAMES, FOOD_BY_CATEGORY } from './constants/labels';
+import { TASK_BITS, gameBitsCapFor, type RealReward } from './utils/economy';
 import type { AISettings } from './components/AISettingsModal';
 
 const EvolutionPath = lazy(() => import('./components/EvolutionPath').then(m => ({ default: m.EvolutionPath })));
@@ -73,6 +74,13 @@ export default function App() {
   const [hpBannerDismissed, setHpBannerDismissed] = useState(false);
   const [messageTrigger, setMessageTrigger] = useState(0);
   const [feedAnim, setFeedAnim] = useState<{ emoji: string; n: number } | null>(null);
+  // 🎉 Confete + "+N Bits" na conclusão de tarefa real (n = re-dispara a animação)
+  const [celebration, setCelebration] = useState<{ n: number; bits: number } | null>(null);
+  useEffect(() => {
+    if (!celebration) return;
+    const t = setTimeout(() => setCelebration(null), 1800);
+    return () => clearTimeout(t);
+  }, [celebration]);
   const [careEvent, setCareEvent] = useState<CareEvent | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [useAI, setUseAI] = useState(true);
@@ -342,11 +350,19 @@ export default function App() {
           activities: updatedActivities,
           activityStats: newActivityStats,
           foodInventory: newFoodInventory,
+          // 💠 Atividade completa = tarefa real → Bits direto (economia ligada à vida real)
+          ...(isFullyCompleted && { gamePoints: (prev.gamePoints ?? 0) + TASK_BITS }),
           ...(energyGain > 0 && { energyPoints: Math.min((prev.energyPoints ?? 0) + energyGain, getMaxEnergyForStage(prev.evolutionStage)) }),
         };
       });
 
       playTaskComplete();
+
+      // 🎉 Celebração (confete + Bits) quando a ATIVIDADE inteira fechou —
+      // computado fora do updater (StrictMode) simulando o passo recém-marcado.
+      if (activity && activity.steps.length > 0 && activity.steps.every(s => s.completed || s.id === stepId)) {
+        setCelebration(prev => ({ n: (prev?.n ?? 0) + 1, bits: TASK_BITS }));
+      }
 
       // Check if this is the first task/step ever completed and show popup
       if (!hasShownFirstTaskPopup) {
@@ -583,11 +599,16 @@ export default function App() {
 
     if (!task.completed) {
       playTaskComplete();
+      // 🎉 Juice: a conclusão da tarefa real é o momento mais importante do
+      // app (dossiê U3) — confete + Bits voando, não só um check silencioso.
+      setCelebration(prev => ({ n: (prev?.n ?? 0) + 1, bits: TASK_BITS }));
 
-      // Mark task as completed first
+      // Mark task as completed first — 💠 tarefa real → +TASK_BITS na hora
+      // (entrega imediata, requisito da economia de fichas; dossiê R21).
       setGameState(prev => ({
         ...prev,
         tasks: prev.tasks.map(t => t.id === taskId ? { ...t, completed: true } : t),
+        gamePoints: (prev.gamePoints ?? 0) + TASK_BITS,
       }));
 
       // Check if this is the first task ever completed and show popup
@@ -762,10 +783,13 @@ export default function App() {
           if (count <= 0) return prev;
           const newInventory = { ...prev.foodInventory, [foodEmoji]: count - 1 };
           if (newInventory[foodEmoji] === 0) delete newInventory[foodEmoji];
+          const healedHP = Math.min(prev.maxHealthPoints, prev.healthPoints + HEART_HEAL);
           return {
             ...prev,
             foodInventory: newInventory,
-            healthPoints: Math.min(prev.maxHealthPoints, prev.healthPoints + HEART_HEAL),
+            healthPoints: healedHP,
+            // 💤 Curar até ≥1 coração acorda o pet do modo dorminhoco
+            ...(healedHP >= 1 && { sleepyMode: false }),
           };
         });
         setFeedAnim(prev => ({ emoji: foodEmoji, n: (prev?.n ?? 0) + 1 }));
@@ -925,9 +949,46 @@ export default function App() {
   }, []);
 
   // 🪙 Bits — minigame currency; accumulates in GameState (cloud-synced), spent in the shop.
+  // Teto diário: minijogos rendem no máx. gameBitsCapFor(tarefas do dia) —
+  // Premack na direção certa (o jogo recompensa a tarefa, não a substitui).
   const handleEarnGamePoints = useCallback((pts: number) => {
     if (pts <= 0) return;
-    setGameState(prev => ({ ...prev, gamePoints: (prev.gamePoints ?? 0) + pts }));
+    setGameState(prev => {
+      const doneToday =
+        prev.activities.filter((a: { steps: { completed: boolean }[]; completedToday?: boolean }) =>
+          a.steps.length > 0 ? a.steps.every(s => s.completed) : !!a.completedToday).length +
+        prev.tasks.filter(t => t.completed).length +
+        prev.completedTasks.filter(ct => new Date(ct.completedAt).toDateString() === new Date().toDateString()).length;
+      const cap = gameBitsCapFor(doneToday);
+      const earnedToday = prev.gameBitsToday ?? 0;
+      const allowed = Math.max(0, Math.min(pts, cap - earnedToday));
+      if (allowed <= 0) return prev;
+      return {
+        ...prev,
+        gamePoints: (prev.gamePoints ?? 0) + allowed,
+        gameBitsToday: earnedToday + allowed,
+      };
+    });
+  }, []);
+
+  // 🎁 Prêmios de verdade — resgate desconta Bits e grava o cartão (histórico).
+  const handleRedeemReward = useCallback((reward: RealReward): boolean => {
+    if ((gameState.gamePoints ?? 0) < reward.price) return false;
+    setGameState(prev => ({
+      ...prev,
+      gamePoints: (prev.gamePoints ?? 0) - reward.price,
+      rewardRedemptions: [
+        ...(prev.rewardRedemptions ?? []),
+        { ...reward, at: new Date().toISOString() },
+      ].slice(-50),
+    }));
+    playTaskComplete();
+    return true;
+  }, [gameState.gamePoints]);
+
+  // 🎁 Catálogo de prêmios — edição do responsável (portão de adulto na loja).
+  const handleSaveRewards = useCallback((rewards: RealReward[]) => {
+    setGameState(prev => ({ ...prev, realRewards: rewards }));
   }, []);
 
   // 🛒 Shop purchase — charges points, adds the food to the Items folder (same
@@ -1041,10 +1102,15 @@ export default function App() {
     rubHealRef.current = { date: today, healed: rubHealRef.current.healed + 0.5 };
     localStorage.setItem(STORAGE_KEYS.RUB_HEAL_DAY, JSON.stringify(rubHealRef.current));
     playFeed();
-    setGameState(prev => ({
-      ...prev,
-      healthPoints: Math.min(prev.maxHealthPoints, prev.healthPoints + 0.5),
-    }));
+    setGameState(prev => {
+      const healedHP = Math.min(prev.maxHealthPoints, prev.healthPoints + 0.5);
+      return {
+        ...prev,
+        healthPoints: healedHP,
+        // 💤 Carinho que devolve ≥1 coração acorda o pet do modo dorminhoco
+        ...(healedHP >= 1 && { sleepyMode: false }),
+      };
+    });
   }, [gameState.healthPoints, gameState.maxHealthPoints]);
 
   // Regressão manual (página de Evolução) — recebe o ID da forma destino.
@@ -1409,10 +1475,41 @@ export default function App() {
                 werewolfKillsTotal={gameState.werewolfKills ?? 0}
                 onEarnPoints={handleEarnGamePoints}
                 onShopBuy={handleShopBuy}
+                gameBitsToday={gameState.gameBitsToday ?? 0}
+                gameBitsCap={gameBitsCapFor(dailyDone)}
+                realRewards={gameState.realRewards}
+                rewardRedemptions={gameState.rewardRedemptions ?? []}
+                onRedeemReward={handleRedeemReward}
+                onSaveRewards={handleSaveRewards}
               />
             </Suspense>
           )}
         </div>
+
+        {/* 🎉 Celebração de tarefa real concluída — confete + Bits (dossiê U3).
+            key={n} re-monta e re-dispara as animações CSS a cada conclusão. */}
+        {celebration && (
+          <div
+            key={celebration.n}
+            aria-hidden
+            style={{ position: 'fixed', inset: 0, zIndex: 200, pointerEvents: 'none', overflow: 'hidden' }}
+            onAnimationEnd={() => { /* limpo pelo timer do último confete */ }}
+          >
+            {Array.from({ length: 14 }, (_, i) => (
+              <span
+                key={i}
+                className="tk-confetti"
+                style={{
+                  left: `${6 + (i * 89) % 88}%`,
+                  background: ['#f472b6', '#a78bfa', '#4ade80', '#facc15', '#60a5fa'][i % 5],
+                  animationDelay: `${(i % 7) * 0.06}s`,
+                  transform: `rotate(${(i * 47) % 360}deg)`,
+                }}
+              />
+            ))}
+            <span className="tk-bits-pop tk-keep-mono">+{celebration.bits} 💠</span>
+          </div>
+        )}
 
         {/* HP risk banner — dismissible strip above companion.
             Escondido na 4ª casinha: é sobre o HP do perfil ATIVO, que não
