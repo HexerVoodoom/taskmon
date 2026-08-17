@@ -1,12 +1,45 @@
 import { useState } from 'react';
 import type { Language } from '../utils/i18n';
 import { SPECIAL_ITEMS, HEART_HEAL } from '../utils/shop';
+import { PETS, PET_TYPES, type PetType } from '../types/progression';
+import { keyForProfile, getActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
+import { getSpriteForStage } from '../utils/sprites';
+import { PROFILE_COLORS } from './Header';
 
 interface ItemsWindowProps {
   foodInventory: Record<string, number>;
   onFeed: (emoji: string) => void;
   onClose: () => void;
   language?: Language;
+  /** Doa 1 unidade do item pro inventário de outro perfil. */
+  onGiftFood?: (targetProfile: number, emoji: string) => boolean;
+}
+
+/** Pets das outras casinhas (nome + sprite) pra escolher quem recebe o
+ *  presente. Perfis sem save ficam de fora: escrever num save inexistente
+ *  criaria um perfil fantasma. */
+function giftTargets(): { index: number; name: string; sprite: string }[] {
+  const active = getActiveProfile();
+  const out: { index: number; name: string; sprite: string }[] = [];
+  for (let i = 0; i < PROFILE_COUNT; i++) {
+    if (i === active) continue;
+    let eggType: string | undefined;
+    let stage: string | undefined;
+    try {
+      const raw = localStorage.getItem(keyForProfile('GAME_STATE', i));
+      if (!raw) continue;
+      const save = JSON.parse(raw);
+      eggType = save?.eggType;
+      stage = save?.evolutionStage;
+    } catch { continue; }
+    const pet = (eggType ?? PET_TYPES[i] ?? 'vix') as PetType;
+    out.push({
+      index: i,
+      name: PETS[pet].name,
+      sprite: getSpriteForStage(stage ?? `${pet}-1`, pet),
+    });
+  }
+  return out;
 }
 
 const FOOD_NAMES: Record<string, { en: string; pt: string; descEn: string; descPt: string }> = {
@@ -40,16 +73,38 @@ function getFoodName(emoji: string, lang: Language): string {
   return lang === 'pt-BR' ? entry.pt : entry.en;
 }
 
-export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US' }: ItemsWindowProps) {
+export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US', onGiftFood }: ItemsWindowProps) {
   const [justFed, setJustFed] = useState<string | null>(null);
+  // Item tocado → escolher entre Usar e Presentear (null = grade normal).
+  const [chosen, setChosen] = useState<string | null>(null);
+  // 2º passo: escolher PRA QUEM presentear (só depois de tocar "Presentear").
+  const [pickingPet, setPickingPet] = useState(false);
+  // 3º passo: pet escolhido, aguardando confirmação do envio.
+  const [confirmTarget, setConfirmTarget] = useState<{ index: number; name: string; sprite: string } | null>(null);
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const isPt = language === 'pt-BR';
   const items = Object.entries(foodInventory).filter(([, c]) => c > 0);
+  const targets = onGiftFood ? giftTargets() : [];
+
+  const closePanel = () => { setChosen(null); setPickingPet(false); setConfirmTarget(null); };
 
   const feed = (emoji: string) => {
     onFeed(emoji);
     setJustFed(emoji);
+    closePanel();
     setTimeout(() => setJustFed(null), 500);
     try { navigator.vibrate?.(20); } catch { /* noop */ }
+  };
+
+  const donate = () => {
+    if (!chosen || !confirmTarget || !onGiftFood) return;
+    const { index, name } = confirmTarget;
+    if (onGiftFood(index, chosen)) {
+      closePanel();
+      setSentTo(name);
+      setTimeout(() => setSentTo(null), 1800);
+      try { navigator.vibrate?.(25); } catch { /* noop */ }
+    }
   };
 
   return (
@@ -82,8 +137,100 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
         </div>
 
         <p style={{ color: 'var(--tk-muted, #6b7280)', fontSize: '0.72rem', textAlign: 'center', padding: '10px 16px 0' }}>
-          {isPt ? 'Toque numa comida pra dar pro seu pet.' : 'Tap a food to feed your pet.'}
+          {sentTo
+            ? (isPt ? `Presente enviado pro ${sentTo}! 💝` : `Gift sent to ${sentTo}! 💝`)
+            : onGiftFood
+              ? (isPt ? 'Toque num item pra usar — ou doar pra outro pet.' : 'Tap an item to use it — or gift it to another pet.')
+              : (isPt ? 'Toque numa comida pra dar pro seu pet.' : 'Tap a food to feed your pet.')}
         </p>
+
+        {/* Passo 1: Usar × Presentear · Passo 2: escolher o pet (com sprite) */}
+        {chosen && (
+          <div style={{ margin: '10px 16px 0', padding: 12, borderRadius: 'var(--tk-radius-sm, 14px)', border: '1px solid var(--tk-border, #e5e7eb)', background: 'var(--tk-soft, #f9fafb)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              {/* A comidinha só aparece ao escolher na pasta e na confirmação —
+                  no meio do caminho ela é ruído. */}
+              {!pickingPet && <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>{chosen}</span>}
+              <span style={{ flex: 1, color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.9rem' }}>
+                {pickingPet
+                  ? (isPt ? 'Presentear quem?' : 'Gift to whom?')
+                  : getFoodName(chosen, language)}
+              </span>
+              <button
+                onClick={() => {
+                  if (confirmTarget) setConfirmTarget(null);
+                  else if (pickingPet) setPickingPet(false);
+                  else closePanel();
+                }}
+                aria-label={pickingPet ? (isPt ? 'Voltar' : 'Back') : (isPt ? 'Cancelar' : 'Cancel')}
+                style={{ border: 'none', background: 'transparent', color: 'var(--tk-muted, #6b7280)', fontWeight: 800, fontSize: '1rem', cursor: 'pointer' }}
+              >
+                {pickingPet ? '←' : '✕'}
+              </button>
+            </div>
+
+            {confirmTarget ? (
+              // Passo 3: confirmar o envio — aqui a comidinha reaparece,
+              // junto do pet que vai receber, pra não errar o presente.
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: '2.2rem', lineHeight: 1 }}>{chosen}</span>
+                  <span style={{ fontSize: '1.4rem', color: 'var(--tk-muted, #6b7280)' }}>→</span>
+                  <img src={confirmTarget.sprite} alt="" style={{ width: 56, height: 56, imageRendering: 'pixelated' }} />
+                </div>
+                <button
+                  onClick={donate}
+                  style={{
+                    width: '100%', minHeight: 56, borderRadius: 12, border: 'none',
+                    background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff',
+                    fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer',
+                  }}
+                >
+                  {isPt ? `Enviar pro ${confirmTarget.name}!` : `Send to ${confirmTarget.name}!`}
+                </button>
+              </div>
+            ) : !pickingPet ? (
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => feed(chosen)}
+                  style={{ flex: 1, minHeight: 56, borderRadius: 12, border: 'none', background: 'var(--tk-btn-bg, var(--tk-accent))', color: '#fff', fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer' }}>
+                  🍽️ {isPt ? 'Usar' : 'Use'}
+                </button>
+                <button
+                  onClick={() => setPickingPet(true)}
+                  disabled={targets.length === 0}
+                  title={targets.length === 0
+                    ? (isPt ? 'Nenhuma outra casinha tem pet ainda' : 'No other house has a pet yet')
+                    : undefined}
+                  style={{
+                    flex: 1, minHeight: 56, borderRadius: 12, border: '2px solid var(--tk-accent, #7c3aed)',
+                    background: 'transparent', color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.95rem',
+                    cursor: targets.length === 0 ? 'default' : 'pointer', opacity: targets.length === 0 ? 0.5 : 1,
+                  }}
+                >
+                  🎀 {isPt ? 'Presentear' : 'Gift'}
+                </button>
+              </div>
+            ) : (
+              // Cada opção mostra o SPRITE do pet que vai receber
+              <div style={{ display: 'flex', gap: 10 }}>
+                {targets.map(t => (
+                  <button key={t.index} onClick={() => setConfirmTarget(t)}
+                    title={isPt ? `Presentear ${t.name}` : `Gift to ${t.name}`}
+                    style={{
+                      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                      padding: '10px 6px', borderRadius: 12,
+                      border: `2px solid ${PROFILE_COLORS[t.index]}`,
+                      background: 'var(--tk-card, #fff)', cursor: 'pointer',
+                    }}
+                  >
+                    <img src={t.sprite} alt="" style={{ width: 64, height: 64, imageRendering: 'pixelated' }} />
+                    <span style={{ color: 'var(--tk-text, #111827)', fontWeight: 800, fontSize: '0.85rem' }}>{t.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Item grid */}
         <div style={{ overflowY: 'auto', padding: 16, flex: 1 }}>
@@ -100,7 +247,9 @@ export function ItemsWindow({ foodInventory, onFeed, onClose, language = 'en-US'
                 return (
                   <button
                     key={emoji}
-                    onClick={() => feed(emoji)}
+                    // Com doação disponível, tocar abre o menu Usar/Doar;
+                    // sem ela, mantém o comportamento antigo (usa direto).
+                    onClick={() => (onGiftFood ? setChosen(emoji) : feed(emoji))}
                     style={{
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                       padding: '14px 8px',

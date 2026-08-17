@@ -37,13 +37,17 @@ export function DailyReportModal({ report, onClose, language, theme = 'default' 
     },
   ];
 
-  const headline = report.degenerated
-    ? (isPt ? '💔 Seu Taskmon voltou uma fase...' : '💔 Your Taskmon went back a phase...')
-    : report.wasPerfect
-      ? (isPt ? '⭐ Dia perfeito!' : '⭐ Perfect day!')
-      : report.heartsLost > 0
-        ? (isPt ? '😟 Dia difícil...' : '😟 Rough day...')
-        : (isPt ? '☀️ Novo dia!' : '☀️ New day!');
+  const headline = report.sleepy
+    ? (isPt ? '💤 Seu pet dormiu de cansaço...' : '💤 Your pet fell asleep, worn out...')
+    : report.degenerated
+      ? (isPt ? '💔 Seu Taskmon voltou uma fase...' : '💔 Your Taskmon went back a phase...')
+      : report.shieldUsed
+        ? (isPt ? '🛡️ O escudo da semana protegeu vocês!' : '🛡️ This week\'s shield protected you!')
+        : report.wasPerfect
+          ? (isPt ? '⭐ Dia perfeito!' : '⭐ Perfect day!')
+          : report.heartsLost > 0
+            ? (isPt ? '😟 Dia difícil...' : '😟 Rough day...')
+            : (isPt ? '☀️ Novo dia!' : '☀️ New day!');
 
   const palette = isGlitch
     ? { bg: '#0a0a0a', border: '2px solid #00ffff', text: '#00ffff', sub: '#5fbcbc', headBg: '#0a0a0a' }
@@ -98,6 +102,20 @@ export function DailyReportModal({ report, onClose, language, theme = 'default' 
               {isPt
                 ? 'Dica: faça carinho (esfregue o pet) para recuperar meio coração.'
                 : 'Tip: rub your pet to restore half a heart.'}
+            </p>
+          )}
+          {report.shieldUsed && (
+            <p style={{ ...mono, fontSize: '0.7rem', color: palette.sub, paddingTop: 6 }}>
+              {isPt
+                ? 'O escudo aparece 1 vez por semana e segura um dia difícil. Amanhã é um novo começo!'
+                : 'The shield shows up once a week and absorbs one rough day. Tomorrow is a fresh start!'}
+            </p>
+          )}
+          {report.sleepy && (
+            <p style={{ ...mono, fontSize: '0.7rem', color: palette.sub, paddingTop: 6 }}>
+              {isPt
+                ? 'Seu pet está dormindo pra se recuperar — faça carinho ou use um Coraçãozinho pra acordar ele. Ele continua na mesma fase!'
+                : 'Your pet is sleeping to recover — rub it or use a Little Heart to wake it up. It keeps its phase!'}
             </p>
           )}
         </div>

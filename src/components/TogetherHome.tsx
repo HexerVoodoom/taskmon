@@ -6,13 +6,35 @@
 // (STORAGE_KEYS.RUB_HEAL_DAY por perfil) usado na home normal.
 import { useEffect, useRef, useState } from 'react';
 import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
-import { keyForProfile, PROFILE_COUNT } from '../utils/storageKeys';
-import { getStageLevel, PETS, type PetType } from '../types/progression';
+import { keyForProfile, getActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
+import { getStageLevel, PETS, PET_TYPES, type PetType } from '../types/progression';
 import type { GameState } from '../contexts/GameStateContext';
 import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
 import { HUB_SCENES, type HubSceneId } from '../utils/hubBackground';
 import { PET_BOX_HEIGHT, FLOOR_BOTTOM_PX } from '../utils/petBoxHeight';
+import { weekKey } from '../utils/economy';
+import { readBasket, isBasketFull, canClaimPicnic, FAMILY_BASKET_GOAL } from '../utils/familyBasket';
+
+// 🧺 Piquenique da Família — meta COOPERATIVA semanal (dossiê R09/R29: nunca
+// ranking entre as irmãs; o vetor social certo é a soma). As tarefas reais
+// concluídas pelos 3 perfis na semana somam num contador; ao bater a meta, os
+// 3 pets fazem piquenique juntos aqui na casinha coletiva. Leitura pura dos 3
+// saves — nenhuma escrita cruzada.
+// Tarefas da semana POR PERFIL — cada uma é exibida como contribuição pra
+// meta somada (equipe), nunca como ranking. Tarefas de HOJE ainda na lista
+// (migram pro histórico ~3s após concluir) não são contadas pra evitar dupla
+// contagem — entram no histórico em seguida.
+function countWeekTasksByProfile(saves: (GameState | null)[]): number[] {
+  const thisWeek = weekKey(new Date());
+  return saves.map(gs => {
+    if (!gs) return 0;
+    return (gs.completedTasks ?? []).filter(ct => {
+      const d = new Date(ct.completedAt);
+      return !isNaN(d.getTime()) && weekKey(d) === thisWeek;
+    }).length;
+  });
+}
 
 function loadProfileGameState(index: number): GameState | null {
   try {
@@ -28,6 +50,8 @@ interface TogetherHomeProps {
   language: Language;
   background: HubSceneId;
   onChangeBackground: (id: HubSceneId) => void;
+  /** Pega o presente do piquenique pro perfil ativo (null se não puder). */
+  onClaimPicnic: () => string | null;
 }
 
 // Mesma altura (responsiva, PET_BOX_HEIGHT) e "chão" (FLOOR_BOTTOM_PX,
@@ -40,10 +64,30 @@ interface TogetherHomeProps {
 // está ativa — a mesma faixa "topo até o bottom" das homes normais, em vez
 // de uma imagem presa numa caixinha. Este componente só posiciona os 3 pets
 // (andando, na mesma altura das homes) e o seletor de cenário por cima dela.
-export function TogetherHome({ language, background, onChangeBackground }: TogetherHomeProps) {
+export function TogetherHome({ language, background, onChangeBackground, onClaimPicnic }: TogetherHomeProps) {
   const [saves, setSaves] = useState<(GameState | null)[]>(() =>
     Array.from({ length: PROFILE_COUNT }, (_, i) => loadProfileGameState(i))
   );
+
+  // 🧺 Cesta da família: enche com uma CÓPIA de cada comidinha ganha em
+  // tarefa real pelas 3 (utils/familyBasket). A contribuição por pet vem das
+  // tarefas da semana — mostra quem juntou o quê, sem virar ranking.
+  const [basket, setBasket] = useState(() => readBasket());
+  const weekByProfile = countWeekTasksByProfile(saves);
+  const collected = basket.foods.length;
+  const picnicUnlocked = isBasketFull(basket);
+  const canClaim = canClaimPicnic(basket, getActiveProfile());
+  const [claimedNow, setClaimedNow] = useState<string | null>(null);
+
+  const claim = () => {
+    const gift = onClaimPicnic();
+    if (gift) {
+      setBasket(readBasket());
+      setClaimedNow(gift);
+      setTimeout(() => setClaimedNow(null), 2600);
+    }
+  };
+
 
   return (
     <div
@@ -98,11 +142,89 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
         ))}
       </div>
 
+      {/* 🧺 Medidor do Piquenique da Família — meta semanal cooperativa */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          zIndex: 2,
+          background: 'rgba(0,0,0,0.45)',
+          borderRadius: 12,
+          padding: '6px 10px',
+          maxWidth: 180,
+        }}
+      >
+        <p style={{ margin: 0, color: '#fff', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>
+          🧺 {language === 'pt-BR' ? 'Piquenique da família' : 'Family picnic'}
+        </p>
+        <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.25)', marginTop: 4, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${Math.min(100, (collected / FAMILY_BASKET_GOAL) * 100)}%`,
+            background: picnicUnlocked ? '#facc15' : '#4ade80',
+            borderRadius: 999,
+            transition: 'width 0.4s',
+          }} />
+        </div>
+        <p style={{ margin: '3px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.62rem', fontFamily: 'monospace' }}>
+          {picnicUnlocked
+            ? (language === 'pt-BR' ? 'Cesta cheia! 🎉' : 'Basket full! 🎉')
+            : (language === 'pt-BR'
+              ? `${collected}/${FAMILY_BASKET_GOAL} comidinhas na cesta`
+              : `${collected}/${FAMILY_BASKET_GOAL} treats in the basket`)}
+        </p>
+
+        {/* As comidinhas de verdade que a família juntou (últimas 10) */}
+        {collected > 0 && (
+          <p style={{ margin: '2px 0 0', fontSize: '0.72rem', lineHeight: 1.2, letterSpacing: '0.02em', maxWidth: 170 }}>
+            {basket.foods.slice(-10).join('')}
+          </p>
+        )}
+        {/* Contribuição dos TRÊS pets — sempre os 3 aparecem, mesmo que uma
+            casinha ainda não tenha save (conta 0 em vez de sumir): a meta é
+            da família inteira. Ordem fixa dos perfis, pesos visuais iguais:
+            soma de equipe, nunca ranking (dossiê R29). */}
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          {Array.from({ length: PROFILE_COUNT }, (_, i) => {
+            // Identidade do pet vem da casinha (PET_TYPES[i]); o save só
+            // sobrescreve se o perfil escolheu outro bichinho no ovo.
+            const pet = PETS[(saves[i]?.eggType ?? PET_TYPES[i] ?? 'vix') as PetType];
+            return (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontFamily: 'monospace', fontSize: '0.62rem', color: '#fff' }}>
+                <span style={{ width: 7, height: 7, borderRadius: 999, background: PROFILE_COLORS[i], display: 'inline-block' }} />
+                {pet.name} {weekByProfile[i]}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Altura fixa igual à caixa do pet nas homes normais (CompanionHUD:
           360px, chão bem mais embaixo) — grudada no fundo de verdade
           (marginTop: auto + dica flutuando por cima, não mais empurrando
           a caixa pra cima no fluxo normal). */}
       <div style={{ position: 'relative', height: PET_BOX_HEIGHT, marginTop: 'auto' }}>
+        {/* 🧺 Piquenique desbloqueado: toalha e comidinhas no chão entre os
+            pets — a celebração coletiva da meta da semana. */}
+        {picnicUnlocked && (
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              left: '50%',
+              bottom: FLOOR_BOTTOM_PX - 6,
+              transform: 'translateX(-50%)',
+              textAlign: 'center',
+              zIndex: 0,
+              pointerEvents: 'none',
+            }}
+          >
+            <div className="animate-pulse" style={{ fontSize: '1.1rem', letterSpacing: 2 }}>🎈 🎵 🎈</div>
+            <div style={{ fontSize: '1.5rem', letterSpacing: 4 }}>🧺🍰🍎🥪🧃</div>
+            <div style={{ width: 150, height: 14, margin: '2px auto 0', borderRadius: 4, background: 'repeating-linear-gradient(45deg, #dc2626 0 8px, #fff 8px 16px)', opacity: 0.9 }} />
+          </div>
+        )}
         {saves.map((gs, i) => (
           <TogetherPet
             key={i}
@@ -114,6 +236,35 @@ export function TogetherHome({ language, background, onChangeBackground }: Toget
           />
         ))}
       </div>
+
+      {/* 🎁 Cesta cheia → cada pet pega o presente dela (1×/semana por perfil).
+          Doar itens agora mora na mochila (ItemsWindow → Usar/Doar). */}
+      {canClaim && (
+        <button
+          onClick={claim}
+          className="animate-pulse"
+          style={{
+            position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+            zIndex: 3, border: 'none', borderRadius: 999, padding: '10px 20px',
+            background: '#facc15', color: '#422006', fontFamily: 'monospace',
+            fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer',
+            boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+          }}
+        >
+          🎁 {language === 'pt-BR' ? 'Pegar meu presente!' : 'Get my treat!'}
+        </button>
+      )}
+      {claimedNow && (
+        <p
+          style={{
+            position: 'absolute', bottom: 62, left: '50%', transform: 'translateX(-50%)',
+            color: '#fff', fontFamily: 'monospace', fontSize: '0.78rem', fontWeight: 800,
+            textShadow: '0 1px 3px rgba(0,0,0,0.8)', margin: 0, zIndex: 3, whiteSpace: 'nowrap',
+          }}
+        >
+          {language === 'pt-BR' ? `Você ganhou ${claimedNow} no piquenique!` : `You got ${claimedNow} at the picnic!`}
+        </p>
+      )}
 
       <p
         style={{

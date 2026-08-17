@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { FORM_REQUIREMENTS, MAX_HP_BY_FORM, getStageLevel, canSelectWeekdays, getMaxEnergyForStage } from '../types/progression';
-import { getNextEvolution, getPreviousForm } from '../utils/dailyReset';
+import { getNextEvolution } from '../utils/dailyReset';
+import { weekKey } from '../utils/economy';
 
 // Replicate the performDailyReset state-updater logic for unit testing.
 // This mirrors the implementation in useDailyReset.ts exactly.
@@ -43,19 +44,33 @@ function simulateReset(prev: any): any {
   let newPerfectDays = prev.perfectDays;
   let newEvolutionStage = prev.evolutionStage;
   const finalUnlockedEvolutions = [...prev.unlockedEvolutions];
-  let wasDegeneratedByHP = false;
   let newMaxActivityCap = prev.maxActivityCap;
 
   // Proportional HP loss vs the same daily goal.
   const completionRatio = dailyGoal > 0 ? Math.min(1, dailyDone / dailyGoal) : 1;
-  const heartsLost = Math.floor((1 - completionRatio) * prev.maxHealthPoints);
+  let heartsLost = Math.floor((1 - completionRatio) * prev.maxHealthPoints);
+
+  // Dia sem tarefa cadastrada é neutro (não perde coração nem dia perfeito).
+  const neutralDay = totalTasks === 0;
+
+  // 🛡️ Escudo semanal automático (1×/semana) absorve um dia ruim.
+  const currentWeek = weekKey(new Date());
+  const shieldAvailable = (prev.shieldUsedWeek ?? '') !== currentWeek;
+  const badDay = !neutralDay && (heartsLost > 0 || !dayWasPerfect);
+  const shieldUsed = badDay && shieldAvailable;
+  let newShieldUsedWeek = prev.shieldUsedWeek ?? '';
+  if (shieldUsed) {
+    heartsLost = 0;
+    newShieldUsedWeek = currentWeek;
+  }
+
   if (heartsLost > 0) {
     newHP = Math.max(0, prev.healthPoints - heartsLost);
   }
 
   if (dayWasPerfect) {
     newPerfectDays++;
-  } else {
+  } else if (!neutralDay && !shieldUsed) {
     newPerfectDays = Math.max(0, prev.perfectDays - 1);
   }
 
@@ -72,13 +87,13 @@ function simulateReset(prev: any): any {
     }
   }
 
+  // 💤 HP 0 → modo dorminhoco, sem regressão de fase automática.
+  let newSleepyMode = prev.sleepyMode ?? false;
   if (newHP === 0) {
-    wasDegeneratedByHP = true;
-    newEvolutionStage = getPreviousForm(prev.evolutionStage, prev.eggType ?? 'vix');
-    const degeneratedLevel = getStageLevel(newEvolutionStage);
-    newHP = MAX_HP_BY_FORM[degeneratedLevel];
-    const degReqs = FORM_REQUIREMENTS[degeneratedLevel];
-    newPerfectDays = Math.floor(degReqs.required / 2);
+    newSleepyMode = true;
+    newHP = 0.5;
+  } else if (newHP >= 1) {
+    newSleepyMode = false;
   }
 
   const resetActivities = prev.activities.map((a: any) => ({
@@ -99,7 +114,10 @@ function simulateReset(prev: any): any {
     perfectDays: newPerfectDays,
     evolutionStage: newEvolutionStage,
     unlockedEvolutions: finalUnlockedEvolutions,
-    degeneratedByHP: wasDegeneratedByHP,
+    degeneratedByHP: false,
+    sleepyMode: newSleepyMode,
+    shieldUsedWeek: newShieldUsedWeek,
+    shieldUsed,
     lastDayWasPerfect: dayWasPerfect,
     maxActivityCap: newMaxActivityCap,
   };
@@ -117,6 +135,9 @@ const baseState = () => ({
   unlockedEvolutions: ['egg', 'vix-1', 'vix-2'],
   maxActivityCap: 7,
   lastResetDate: 'yesterday',
+  // Escudo já consumido nesta semana — os testes de punição medem a regra crua;
+  // os testes do escudo passam '' explicitamente.
+  shieldUsedWeek: weekKey(new Date()),
 });
 
 describe('performDailyReset — proportional HP loss', () => {
@@ -198,33 +219,65 @@ describe('getMaxEnergyForStage — energy bars = task requirement', () => {
   });
 });
 
-describe('performDailyReset — degeneration & evolution', () => {
-  it('degenerates fase 2 to fase 1 when HP drops to 0', () => {
-    // 3 tasks, none done → lose all hearts from 1 → 0 → degenerate
+describe('performDailyReset — dia neutro (sem tarefa cadastrada)', () => {
+  it('não perde dias perfeitos num dia sem nenhuma tarefa cadastrada', () => {
+    const result = simulateReset({ ...baseState(), perfectDays: 4 });
+    expect(result.perfectDays).toBe(4);
+    expect(result.healthPoints).toBe(3);
+  });
+});
+
+describe('performDailyReset — 🛡️ escudo semanal', () => {
+  it('absorve a perda de coração e preserva os dias perfeitos quando disponível', () => {
+    // 5 tarefas, 1 feita → sem escudo perderia 2 corações e 1 dia perfeito
+    const tasks = Array.from({ length: 10 }, (_, i) => ({ id: `t${i}`, completed: i < 1 }));
+    const result = simulateReset({ ...baseState(), tasks, perfectDays: 4, shieldUsedWeek: '' });
+    expect(result.shieldUsed).toBe(true);
+    expect(result.healthPoints).toBe(3);
+    expect(result.perfectDays).toBe(4);
+    expect(result.shieldUsedWeek).toBe(weekKey(new Date()));
+  });
+
+  it('só funciona 1 vez por semana', () => {
+    const tasks = Array.from({ length: 10 }, (_, i) => ({ id: `t${i}`, completed: i < 1 }));
+    const first = simulateReset({ ...baseState(), tasks, shieldUsedWeek: '' });
+    expect(first.shieldUsed).toBe(true);
+    const second = simulateReset({ ...first, tasks, healthPoints: 3, perfectDays: 2 });
+    expect(second.shieldUsed).toBe(false);
+    expect(second.healthPoints).toBe(1); // floor(0.8*3)=2 perdidos
+    expect(second.perfectDays).toBe(1);
+  });
+
+  it('não é consumido num dia perfeito nem num dia neutro', () => {
+    const perfect = simulateReset({
+      ...baseState(),
+      tasks: Array.from({ length: 5 }, (_, i) => ({ id: `t${i}`, completed: true })),
+      shieldUsedWeek: '',
+    });
+    expect(perfect.shieldUsed).toBe(false);
+    const neutral = simulateReset({ ...baseState(), shieldUsedWeek: '' });
+    expect(neutral.shieldUsed).toBe(false);
+  });
+});
+
+describe('performDailyReset — 💤 modo dorminhoco (sem regressão automática)', () => {
+  it('HP 0 vira modo dorminhoco com meio coração, mantendo a fase', () => {
+    // 3 tasks, none done → perde o único coração → dorme em vez de regredir
     const tasks = Array.from({ length: 3 }, (_, i) => ({ id: `t${i}`, completed: false }));
     const result = simulateReset({ ...baseState(), tasks, healthPoints: 1, evolutionStage: 'vix-2' });
-    expect(result.degeneratedByHP).toBe(true);
-    expect(result.evolutionStage).toBe('vix-1');
+    expect(result.degeneratedByHP).toBe(false);
+    expect(result.sleepyMode).toBe(true);
+    expect(result.evolutionStage).toBe('vix-2'); // NÃO regrediu
+    expect(result.healthPoints).toBe(0.5);
   });
 
-  it('grants a half-requirement head start when degenerating by HP (recovery discount)', () => {
-    // fase 2 (vix-2) with 1 HP, 3 tasks none done → loses the heart →
-    // degenerates back to fase 1 (vix-1). Re-climbing fase-1→fase-2 normally
-    // needs fase-1's requirement (3); the discount gives floor(3/2)=1 perfect
-    // day for free. Non-cumulative: always floor(required/2) of the new stage.
-    const tasks = Array.from({ length: 3 }, (_, i) => ({ id: `t${i}`, completed: false }));
-    const result = simulateReset({
-      ...baseState(),
-      tasks,
-      healthPoints: 1,
-      evolutionStage: 'vix-2',
-    });
-    expect(result.degeneratedByHP).toBe(true);
-    expect(result.evolutionStage).toBe('vix-1'); // fase 2 → fase 1
-    // fase-1.required = 3 → head start = floor(3/2) = 1
-    expect(result.perfectDays).toBe(Math.floor(FORM_REQUIREMENTS['fase-1'].required / 2));
+  it('acorda do modo dorminhoco quando chega na virada com ≥1 coração', () => {
+    const result = simulateReset({ ...baseState(), sleepyMode: true, healthPoints: 2 });
+    expect(result.sleepyMode).toBe(false);
   });
+});
 
+describe('performDailyReset — evolution', () => {
   it('evolves linearly when perfect days meet the requirement', () => {
     // fase 1 (vix-1) precisa de 3 dias perfeitos; chega com 2 + dia perfeito de ontem
     const tasks = Array.from({ length: 3 }, (_, i) => ({ id: `t${i}`, completed: true }));

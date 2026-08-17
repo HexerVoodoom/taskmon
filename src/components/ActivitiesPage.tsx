@@ -6,19 +6,22 @@ import { RPSGame } from './RPSGame';
 import { BubbleGame } from './BubbleGame';
 import { FlowerCatchGame } from './FlowerCatchGame';
 import { WerewolfRunGame } from './WerewolfRunGame';
+import { FeirinhaGame } from './FeirinhaGame';
+import { LetterHuntGame } from './LetterHuntGame';
 import werewolfIcon from '../assets/werewolf/werewolf.png';
 import { ShopModal } from './ShopModal';
 import { bitsStyle } from '../utils/currency';
 import { getSpriteForStage } from '../utils/sprites';
 import rooftopIcon from '../assets/roofrun/rooftop.png';
 import type { Language } from '../utils/i18n';
+import type { RealReward, RewardRedemption } from '../utils/economy';
 
 /**
  * "Atividades" page — interactive minigames hub.
  * All games award 🪙 Bits (GameState.gamePoints), spent in the shop on food.
  * Balance: Dungeon points/enemy + wave clear · Dino/Roof Run floor(score/50) · RPS +10/match · Bubble Pop +1/bolha.
  */
-export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onWerewolfKill, werewolfKillsTotal, onEarnPoints, onShopBuy }: {
+export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'default', totalPoints, onDungeonEnter, onDungeonLose, onDungeonHeartDrop, onGlitchtama, onDungeonEnemyDefeated, onDinoScore, onWerewolfKill, werewolfKillsTotal, onEarnPoints, onShopBuy, gameBitsToday, gameBitsCap, realRewards, rewardRedemptions, onRedeemReward, onSaveRewards }: {
   evolutionStage: string;
   eggType?: string;
   language: Language;
@@ -34,14 +37,22 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
   werewolfKillsTotal: number;
   onEarnPoints: (pts: number) => void;
   onShopBuy: (itemId: string) => boolean;
+  /** Bits de minijogo já ganhos hoje (teto diário escala com tarefas). */
+  gameBitsToday: number;
+  /** Teto diário atual de Bits de minijogo. */
+  gameBitsCap: number;
+  realRewards?: RealReward[];
+  rewardRedemptions: RewardRedemption[];
+  onRedeemReward: (reward: RealReward) => boolean;
+  onSaveRewards: (rewards: RealReward[]) => void;
 }) {
   const isPt = language === 'pt-BR';
   const isWin98 = theme === 'win98';
   const isGlitch = theme === 'glitch';
-  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf' | null>(null);
+  const [openGame, setOpenGame] = useState<'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf' | 'feirinha' | 'letters' | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
 
-  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
+  const cards: { key: 'dungeon' | 'dino' | 'roofrun' | 'rps' | 'bubble' | 'flower' | 'werewolf' | 'feirinha' | 'letters'; icon: string; sprite?: string; badgeBg: string; title: string; desc: string; pts: string }[] = [
     {
       key: 'dungeon', icon: '⚔️', sprite: getSpriteForStage('enemy-wraith'),
       badgeBg: 'linear-gradient(160deg, #4c1d95, #1e1b4b)',
@@ -93,6 +104,24 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       desc: isPt ? 'Os 3 pets saem pra um passeio noturno — mude de faixa e atropele os lobisomens! 40 segundos.' : 'All 3 pets go for a night drive — switch lanes and run over the werewolves! 40 seconds.',
       pts: isPt ? '1 Bit por lobisomem' : '1 Bit per werewolf',
     },
+    {
+      key: 'feirinha', icon: '🧺',
+      badgeBg: 'linear-gradient(160deg, #65a30d, #1a2e1a)',
+      title: isPt ? 'Feirinha dos Pets' : 'Pet Market',
+      desc: isPt
+        ? 'Seu pet abre a banquinha e os pets da família vêm comprar! Conte frutinhas ou pague com moedas — jogo de matemática com voz.'
+        : 'Your pet opens a stall and the family pets come shopping! Count fruits or pay with coins — a math game with voice.',
+      pts: isPt ? 'Educativo · 2 Bits por pedido' : 'Educational · 2 Bits per order',
+    },
+    {
+      key: 'letters', icon: '🔤',
+      badgeBg: 'linear-gradient(160deg, #7c3aed, #1e1b4b)',
+      title: isPt ? 'Caça-Letras' : 'Letter Hunt',
+      desc: isPt
+        ? 'Ouça e ache a letra, ou complete a palavra! Jogo de alfabetização com voz — perfeito pra quem está aprendendo a ler.'
+        : 'Listen and find the letter, or complete the word! A literacy game with voice — great for new readers.',
+      pts: isPt ? 'Educativo · 2 Bits por acerto' : 'Educational · 2 Bits per hit',
+    },
   ];
 
   return (
@@ -138,6 +167,16 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       <p className={isGlitch ? 'text-[#5fbcbc]' : isWin98 ? 'text-gray-700' : 'text-gray-500'}
          style={{ fontSize: '0.78rem' }}>
         {isPt ? 'Minijogos para se divertir e acumular Bits com seu pet.' : 'Minigames to have fun and earn Bits with your pet.'}
+      </p>
+
+      {/* 💠 Teto diário de Bits de minijogo — escala com as tarefas reais do dia.
+          Pill com fundo próprio: o texto solto sumia sobre o cenário escuro. */}
+      <p style={{ textAlign: 'center', margin: '2px 0 8px' }}>
+        <span className="tk-keep-mono" style={{ ...bitsStyle, fontSize: '0.68rem', color: '#111', background: '#eafbe7', border: '1px solid rgba(0,0,0,0.15)', borderRadius: 999, padding: '3px 10px', display: 'inline-block' }}>
+          {isPt
+            ? `Bits de jogo hoje: ${Math.min(gameBitsToday, gameBitsCap)}/${gameBitsCap} · tarefas aumentam o limite!`
+            : `Game Bits today: ${Math.min(gameBitsToday, gameBitsCap)}/${gameBitsCap} · tasks raise the cap!`}
+        </span>
       </p>
 
       <div className="grid grid-cols-2 gap-3">
@@ -189,6 +228,10 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
           points={totalPoints}
           onBuy={onShopBuy}
           onClose={() => setShopOpen(false)}
+          realRewards={realRewards}
+          rewardRedemptions={rewardRedemptions}
+          onRedeemReward={onRedeemReward}
+          onSaveRewards={onSaveRewards}
         />
       )}
 
@@ -258,6 +301,22 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
           onEarnPoints={onEarnPoints}
           onKill={onWerewolfKill}
           killsTotal={werewolfKillsTotal}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'feirinha' && (
+        <FeirinhaGame
+          eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
+          onExit={() => setOpenGame(null)}
+        />
+      )}
+      {openGame === 'letters' && (
+        <LetterHuntGame
+          eggType={eggType}
+          language={language}
+          onEarnPoints={onEarnPoints}
           onExit={() => setOpenGame(null)}
         />
       )}

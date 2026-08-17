@@ -1,7 +1,8 @@
 import { useEffect, useCallback } from 'react';
 import { FORM_REQUIREMENTS, MAX_HP_BY_FORM, getStageLevel, canSelectWeekdays, type PetType } from '../types/progression';
 import { STORAGE_KEYS } from '../utils/storageKeys';
-import { getNextEvolution, getPreviousForm } from '../utils/dailyReset';
+import { getNextEvolution } from '../utils/dailyReset';
+import { weekKey } from '../utils/economy';
 
 interface Step { id: string; label: string; completed: boolean; }
 interface Activity {
@@ -90,21 +91,37 @@ export function useDailyReset({
       let newPerfectDays = prev.perfectDays;
       let newEvolutionStage = prev.evolutionStage;
       const finalUnlockedEvolutions = [...prev.unlockedEvolutions];
-      let wasDegeneratedByHP = false;
       let newMaxActivityCap = prev.maxActivityCap;
 
       // HP penalty: proportional to the tasks NOT done, measured against the
       // same daily goal. Meeting it = safe; registering MORE than required
       // never adds risk. No tasks registered → nothing to fail.
       const completionRatio = dailyGoal > 0 ? Math.min(1, dailyDone / dailyGoal) : 1;
-      const heartsLost = Math.floor((1 - completionRatio) * prev.maxHealthPoints);
+      let heartsLost = Math.floor((1 - completionRatio) * prev.maxHealthPoints);
+
+      // Dia sem NENHUMA tarefa cadastrada é neutro: a agenda é do adulto, não
+      // da criança — não perde coração nem dia perfeito (dossiê P3).
+      const neutralDay = totalTasks === 0;
+
+      // 🛡️ Escudo semanal: 1× por semana, automático, um dia ruim não perde
+      // coração nem dias perfeitos (streak-freeze do Duolingo, dossiê G2/R07).
+      const currentWeek = weekKey(new Date());
+      const shieldAvailable = (prev.shieldUsedWeek ?? '') !== currentWeek;
+      const badDay = !neutralDay && (heartsLost > 0 || !dayWasPerfect);
+      const shieldUsed = badDay && shieldAvailable;
+      let newShieldUsedWeek = prev.shieldUsedWeek ?? '';
+      if (shieldUsed) {
+        heartsLost = 0;
+        newShieldUsedWeek = currentWeek;
+      }
+
       if (heartsLost > 0) {
         newHP = Math.max(0, prev.healthPoints - heartsLost);
       }
 
       if (dayWasPerfect) {
         newPerfectDays++;
-      } else {
+      } else if (!neutralDay && !shieldUsed) {
         // Streak break: any non-perfect day loses one day of accumulated progress
         newPerfectDays = Math.max(0, prev.perfectDays - 1);
       }
@@ -135,18 +152,16 @@ export function useDailyReset({
         }
       }
 
-      // Degeneration by HP
+      // 💤 HP 0 → modo dorminhoco, NÃO regride mais de fase (dossiê P3/P5:
+      // punição de perda de vínculo é forte demais pra essa idade; regressão
+      // agora só manual, pelo botão "Voltar" da página de Evolução). O pet fica
+      // dormindo com meio coração até ser curado (carinho/coraçãozinho).
+      let newSleepyMode = prev.sleepyMode ?? false;
       if (newHP === 0) {
-        wasDegeneratedByHP = true;
-        newEvolutionStage = getPreviousForm(prev.evolutionStage, prev.eggType ?? 'vix');
-
-        const degeneratedLevel = getStageLevel(newEvolutionStage);
-        newHP = MAX_HP_BY_FORM[degeneratedLevel];
-        // Recovery discount: climbing back to the stage you fell from costs half
-        // the perfect days (head start at floor(required/2)). Non-cumulative — it's
-        // always half of the *new* (lower) stage's requirement, so a second
-        // degeneration gets the same discount again, never a smaller one.
-        newPerfectDays = Math.floor(FORM_REQUIREMENTS[degeneratedLevel].required / 2);
+        newSleepyMode = true;
+        newHP = 0.5;
+      } else if (newHP >= 1) {
+        newSleepyMode = false;
       }
 
       const resetActivities = prev.activities.map((activity: Activity) => ({
@@ -176,7 +191,10 @@ export function useDailyReset({
         poopEventsShown: [],
         poopPenaltyClockAt: 0,
         unlockedEvolutions: finalUnlockedEvolutions,
-        degeneratedByHP: wasDegeneratedByHP,
+        degeneratedByHP: false,
+        sleepyMode: newSleepyMode,
+        shieldUsedWeek: newShieldUsedWeek,
+        gameBitsToday: 0, // teto diário de Bits de minijogo reinicia na virada
         lastDayWasPerfect: dayWasPerfect,
         // Lifetime perfect-day counter (missions) — never resets on evolution
         totalPerfectDays: (prev.totalPerfectDays ?? 0) + (dayWasPerfect ? 1 : 0),
@@ -192,7 +210,9 @@ export function useDailyReset({
           wasPerfect: dayWasPerfect,
           energyWasFull,
           perfectDays: newPerfectDays,
-          degenerated: wasDegeneratedByHP,
+          degenerated: false,
+          shieldUsed,
+          sleepy: newSleepyMode,
         },
       };
     });

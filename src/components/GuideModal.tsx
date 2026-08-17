@@ -90,7 +90,10 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
                 <strong> poop</strong> also drains <strong>1 heart every 6 hours</strong>.
                 Hearts are healed by <strong>rubbing your pet</strong> (up to
                 <strong> 1 heart per day</strong>) or by using a <strong>Little Heart</strong> item
-                (a rare dungeon drop). If HP hits 0, your pet goes back a phase.
+                (a rare dungeon drop). If HP hits 0, your pet falls into <strong>sleepy mode</strong>
+                (it keeps its phase — heal it back to 1 heart to wake it). A day with
+                <strong> no registered tasks is neutral</strong>: no hearts or perfect days lost.
+                Once a week an automatic <strong>🛡️ shield</strong> absorbs one rough day.
               </li>
               <li>
                 <strong>⚡ Energy</strong> — The number of energy bars equals your phase's
@@ -155,11 +158,30 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
               everything you registered — means <strong>no loss</strong>, and registering extra activities
               never adds risk.
             </p>
+            <p className="mb-2">
+              <strong>If HP reaches 0:</strong> your pet falls into <strong>💤 sleepy mode</strong> —
+              it sleeps with half a heart but <strong>keeps its phase</strong>. Rub it or use a
+              Little Heart to bring it back to 1 heart and wake it up. (Going back a phase
+              only happens manually, via the "Back" button on the Evolution page.)
+            </p>
             <p>
-              <strong>If HP reaches 0:</strong> your pet goes back to the previous phase.
-              Climbing back is easier: you keep a head start of half the perfect days
-              needed for that phase. This discount doesn't stack — it's always half
-              again if it happens a second time.
+              <strong>🛡️ Weekly shield:</strong> once a week, automatically, one rough day is
+              absorbed — no hearts lost and your perfect days are kept. It recharges every Monday.
+              A day with <strong>no registered tasks</strong> is neutral: nothing is lost.
+            </p>
+          </section>
+
+          <section>
+            <h3 className={h3Class}>7. Bits & real rewards</h3>
+            <p className="mb-2">
+              <strong>💠 Bits</strong> now come mainly from <strong>real tasks</strong> (+10 per
+              completed task or activity). Minigames still award Bits, but with a daily cap that
+              grows with your real tasks: 20 base + 30 per task done today.
+            </p>
+            <p>
+              The shop has a <strong>🎁 Rewards tab</strong>: real-world prizes (picking the movie,
+              an extra bedtime story…) set up by your grown-up. Redeeming one shows a card —
+              present it to your grown-up to claim the prize!
             </p>
           </section>
 
