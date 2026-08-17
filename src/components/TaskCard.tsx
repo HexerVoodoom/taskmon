@@ -1,6 +1,19 @@
 import { memo } from 'react';
-import { Edit2 } from 'lucide-react';
+import { Edit2, Volume2 } from 'lucide-react';
 import { Language, useTranslation } from '../utils/i18n';
+
+// 🔊 Pré-leitores (dossiê U1/R28): lê o nome da tarefa em voz alta via Web
+// Speech API — a criança de 4 anos não lê, mas ouve.
+function speakTaskName(name: string, language: Language) {
+  try {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(name);
+    u.lang = language === 'pt-BR' ? 'pt-BR' : 'en-US';
+    u.rate = 0.9;
+    window.speechSynthesis.speak(u);
+  } catch { /* noop — TTS é progressivo, sem ele o botão só não fala */ }
+}
 
 interface TaskCardProps {
   id: string;
@@ -73,6 +86,19 @@ export const TaskCard = memo(function TaskCard({
             {t.main.singleExecution}
           </p>
         </div>
+
+        {/* 🔊 Read-aloud button (pre-readers) */}
+        <button
+          onClick={() => speakTaskName(name, language)}
+          className={`p-2 rounded-lg transition-all flex-shrink-0 ${
+            isWin98
+              ? 'win98-button'
+              : 'bg-[#f3f4f6] hover:bg-gray-200 text-[#4a5565]'
+          }`}
+          aria-label={language === 'pt-BR' ? 'Ouvir tarefa' : 'Hear task'}
+        >
+          <Volume2 size={16} strokeWidth={1.5} color={isWin98 ? '#000000' : undefined} />
+        </button>
 
         {/* Edit Button */}
         <button

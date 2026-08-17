@@ -1,0 +1,1286 @@
+<title>Dossiê Taskmon</title>
+
+<style>
+  :root {
+    --ink:        #17131E;
+    --ink-2:      #4A4356;
+    --ink-3:      #756E82;
+    --paper:      #F4F2F8;
+    --surface:    #FFFFFF;
+    --surface-2:  #EBE7F2;
+    --rule:       #D9D3E4;
+    --accent:     #6B3FA0;
+    --accent-ink: #4C2A76;
+    --accent-bg:  #EEE7F7;
+    --p0:         #7C4DBE;
+    --p1:         #C2306E;
+    --p2:         #2F7A4C;
+    --ok:         #2C6E52;
+    --ok-bg:      #E1F0E8;
+    --warn:       #8F5406;
+    --warn-bg:    #F8EDDC;
+    --bad:        #A63A33;
+    --bad-bg:     #F8E4E2;
+    --neutral:    #4C5563;
+    --neutral-bg: #E7E9EE;
+
+    --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --prose: 43rem;
+    --wide: 60rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink:        #ECE7F3;
+      --ink-2:      #B0A8BE;
+      --ink-3:      #8A8398;
+      --paper:      #131019;
+      --surface:    #1B1724;
+      --surface-2:  #241F30;
+      --rule:       #322B40;
+      --accent:     #B48DE8;
+      --accent-ink: #CDB2F2;
+      --accent-bg:  #2A2039;
+      --p0:         #A97FE0;
+      --p1:         #E86FA4;
+      --p2:         #5FBB86;
+      --ok:         #6CC69B;
+      --ok-bg:      #17301F;
+      --warn:       #DFA954;
+      --warn-bg:    #33270F;
+      --bad:        #E8867E;
+      --bad-bg:     #351B1A;
+      --neutral:    #9AA3B2;
+      --neutral-bg: #232833;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ink:        #ECE7F3;
+    --ink-2:      #B0A8BE;
+    --ink-3:      #8A8398;
+    --paper:      #131019;
+    --surface:    #1B1724;
+    --surface-2:  #241F30;
+    --rule:       #322B40;
+    --accent:     #B48DE8;
+    --accent-ink: #CDB2F2;
+    --accent-bg:  #2A2039;
+    --p0:         #A97FE0;
+    --p1:         #E86FA4;
+    --p2:         #5FBB86;
+    --ok:         #6CC69B;
+    --ok-bg:      #17301F;
+    --warn:       #DFA954;
+    --warn-bg:    #33270F;
+    --bad:        #E8867E;
+    --bad-bg:     #351B1A;
+    --neutral:    #9AA3B2;
+    --neutral-bg: #232833;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 1.25rem 6rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .col {
+    max-width: var(--prose);
+    margin-inline: auto;
+  }
+  .col-wide {
+    max-width: var(--wide);
+    margin-inline: auto;
+  }
+
+  /* ---------- type ---------- */
+
+  h1, h2, h3, h4 { font-family: var(--font-display); text-wrap: balance; font-weight: 600; }
+
+  h1 {
+    font-size: clamp(2.5rem, 7vw, 3.9rem);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin: 0 0 1rem;
+  }
+  h2 {
+    font-size: clamp(1.6rem, 3.6vw, 2.1rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.4rem;
+  }
+  h3 {
+    font-size: 1.3rem;
+    line-height: 1.25;
+    margin: 2.4rem 0 0.6rem;
+  }
+  h4 {
+    font-family: var(--font-body);
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  p { margin: 0 0 1.05rem; }
+  a { color: var(--accent-ink); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  strong { font-weight: 650; color: var(--ink); }
+  em { font-style: italic; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 0.75rem;
+    display: block;
+  }
+
+  .lede {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2.6vw, 1.45rem);
+    line-height: 1.42;
+    color: var(--ink-2);
+    margin: 0 0 1.6rem;
+  }
+
+  /* ---------- structure ---------- */
+
+  header.masthead {
+    padding: clamp(3.5rem, 11vw, 7rem) 0 2.5rem;
+  }
+  .masthead .rule-pixel { margin-top: 2rem; }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-3);
+    margin-top: 1.4rem;
+  }
+  .meta-row span strong { color: var(--ink-2); font-weight: 500; }
+
+  .rule-pixel {
+    border: 0;
+    border-top: 3px dotted var(--rule);
+    margin: 0;
+  }
+
+  section { padding-top: 3.6rem; }
+  section > .col > .rule-pixel,
+  section > .col-wide > .rule-pixel { margin-bottom: 2rem; }
+
+  /* ---------- thesis block ---------- */
+
+  .thesis {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 4px solid var(--accent);
+    padding: 1.6rem 1.7rem 0.9rem;
+    margin: 0 0 1.6rem;
+  }
+  .thesis p:last-child { margin-bottom: 1rem; }
+
+  ol.priority {
+    counter-reset: pri;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  ol.priority > li {
+    counter-increment: pri;
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.9rem;
+    align-items: start;
+  }
+  ol.priority > li::before {
+    content: counter(pri);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+    background: var(--accent-bg);
+    border: 1px solid var(--rule);
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    margin-top: 0.15rem;
+  }
+
+  /* ---------- data table ---------- */
+
+  .table-wrap { overflow-x: auto; margin: 0 0 1.6rem; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.92rem;
+    min-width: 34rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.62rem 0.9rem 0.62rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  th {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 500;
+    border-bottom: 2px solid var(--rule);
+  }
+  td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  table.roadmap td:first-child {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+    font-weight: 500;
+    width: 2.4rem;
+  }
+  table.roadmap td:nth-child(2) { min-width: 15rem; }
+  .eff {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--rule);
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  /* ---------- findings ---------- */
+
+  .finding {
+    border-top: 1px solid var(--rule);
+    padding: 1.15rem 0 0.2rem;
+  }
+  .finding:first-of-type { border-top: 2px solid var(--ink-3); }
+  .finding-head {
+    display: flex;
+    gap: 0.7rem;
+    align-items: baseline;
+    margin-bottom: 0.45rem;
+  }
+  .finding-id {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--accent-ink);
+    flex: none;
+  }
+  .finding p { font-size: 0.98rem; color: var(--ink-2); margin-bottom: 0.9rem; }
+
+  .lens {
+    margin-bottom: 2.8rem;
+  }
+  .lens-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .lens-title .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* ---------- loops ---------- */
+
+  .loop-block { margin-bottom: 2.6rem; }
+  .loop-block > h3 {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    border-bottom: 3px dotted var(--rule);
+    padding-bottom: 0.6rem;
+    margin: 0 0 0.2rem;
+  }
+
+  .loop {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: 0 1rem;
+    padding: 1.15rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .loop-num {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--ink-3);
+    padding-top: 0.05rem;
+  }
+  .loop-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 0.7rem;
+    margin-bottom: 0.45rem;
+  }
+  .loop p {
+    font-size: 0.96rem;
+    color: var(--ink-2);
+    margin: 0 0 0.55rem;
+  }
+  .loop p:last-child { margin-bottom: 0; }
+  .arrow {
+    color: var(--accent);
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    padding: 0.16rem 0.44rem;
+    white-space: nowrap;
+    border: 1px solid currentColor;
+  }
+  .chip-copy    { color: var(--ok);      background: var(--ok-bg); }
+  .chip-adapt   { color: var(--warn);    background: var(--warn-bg); }
+  .chip-avoid   { color: var(--bad);     background: var(--bad-bg); }
+  .chip-base    { color: var(--neutral); background: var(--neutral-bg); }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 1rem;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--ink-3);
+    margin: 0 0 2rem;
+  }
+  .legend > span { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+  /* ---------- profiles strip ---------- */
+
+  .profiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 0.75rem;
+    margin: 0 0 1.6rem;
+  }
+  .profile {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--pc);
+    padding: 0.8rem 0.9rem;
+  }
+  .profile .name {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--pc);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+  .profile .desc { font-size: 0.86rem; color: var(--ink-2); }
+  .p-0 { --pc: var(--p0); }
+  .p-1 { --pc: var(--p1); }
+  .p-2 { --pc: var(--p2); }
+
+  /* ---------- don't list ---------- */
+
+  ul.dont {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  ul.dont li {
+    display: grid;
+    grid-template-columns: 1.3rem 1fr;
+    gap: 0.7rem;
+    font-size: 0.98rem;
+    color: var(--ink-2);
+  }
+  ul.dont li::before {
+    content: "×";
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--bad);
+    font-size: 1.15rem;
+    line-height: 1.3;
+  }
+
+  ol.metrics {
+    list-style: none;
+    counter-reset: met;
+    padding: 0;
+    margin: 0 0 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  ol.metrics li {
+    counter-increment: met;
+    display: grid;
+    grid-template-columns: 1.9rem 1fr;
+    gap: 0.8rem;
+    font-size: 0.98rem;
+    color: var(--ink-2);
+  }
+  ol.metrics li::before {
+    content: "0" counter(met);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent-ink);
+    padding-top: 0.15rem;
+  }
+
+  /* ---------- sources ---------- */
+
+  .sources { font-size: 0.86rem; color: var(--ink-3); }
+  .sources h4 {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    font-weight: 600;
+    margin: 1.5rem 0 0.5rem;
+  }
+  .sources p { margin-bottom: 0.6rem; line-height: 1.75; }
+
+  footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 3px dotted var(--rule);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 34rem) {
+    body { font-size: 16px; }
+    .loop { grid-template-columns: 1fr; gap: 0; }
+    .loop-num { margin-bottom: 0.25rem; }
+  }
+</style>
+
+<header class="masthead">
+  <div class="col">
+    <span class="eyebrow">Benchmarking &amp; análise · agosto 2026</span>
+    <h1>Dossiê Taskmon</h1>
+    <p class="lede">Trinta rodadas de benchmarking e uma análise sob quatro lentes — psicologia,
+      gamificação, design de produto e design de UX — de um app de tarefas em família com bichinho
+      virtual, para duas crianças pequenas e a mãe.</p>
+    <div class="meta-row">
+      <span><strong>30</strong> rodadas</span>
+      <span><strong>48</strong> buscas</span>
+      <span><strong>~31,7k</strong> linhas de código lidas</span>
+      <span><strong>3</strong> perfis · <strong>7</strong> minijogos</span>
+    </div>
+    <hr class="rule-pixel">
+  </div>
+</header>
+
+<section>
+  <div class="col">
+    <span class="eyebrow">Tese</span>
+    <h2>Um Tamagotchi excelente com uma camada de tarefas fina demais</h2>
+
+    <div class="thesis">
+      <p>O motor emocional do Taskmon já está pronto e é melhor que o de qualquer concorrente de
+        tarefas familiares que eu encontrei: o pet, o cuidado diário, a evolução, os três mundos
+        temáticos. O que falta não é conteúdo — é <strong>acoplamento</strong>.</p>
+      <p>A vida real quase não move a economia do jogo. A mãe não existe como papel dentro do
+        produto. E o sistema pune com mais nitidez do que recompensa.</p>
+    </div>
+
+    <p>As três correções de maior alavancagem, em ordem:</p>
+
+    <ol class="priority">
+      <li><div><strong>Ligar a economia à vida real.</strong> Bits vêm só de minijogo. Uma criança
+        pode rodar o loop econômico inteiro — Bits, loja, comida, energia — sem fazer uma única
+        tarefa real. O minijogo compete com a tarefa em vez de recompensá-la.</div></li>
+      <li><div><strong>Criar o papel de responsável.</strong> São três saves e zero papéis. Cadastrar,
+        lembrar, verificar e mediar continua tudo fora do app — que é exatamente como apps de
+        tarefa familiar morrem.</div></li>
+      <li><div><strong>Inverter a assimetria de punição.</strong> Coração perdido na virada,
+        regressão de fase em HP&nbsp;0, −1 dia perfeito, coração por cocô não limpo. Aos 4 e aos 8
+        anos, isso pune falhas de agenda de quem controla a agenda: o adulto.</div></li>
+    </ol>
+  </div>
+</section>
+
+<section>
+  <div class="col">
+    <hr class="rule-pixel">
+    <span class="eyebrow">Ponto de partida</span>
+    <h2>O produto hoje</h2>
+
+    <div class="table-wrap">
+      <table>
+        <tbody>
+          <tr><td>Núcleo</td><td>Pet virtual — 3 pets × 3 fases, linear — com cuidado diário: comida, banho, cocô, sono, carinho</td></tr>
+          <tr><td>Tarefas</td><td>Cadastro livre com categorias e passos; meta por fase de 1 / 3 / 5 / 6 por dia</td></tr>
+          <tr><td>Economia</td><td>💠 Bits <strong>só de minijogos</strong> → loja vende <strong>só comida</strong> → comida dá <strong>+1 energia</strong></td></tr>
+          <tr><td>Minijogos</td><td>7 — Masmorra, Dino, RoofRun, PPT, Bubble, FlowerCatch, WerewolfRun</td></tr>
+          <tr><td>Perfis</td><td>3 saves independentes <strong>no mesmo aparelho</strong>, mais a 4ª casinha coletiva (só visual + carinho)</td></tr>
+          <tr><td>Nuvem</td><td>1 blob por e-mail com os 3 perfis juntos — o último a salvar vence</td></tr>
+          <tr><td>IA</td><td>Fala idle a cada 3 min via <code>/api/chat</code>, personalidade por pet</td></tr>
+          <tr><td>Métricas</td><td>Nenhuma</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="profiles">
+      <div class="profile p-0"><span class="name">Perfil 0 · Gótico</span><span class="desc">Roxo e preto. Capela no header.</span></div>
+      <div class="profile p-1"><span class="name">Perfil 1 · Grécia</span><span class="desc">Rosa. Templo no header.</span></div>
+      <div class="profile p-2"><span class="name">Perfil 2 · Mad Max</span><span class="desc">Verde. Abrigo no header.</span></div>
+    </div>
+
+    <p>Onde o esforço recente foi: minijogos, cenários, hub coletivo, arte. Onde o esforço não foi:
+      o elo entre a tarefa real e todo o resto.</p>
+  </div>
+</section>
+
+<section>
+  <div class="col">
+    <hr class="rule-pixel">
+    <span class="eyebrow">Diagnóstico</span>
+    <h2>Quatro lentes</h2>
+    <p class="lede">Dezesseis achados. Os identificadores (P1, G3, Pr2, U4) são referenciados pelo
+      roadmap mais adiante.</p>
+
+    <div class="lens">
+      <div class="lens-title"><h3 style="margin-top:1.5rem">Psicologia</h3><span class="kicker">P1 – P5</span></div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">P1</span><h4>A economia recompensa o jogo, não a vida</h4></div>
+        <p>Bits vêm de minijogos. Tarefas dão comida, que dá energia, que só serve para o dia
+          perfeito. O caminho mais curto para tudo que a criança quer não passa por guardar os
+          brinquedos. Em economia de fichas, a ficha só vale por causa do <em>backup reinforcer</em> —
+          o que ela compra de verdade. Aqui ela compra outro item do próprio jogo, em circuito
+          fechado.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">P2</span><h4>Pune-se com mais nitidez do que se recompensa</h4></div>
+        <p>De um lado: coração perdido na virada, HP&nbsp;0 → regride de fase, −1 dia perfeito,
+          −1 coração a cada 6&nbsp;h de cocô. Do outro: +1 energia por comida. A literatura de
+          disciplina positiva é consistente — consequência natural ensina, punição por omissão
+          ensina a evitar o sistema. O Habitica é o caso-limite documentado: gente abandona por
+          causa da mecânica de dano e da espiral de culpa que ela produz.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">P3</span><h4>Pune-se algo que a criança não controla</h4></div>
+        <p>Aos 4 e aos 8 anos a função executiva e a noção de tempo ainda estão em formação, e a
+          agenda é do adulto. Se a mãe não cadastrou tarefa, se foi dia de médico, se dormiram na
+          casa da avó — o pet perde coração assim mesmo. Isso não é firmeza, é ruído.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">P4</span><h4>Sobrejustificação: cuidado com o que já é prazer</h4></div>
+        <p>Recompensa esperada corrói motivação intrínseca em atividades que a pessoa já gosta —
+          o experimento clássico de Lepper, Greene e Nisbett foi feito com crianças de 3 a 5 anos.
+          Mas para tarefa doméstica chata, recompensa extrínseca é apropriada e funciona. A regra
+          prática: <strong>pague o que é chato, celebre o que já é amado.</strong> Se "ler um livro"
+          entrar na mesma esteira de Bits que "guardar os brinquedos", o app cobra um preço na
+          coisa errada.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">P5</span><h4>A ameaça ao vínculo é potente demais para essa idade</h4></div>
+        <p>Estudos de fMRI mostram que cuidar de uma criatura digital ativa circuitos de cuidado
+          parecidos com os de um ser vivo. É o que dá força ao produto — e é o que torna "seu pet
+          regrediu de fase" uma perda emocional real para uma criança de 4 anos, por um motivo que
+          ela não entende.</p>
+      </div>
+    </div>
+
+    <div class="lens">
+      <div class="lens-title"><h3>Gamificação</h3><span class="kicker">G1 – G4</span></div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">G1</span><h4>Octalysis desbalanceado para o lado escuro</h4></div>
+        <p>Forte em CD4 (Posse — o pet, a coleção de comida) e CD8 (Perda &amp; Evitação — os
+          corações). Fraco justamente nos <em>white hat</em>: CD1 (Significado Épico — por que
+          existimos como família), CD3 (Criatividade — a criança quase não personaliza nada) e
+          CD5 (Social — três pessoas na mesma casa e três jogos solo). O desenho atual gera
+          urgência sem gerar orgulho.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">G2</span><h4>Não existe escudo</h4></div>
+        <p>O <em>streak freeze</em> do Duolingo reduziu churn em 21% no grupo prestes a quebrar a
+          sequência. No Taskmon não há equivalente: a vida real é irregular e a regra do dia
+          perfeito não perdoa nada.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">G3</span><h4>Princípio de Premack invertido</h4></div>
+        <p>Premack: a atividade preferida reforça a menos preferida. No Taskmon o minijogo (o
+          preferido) é livre, e a tarefa (a menos preferida) é a que tem porteiro. Está de cabeça
+          para baixo.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">G4</span><h4>Só existe o loop diário</h4></div>
+        <p>Não há loop semanal — algo que só acontece no sábado, um ritual — nem loop de temporada,
+          conteúdo que se renova. Crianças perdem interesse em duas a três semanas quando a
+          novidade acaba; é o motivo número um de abandono de app de tarefa infantil, e o Taskmon
+          vai encontrá-lo pela terceira semana de uso constante.</p>
+      </div>
+    </div>
+
+    <div class="lens">
+      <div class="lens-title"><h3>Design de produto</h3><span class="kicker">Pr1 – Pr5</span></div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">Pr1</span><h4>Não existe o papel de responsável</h4></div>
+        <p>Nenhuma visão da mãe sobre as duas filhas, nenhuma aprovação, nenhuma tarefa cadastrada
+          de fora do perfil. Setenta por cento das pessoas abandonam apps de tarefa doméstica em
+          100 dias, e a razão apontada na pesquisa é precisa: <em>o app vira mais uma tarefa da
+          mãe</em>. Hoje o Taskmon está do lado errado dessa linha.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">Pr2</span><h4>Um aparelho, três perfis — teto estrutural</h4></div>
+        <p>Trocar de perfil dá reload. O save de nuvem é um blob único por e-mail: se as duas
+          crianças usarem aparelhos diferentes com o mesmo e-mail, a última a salvar apaga a outra.
+          O merge precisa ser por perfil, com timestamp próprio.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">Pr3</span><h4>Zero instrumentação</h4></div>
+        <p>Não há como saber se funcionou. Para uma família não é preciso analytics de verdade —
+          bastam cinco números numa tela.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">Pr4</span><h4>Superfície crescendo, núcleo parado</h4></div>
+        <p>Sete minijogos e três mundos temáticos, contra um elo tarefa→economia que não existe.
+          É a mesma crítica que os usuários do Finch estão fazendo em 2026: continuam adicionando
+          features divertidas e o app nem está estável.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">Pr5</span><h4>Chat de IA aberto para criança pequena é o maior risco do produto</h4></div>
+        <p>Em 2026 a UNICEF publicou o brief sobre riscos de companheiros de IA para crianças, a
+          SB&nbsp;243 da Califórnia entrou em vigor em 1º de janeiro, e a Common Sense Media
+          recomenda nenhum companion de IA para menores de 18. O Taskmon chama um LLM a cada três
+          minutos com personalidade de amigo. Não precisa morrer — precisa de repertório fechado,
+          sem memória emocional, sem linguagem de amizade exclusiva, e desligado por padrão nos
+          perfis infantis.</p>
+      </div>
+    </div>
+
+    <div class="lens">
+      <div class="lens-title"><h3>Design de UX</h3><span class="kicker">U1 – U4</span></div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">U1</span><h4>Texto é ruído para uma pré-leitora</h4></div>
+        <p>A convenção do projeto é sempre PT-BR + EN. Para a criança de 4 anos os dois são
+          igualmente ilegíveis. A NN/g é direta: para 3 a 5 anos, símbolo e ícone são o modo
+          primário de comunicação; o texto entra depois.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">U2</span><h4>Alvos e gestos</h4></div>
+        <p>A referência para criança é 2 × 2 cm — cerca de 75&nbsp;px — com folga entre botões, e
+          evitar gestos complexos como arrastar nas faixas mais novas. O carinho de esfregar por
+          ~2&nbsp;s é uma ideia excelente: tátil, recíproca, curativa. Mas 2&nbsp;s é longo para
+          mãos pequenas, e o arrasto do Flower Catch é justamente o gesto que a literatura
+          desaconselha para os menores.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">U3</span><h4>O juice está no lugar errado</h4></div>
+        <p>O ápice audiovisual do app é ganhar um minijogo. Concluir uma tarefa real — o único
+          momento que o produto existe para celebrar — é o mais silencioso. Juice não muda as
+          regras, muda o que o jogador sente, e é a razão número um de as pessoas continuarem
+          jogando. Na fórmula do Fogg, a celebração é justamente o que consolida o hábito.</p>
+      </div>
+
+      <div class="finding">
+        <div class="finding-head"><span class="finding-id">U4</span><h4>A melhor ideia do app está escondida</h4></div>
+        <p>O cadeado de evolução — tocar no pet para travar a evolução e acumular dias — é
+          autonomia pura: controle de ritmo nas mãos da criança, exatamente o que a Teoria da
+          Autodeterminação pede. Está enterrado numa página secundária, sem explicação.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col-wide">
+    <hr class="rule-pixel">
+    <span class="eyebrow">Evidência</span>
+    <h2>As 30 rodadas</h2>
+    <p style="max-width:var(--prose)">Cada rodada: o que foi estudado, o achado e o que fazer com
+      ele no Taskmon. O veredito indica o tratamento.</p>
+
+    <div class="legend">
+      <span><span class="chip chip-copy">Copiar</span> trazer quase como está</span>
+      <span><span class="chip chip-adapt">Adaptar</span> a ideia serve, a forma não</span>
+      <span><span class="chip chip-avoid">Evitar</span> erro documentado</span>
+      <span><span class="chip chip-base">Base</span> fundamento, não feature</span>
+    </div>
+
+    <div class="loop-block">
+      <h3>Bloco A · Pets virtuais e autocuidado</h3>
+
+      <div class="loop">
+        <div class="loop-num">01</div>
+        <div>
+          <div class="loop-head"><h4>Finch: Self-Care Pet</h4><span class="chip chip-adapt">Adaptar</span></div>
+          <p>Cerca de 10 milhões de usuários e US$ 30–40 M de ARR sem capital de risco. O truque
+            não é disciplina, é reenquadramento: "beba água" vira "dê energia ao seu passarinho".
+            O dever vira cuidado.</p>
+          <p><span class="arrow">→</span> O Taskmon já tem o pet, mas o texto das tarefas ainda é de
+            app de produtividade. Reescrever a voz: a tarefa não é cobrança, é o que alimenta o
+            Vixinho.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">02</div>
+        <div>
+          <div class="loop-head"><h4>Finch, lado B</h4><span class="chip chip-avoid">Evitar</span></div>
+          <p>Reclamações de 2026: features empilhadas sobre um app instável, check-in lento — muitos
+            toques, animações, mensagens — e preço quatro vezes maior no Android.</p>
+          <p><span class="arrow">→</span> Cada novo minijogo no Taskmon compra a mesma dívida.
+            Congelar features de jogo até o elo tarefa→economia existir.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">03</div>
+        <div>
+          <div class="loop-head"><h4>Forest</h4><span class="chip chip-adapt">Adaptar</span></div>
+          <p>A árvore morre se você sair do app. A punição é dentro da sessão, imediata,
+            compreensível — e o usuário escolheu entrar nela.</p>
+          <p><span class="arrow">→</span> A punição no Taskmon é de madrugada, invisível. A criança
+            acorda com o pet pior sem entender por quê. Punição precisa ser presenciada para
+            ensinar.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">04</div>
+        <div>
+          <div class="loop-head"><h4>Pokémon Sleep</h4><span class="chip chip-adapt">Adaptar com trava</span></div>
+          <p>Coleção (CD4) e imprevisibilidade (CD7) fazem gente mudar hábito de sono de verdade.
+            Mas a comunidade documentou a virada para grind e min-max.</p>
+          <p><span class="arrow">→</span> A masmorra já é o vetor certo de imprevisibilidade — drop
+            de 💗 a 5%. Manter pequena. Não transformar a coleção de comida em checklist
+            obrigatório.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">05</div>
+        <div>
+          <div class="loop-head"><h4>Tamagotchi Uni</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>Wi-Fi, Tamaverse, visitas, presentes entre aparelhos, personalidade e hobby por
+            bichinho. A franquia original concluiu que pet sozinho não basta.</p>
+          <p><span class="arrow">→</span> O <code>TogetherHome</code> já é 40% disso. Falta presente,
+            visita e recado entre perfis.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">06</div>
+        <div>
+          <div class="loop-head"><h4>Efeito Tamagotchi</h4><span class="chip chip-base">Base</span></div>
+          <p>Antropomorfismo e apego parassocial ativam circuitos de cuidado reais; o luto quando o
+            bichinho "morre" também é real.</p>
+          <p><span class="arrow">→</span> Confirma a força do produto e define o limite: o pet do
+            Taskmon nunca deve morrer, e regredir de fase deve ser sempre reversível e explicado.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="loop-block">
+      <h3>Bloco B · Hábito, streak e retenção</h3>
+
+      <div class="loop">
+        <div class="loop-num">07</div>
+        <div>
+          <div class="loop-head"><h4>Duolingo — streak e streak freeze</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>A streak é a ferramenta de retenção mais forte que existe, porque perder dói cerca de
+            duas vezes mais do que ganhar o equivalente. O streak freeze reduziu churn em 21% em
+            quem estava prestes a quebrar.</p>
+          <p><span class="arrow">→</span> Criar o escudo: item automático, um por semana, que anula
+            a perda do dia e preserva os dias perfeitos. Sem custo, sem loja.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">08</div>
+        <div>
+          <div class="loop-head"><h4>Streak anxiety</h4><span class="chip chip-avoid">Evitar</span></div>
+          <p>O Duo virou símbolo de culpa: notificação passivo-agressiva, animação triste. A
+            pesquisa mostra ansiedade, vergonha e burnout — e 40% dos adolescentes limitando uso por
+            saúde mental.</p>
+          <p><span class="arrow">→</span> Nenhuma notificação do Taskmon deve dizer "seu pet está
+            triste porque você sumiu". Convite, nunca cobrança.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">09</div>
+        <div>
+          <div class="loop-head"><h4>Habitica</h4><span class="chip chip-avoid">Evitar, com um resgate</span></div>
+          <p>Interface sobrecarregada, estética que cansa e, sobretudo, o dano: perder um dia
+            machuca o avatar e prejudica o <em>party</em>. Gente sai por causa da espiral de culpa.
+            Quando o party esvazia, a motivação some junto.</p>
+          <p><span class="arrow">→</span> Nunca criar mecânica em que a falha de uma irmã prejudique
+            a outra. O resgate: um party ativo é genuinamente motivador — vale como meta
+            cooperativa, não como dano compartilhado.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">10</div>
+        <div>
+          <div class="loop-head"><h4>Anéis do Apple Fitness</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>Meta diária que se lê sem ler: três anéis fechando. Zero texto, estado inteiro num
+            relance.</p>
+          <p><span class="arrow">→</span> Duplicar as barras do Taskmon com um anel de dia por
+            perfil, legível para quem ainda não lê.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">11</div>
+        <div>
+          <div class="loop-head"><h4>Benchmarks de retenção</h4><span class="chip chip-base">Base</span></div>
+          <p>Saúde e fitness: D1 ~27%, D7 ~10%, D30 ~4%. D7 é o número diagnóstico — quem volta no
+            dia 7 tem de 4 a 5 vezes mais chance de estar ativo no dia 30. Features sociais e de
+            responsabilidade mútua derrubam o churn mensal em 20 a 35%.</p>
+          <p><span class="arrow">→</span> Para o Taskmon, o equivalente familiar do D7 é a
+            <strong>terceira semana</strong>, quando a novidade acaba. É para lá que o roadmap deve
+            olhar.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="loop-block">
+      <h3>Bloco C · Tarefas em família</h3>
+
+      <div class="loop">
+        <div class="loop-num">12</div>
+        <div>
+          <div class="loop-head"><h4>OurHome, S'moresUp, Homey</h4><span class="chip chip-base">Contexto</span></div>
+          <p>S'moresUp é o mais completo e o mais caro — US$ 80 a 96 por ano. OurHome, o queridinho
+            gratuito, foi despublicado da Play Store em 2023 e os servidores caíram; famílias
+            inteiras perderam o histórico.</p>
+          <p><span class="arrow">→</span> Argumento a favor do desenho do Taskmon: dados locais
+            primeiro, nuvem como cópia. Manter assim.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">13</div>
+        <div>
+          <div class="loop-head"><h4>Greenlight e BusyKid</h4><span class="chip chip-adapt">Adaptar</span></div>
+          <p>Mesada real amarrada a tarefa, com revisão do adulto — "done = done right" — por
+            US$ 4 a 25 ao mês.</p>
+          <p><span class="arrow">→</span> O que importa não é o dinheiro. É o elo com algo que a
+            criança valoriza <em>fora</em> do app, e a existência de uma etapa de revisão.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">14</div>
+        <div>
+          <div class="loop-head"><h4>Concorrentes brasileiros</h4><span class="chip chip-base">Contexto</span></div>
+          <p>Pontuei (pontos → prêmios, de mesada a passeio, planos a partir de R$ 0), ParensUP
+            (10 mil downloads, feito por uma família), Rotina Divertida (estrelas → recompensas,
+            foco em autismo, R$ 14,90/mês), Feito!, Rotininha. Todos convergem para o mesmo
+            formato: pontos → catálogo de prêmios do mundo real.</p>
+          <p><span class="arrow">→</span> O mercado PT-BR já validou a peça que falta no Taskmon.
+            E nenhum deles tem um bicho com vínculo emocional real — é aí que o Taskmon ganha.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">15</div>
+        <div>
+          <div class="loop-head"><h4>Foto-prova e aprovação</h4><span class="chip chip-adapt">Adaptar com cuidado</span></div>
+          <p>Kid Chore, ChoreQuest e ChoreSplit — este com verificação por IA — pedem foto e
+            aprovação, com auto-aprovação para tarefas de confiança.</p>
+          <p><span class="arrow">→</span> Útil para "arrumei a cama". Mas verificação por padrão
+            sinaliza desconfiança para uma criança de 8 anos. Opcional, por tarefa, escolhida pela
+            mãe, nunca padrão.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">16</div>
+        <div>
+          <div class="loop-head"><h4>Loja de recompensa do mundo real</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>Padrão consolidado: a moeda vale porque compra privilégio — escolher o filme, ficar
+            acordada mais tarde, um passeio. O adulto define preços e aprova o resgate, e a
+            recomendação é misturar prêmios de tela com prêmios fora da tela.</p>
+          <p><span class="arrow">→</span> É a peça mais barata e de maior impacto do roadmap. Uma
+            lista editável e um cartão de resgate. Zero backend.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">17</div>
+        <div>
+          <div class="loop-head"><h4>Carga mental materna</h4><span class="chip chip-avoid">Crítico</span></div>
+          <p>Mães carregam 71% da carga mental doméstica. Setenta por cento das pessoas desistem de
+            apps de tarefa em 100 dias. A socióloga Jaclyn Wong resume: "o trabalho de administrar
+            o app continua sendo visto como trabalho de mulher".</p>
+          <p><span class="arrow">→</span> Toda feature nova precisa passar num teste: <em>isso tira
+            trabalho da mãe ou adiciona?</em> Cadastro por voz, modelos de rotina prontos e tarefas
+            recorrentes são features de alívio, não de enfeite.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">18</div>
+        <div>
+          <div class="loop-head"><h4>A queda da novidade</h4><span class="chip chip-avoid">Crítico</span></div>
+          <p>Crianças perdem interesse em duas a três semanas e os pais concluem que "o app não
+            funcionou". Aparece o <em>reward fatigue</em>: a criança passa a perguntar "o que eu
+            ganho?" para cada coisa. A saída documentada não é mais pontos — é pertencimento e
+            contribuição.</p>
+          <p><span class="arrow">→</span> O Taskmon precisa de um eixo de significado ao lado do
+            eixo de recompensa — "a família conseguiu", "eu ajudei minha irmã" — e de conteúdo que
+            se renove sem trabalho da mãe.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="loop-block">
+      <h3>Bloco D · Fundamentos de psicologia</h3>
+
+      <div class="loop">
+        <div class="loop-num">19</div>
+        <div>
+          <div class="loop-head"><h4>Teoria da Autodeterminação</h4><span class="chip chip-base">Base</span></div>
+          <p>Autonomia, competência e vínculo. Na pesquisa com 307 usuários de mHealth, os três
+            predizem motivação intrínseca — e o mapeamento é específico: avatar, história e
+            companheiros alimentam <strong>vínculo</strong>; badges e gráficos alimentam
+            <strong>competência</strong>; escolha significativa alimenta <strong>autonomia</strong>.
+            O alerta: pontos usados como controle corroem interesse; usados como feedback de
+            competência, sustentam.</p>
+          <p><span class="arrow">→</span> O Taskmon é rico em vínculo, médio em competência, pobre
+            em autonomia. O cadeado de evolução e a escolha dos dias da semana são as duas sementes
+            de autonomia que já existem. Promover as duas.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">20</div>
+        <div>
+          <div class="loop-head"><h4>Efeito de sobrejustificação</h4><span class="chip chip-avoid">Guardrail</span></div>
+          <p>Recompensa esperada por atividade já prazerosa reduz o interesse. Mas quando a tarefa é
+            desagradável e a motivação intrínseca é insuficiente — o caso das tarefas domésticas — a
+            recompensa extrínseca é útil e apropriada.</p>
+          <p><span class="arrow">→</span> Separar dois tipos de tarefa: <strong>Dever</strong>, que
+            rende Bits, e <strong>Meu jeito</strong>, que rende história, fala do pet, celebração —
+            nunca moeda.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">21</div>
+        <div>
+          <div class="loop-head"><h4>Economia de fichas (ABA)</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>Uma das intervenções mais estudadas em análise do comportamento, recomendada por AAP e
+            CDC. Requisitos: comportamento definido com especificidade, ficha entregue
+            imediatamente, acúmulo visível, ficha que não seja reforçadora por si só, e
+            <strong>plano de desmame</strong> — "as habilidades duram depois que as fichas param?".</p>
+          <p><span class="arrow">→</span> O Taskmon acerta em acúmulo visível e erra em três: a
+            tarefa é texto livre (sem especificidade), a entrega não é imediata nem enfática, e não
+            existe desmame.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">22</div>
+        <div>
+          <div class="loop-head"><h4>Modelo de Fogg — B = MAP</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>Comportamento = Motivação × Habilidade × Estímulo; se qualquer um for zero, não
+            acontece. A receita: <em>depois de [âncora], eu faço [comportamento mínimo], então
+            [celebração]</em>. "Emoções criam hábitos."</p>
+          <p><span class="arrow">→</span> Três aplicações diretas: âncora — ligar a tarefa a um
+            momento do dia, não a um horário no relógio que a criança de 4 anos não lê; habilidade —
+            permitir a versão mínima, "guardei um brinquedo" conta; celebração — ver U3.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">23</div>
+        <div>
+          <div class="loop-head"><h4>Disciplina positiva e elogio ao processo</h4><span class="chip chip-avoid">Crítico</span></div>
+          <p>Consequência natural ensina; punição gera evitação. Elogio ao processo — "você se
+            esforçou muito" — entre 1 e 3 anos prediz mentalidade de crescimento aos 7 e desempenho
+            escolar aos 9. Elogio à pessoa — "você é inteligente" — faz o oposto.</p>
+          <p><span class="arrow">→</span> As falas do pet são o canal perfeito e já existem. Regra
+            de escrita: o pet comenta o esforço e a estratégia, nunca o atributo da criança. E nunca
+            comenta a falha.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">24</div>
+        <div>
+          <div class="loop-head"><h4>Gradiente de meta, progresso dotado, Zeigarnik</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>As pessoas aceleram perto do fim; começar com progresso de graça — dois selos em vez de
+            zero — aumenta a conclusão; tarefa inacabada fica na cabeça.</p>
+          <p><span class="arrow">→</span> Hoje o Taskmon mostra "2/3 tarefas". Melhor: barra que já
+            começa parcialmente cheia por ter aparecido, e destaque visual crescente na última
+            tarefa do dia.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">25</div>
+        <div>
+          <div class="loop-head"><h4>Octalysis</h4><span class="chip chip-base">Diagnóstico</span></div>
+          <p>Oito drives. Os de cima — Significado, Realização, Criatividade — são white hat: poder
+            e orgulho, sem urgência. Os de baixo — Escassez, Imprevisibilidade, Perda — são black
+            hat: urgência e ansiedade.</p>
+          <p><span class="arrow">→</span> Mapa do Taskmon: CD4 e CD8 fortes, CD2 médio, CD1, CD3 e
+            CD5 quase ausentes. Todo o roadmap abaixo é, em resumo, uma migração de peso do black
+            hat para o white hat.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="loop-block">
+      <h3>Bloco E · Crianças, UX e ética</h3>
+
+      <div class="loop">
+        <div class="loop-num">26</div>
+        <div>
+          <div class="loop-head"><h4>Desenvolvimento aos 4 e aos 8</h4><span class="chip chip-avoid">Crítico</span></div>
+          <p>Controle inibitório, memória de trabalho e flexibilidade cognitiva ainda em
+            desenvolvimento; a percepção de intervalos de tempo continua amadurecendo bem depois dos
+            7. Cronogramas visuais reduzem estresse e aumentam autonomia.</p>
+          <p><span class="arrow">→</span> Uma menina de 4 e uma de 8 não podem usar a mesma
+            interface. A de 4 precisa de rotina visual em imagens e de zero relógio; a de 8 aguenta
+            metas e escolha de dias.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">27</div>
+        <div>
+          <div class="loop-head"><h4>UX infantil — NN/g</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>Segmentar em faixas estreitas: 3–5, 6–8, 9–12. Alvo de 2 × 2 cm com folga. Símbolo
+            antes de texto para os menores. Instruções claras e específicas. Evitar arrastar e
+            rolagem complexa.</p>
+          <p><span class="arrow">→</span> Modo por perfil, não configuração global — os três perfis
+            já são o lugar natural para isso.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">28</div>
+        <div>
+          <div class="loop-head"><h4>Pré-leitores</h4><span class="chip chip-copy">Copiar</span></div>
+          <p>Narração em áudio e destaque palavra a palavra são o padrão para quem ainda não lê.</p>
+          <p><span class="arrow">→</span> O <code>speak()</code> já está no app para as falas do pet.
+            Reaproveitar: botão 🔊 em cada tarefa e leitura automática da tarefa do dia no modo
+            pré-leitor. É a feature de melhor razão impacto/esforço deste dossiê.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">29</div>
+        <div>
+          <div class="loop-head"><h4>Rivalidade entre irmãs</h4><span class="chip chip-avoid">Crítico</span></div>
+          <p>Rivalidade nasce de injustiça percebida. Justo ≠ igual: recompensa proporcional à idade
+            e à capacidade é o que sustenta a percepção de justiça. Em sala de aula, leaderboard
+            aumenta engajamento <em>e</em> desconforto — a saída documentada foi migrar para
+            atividades em equipe. Ranking público pode virar bullying.</p>
+          <p><span class="arrow">→</span> Nunca colocar ranking entre as três. O Taskmon já acerta
+            por acaso ao ter metas por fase, cada uma na sua régua. Cooperação é o vetor social
+            correto: meta somada da família, presente de uma para a outra, carinho recíproco.</p>
+        </div>
+      </div>
+
+      <div class="loop">
+        <div class="loop-num">30</div>
+        <div>
+          <div class="loop-head"><h4>Ética e regulação em 2026</h4><span class="chip chip-avoid">Crítico</span></div>
+          <p>O AADC da Califórnia define dark pattern incluindo "recompensas por tempo gasto" e
+            notificações desenhadas para estender o uso infantil. Nova Jersey e Carolina do Sul
+            aprovaram códigos próprios em 2026. <strong>O Brasil proíbe loot box para menores a
+            partir de 2026.</strong> A UNICEF publicou o brief sobre companheiros de IA e direitos
+            da criança; a SB 243 da Califórnia entrou em vigor em 1º/1/2026.</p>
+          <p><span class="arrow">→</span> Três linhas vermelhas: nada de caixa aleatória paga, nada
+            de recompensa por tempo de tela dentro do app, e o chat de IA com escopo fechado e
+            desligado por padrão nos perfis infantis.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col-wide">
+    <hr class="rule-pixel">
+    <span class="eyebrow">Plano</span>
+    <h2>Roadmap priorizado</h2>
+    <p style="max-width:var(--prose)">Ordenado por alavancagem, não por facilidade. As referências
+      entre parênteses apontam para os achados do diagnóstico e para as rodadas.</p>
+
+    <h3>Agora — duas semanas, tudo no cliente</h3>
+    <div class="table-wrap">
+      <table class="roadmap">
+        <thead><tr><th></th><th>Mudança</th><th>Por quê</th><th>Esforço</th></tr></thead>
+        <tbody>
+          <tr><td>01</td><td><strong>Tarefa dá Bits.</strong> Cada tarefa concluída rende Bits direto.</td><td>Corrige o incentivo invertido (P1, G3)</td><td><span class="eff">P</span></td></tr>
+          <tr><td>02</td><td><strong>Teto diário de Bits do minijogo escala com tarefas.</strong> Ex.: <code>20 + 30 × tarefas do dia</code>.</td><td>Minijogo vira recompensa da tarefa, não substituto (G3)</td><td><span class="eff">P</span></td></tr>
+          <tr><td>03</td><td><strong>Loja de recompensa real.</strong> Lista editável pela mãe — "escolher a pizza, 200 Bits" — e o resgate gera um cartão pra mostrar.</td><td>O backup reinforcer que falta (P1, R16)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>04</td><td><strong>Escudo semanal automático.</strong> Um por semana, anula a perda de coração e preserva os dias perfeitos.</td><td>−21% de churn no equivalente do Duolingo (G2)</td><td><span class="eff">P</span></td></tr>
+          <tr><td>05</td><td><strong>Fim da regressão automática.</strong> HP 0 vira "modo dorminhoco" — o pet dorme, não regride. Regressão só com confirmação do adulto.</td><td>Punição desproporcional à idade (P3, P5)</td><td><span class="eff">P</span></td></tr>
+          <tr><td>06</td><td><strong>Sem tarefa cadastrada, sem punição.</strong> Dia sem tarefa não tira coração nem dia perfeito.</td><td>Pune a agenda do adulto, não a criança (P3)</td><td><span class="eff">P</span></td></tr>
+          <tr><td>07</td><td><strong>Juice na conclusão.</strong> Confete, som, o pet corre até a tarefa, Bits voando.</td><td>Celebração é o que fixa o hábito (U3, R22)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>08</td><td><strong>Botão 🔊 na tarefa.</strong> Reaproveitar o <code>speak()</code>.</td><td>Pré-leitora de 4 anos (U1, R28)</td><td><span class="eff">P</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Próximo — um a dois meses</h3>
+    <div class="table-wrap">
+      <table class="roadmap">
+        <thead><tr><th></th><th>Mudança</th><th>Por quê</th><th>Esforço</th></tr></thead>
+        <tbody>
+          <tr><td>09</td><td><strong>Casinha da Mãe.</strong> Quinta casinha com PIN de 4 dígitos: cadastra tarefa em qualquer perfil, aprova resgate, vê o painel da semana.</td><td>O papel que não existe (Pr1, R17)</td><td><span class="eff">G</span></td></tr>
+          <tr><td>10</td><td><strong>Meta familiar cooperativa.</strong> Soma das três por semana destrava cenário ou evento de sábado. Nunca ranking.</td><td>CD1 + CD5, e o vetor social seguro (G1, R29)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>11</td><td><strong>Carinho recíproco no TogetherHome.</strong> Uma irmã cuida do pet da outra e isso conta.</td><td>Metade já existe; é o gesto de vínculo mais barato (R05)</td><td><span class="eff">P</span></td></tr>
+          <tr><td>12</td><td><strong>Modo por faixa etária, por perfil.</strong> Pré-leitor: ícone grande, alvo ≥ 75 px, um idioma, sem texto secundário.</td><td>NN/g, e os perfis já são o lugar (U1, U2, R26, R27)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>13</td><td><strong>Contenção do chat de IA.</strong> Repertório fechado em vez de geração livre, sem memória emocional, sem linguagem de amizade exclusiva, desligado por padrão nos perfis infantis.</td><td>Maior risco do produto em 2026 (Pr5, R30)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>14</td><td><strong>Painel "Semana da família".</strong> Cinco números, uma tela.</td><td>Sem isso não dá pra saber se funcionou (Pr3)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>15</td><td><strong>Tarefas: modelos e recorrência.</strong> Biblioteca de rotinas prontas por idade, mais repetição.</td><td>Tira trabalho da mãe (R17)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>16</td><td><strong>Anel do dia.</strong> Estado do dia legível sem ler.</td><td>R10, U1</td><td><span class="eff">P</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Depois — trimestre</h3>
+    <div class="table-wrap">
+      <table class="roadmap">
+        <thead><tr><th></th><th>Mudança</th><th>Por quê</th><th>Esforço</th></tr></thead>
+        <tbody>
+          <tr><td>17</td><td><strong>Merge de nuvem por perfil.</strong> Timestamp por perfil em vez de blob last-write-wins.</td><td>Destrava um aparelho por pessoa (Pr2)</td><td><span class="eff">G</span></td></tr>
+          <tr><td>18</td><td><strong>Temporadas de 6 semanas.</strong> Um cenário, uma sombra, uma comida e um objetivo coletivo novos.</td><td>Combate a queda da novidade (G4, R18)</td><td><span class="eff">G</span></td></tr>
+          <tr><td>19</td><td><strong>Dois tipos de tarefa: Dever e Meu jeito.</strong> Dever rende Bits; Meu jeito rende história e fala do pet.</td><td>Guardrail de sobrejustificação (P4, R20)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>20</td><td><strong>Desmame na fase 3.</strong> A razão tarefa→Bits cai e entra "contribuição": tarefas de ajudar alguém valem história.</td><td>O plano de fading que a economia de fichas exige (R21, R18)</td><td><span class="eff">M</span></td></tr>
+          <tr><td>21</td><td><strong>Foto-prova opcional.</strong> Por tarefa, escolhida pela mãe, com auto-aprovação padrão.</td><td>R15</td><td><span class="eff">M</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="col">
+    <hr class="rule-pixel">
+    <span class="eyebrow">Linhas vermelhas</span>
+    <h2>O que não fazer</h2>
+
+    <ul class="dont">
+      <li><strong>Ranking entre as irmãs.</strong> Idades diferentes, réguas diferentes. Ranking fabrica injustiça percebida, que é a raiz da rivalidade.</li>
+      <li><strong>Caixa aleatória paga.</strong> Além do dano documentado, o Brasil proíbe loot box para menores a partir de 2026.</li>
+      <li><strong>Recompensar tempo de tela dentro do app.</strong> É literalmente o exemplo de dark pattern no código da Califórnia.</li>
+      <li><strong>Notificação culpada.</strong> "Seu pet está triste porque você sumiu" é o padrão que transformou o Duo em meme de ansiedade.</li>
+      <li><strong>Deixar o pet morrer.</strong> O apego é real; a perda também.</li>
+      <li><strong>Pagar Bits por algo que a criança já ama fazer.</strong> É onde a sobrejustificação cobra o preço.</li>
+      <li><strong>O oitavo minijogo antes do elo tarefa→economia.</strong> É o erro que os usuários estão apontando no Finch em 2026.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <div class="col">
+    <hr class="rule-pixel">
+    <span class="eyebrow">Verificação</span>
+    <h2>Como medir</h2>
+    <p>Cinco números. Não é um SaaS, é uma família.</p>
+
+    <ol class="metrics">
+      <li><strong>Tarefas reais concluídas por semana, por perfil.</strong> O número que importa.</li>
+      <li><strong>Percentual de dias com pelo menos uma tarefa</strong> — não a streak perfeita. Consistência, não perfeição.</li>
+      <li><strong>Bits de minijogo dividido por Bits de tarefa.</strong> Guardrail do incentivo. Alvo: menor que 1.</li>
+      <li><strong>Tarefas cadastradas pela mãe por semana.</strong> Proxy da carga materna — quer que <em>caia</em> com o tempo, à medida que modelos e recorrência assumem o trabalho.</li>
+      <li><strong>Resgates de recompensa real por mês.</strong> Prova de que a moeda vale algo.</li>
+    </ol>
+
+    <p>E um marco qualitativo: <strong>a semana 3</strong>. É quando a novidade acaba na literatura.
+      Se as três continuarem abrindo o app na semana 4, o desenho está certo.</p>
+  </div>
+</section>
+
+<section>
+  <div class="col">
+    <hr class="rule-pixel">
+    <span class="eyebrow">Referências</span>
+    <h2>Fontes</h2>
+
+    <div class="sources">
+      <h4>Pets virtuais e autocuidado</h4>
+      <p><a href="https://www.deconstructoroffun.com/blog/x0hd2ssr80y5n7gv0w967pg7hwd7tl">Deconstructor of Fun — widgets gamificados do Finch</a> · <a href="https://blog.sparrowapps.io/p/finch-how-a-self-care-app-hit-30m-arr-without-vc-money">Finch a US$ 30M ARR sem VC</a> · <a href="https://koi-calm.app/blog/self-care-pet-apps">Koi — a ascensão do self-care pet</a> · <a href="https://habitbox.app/blog/finch-app-review">Críticas ao Finch em 2026</a> · <a href="https://trophy.so/blog/forest-gamification-case-study">Forest e gamificação</a> · <a href="https://www.marygeorgescu.com/blog/2025/7/12/how-far-is-too-far-evaluating-pokmon-sleeps-design-tracking-and-monetization">Pokémon Sleep: quão longe é longe demais</a> · <a href="https://tamagotchi.fandom.com/wiki/Tamagotchi_Uni">Tamagotchi Uni</a> · <a href="https://en.wikipedia.org/wiki/Tamagotchi_effect">Efeito Tamagotchi</a> · <a href="https://www.sciencedirect.com/science/article/pii/S1875952125000382">Revisão narrativa sobre pets virtuais</a></p>
+
+      <h4>Hábito, streak e retenção</h4>
+      <p><a href="https://www.justanotherpm.com/blog/the-psychology-behind-duolingo-streak-feature">A psicologia da streak do Duolingo</a> · <a href="https://yukaichou.com/gamification-analysis/streak-design-gamification-motivation-burnout/">Streak design sem burnout — Yu-kai Chou</a> · <a href="https://blog.cohorty.app/the-psychology-of-streaks-why-they-work-and-when-they-backfire/">Quando streaks saem pela culatra</a> · <a href="https://trophy.so/blog/habitica-gamification-case-study">Habitica: estudo de caso</a> · <a href="https://habithuddle.com/blog/habitica-alternatives">Por que as pessoas saem do Habitica</a> · <a href="https://vmobify.com/blog/app-retention-benchmarks">Benchmarks D1/D7/D30 em 2026</a></p>
+
+      <h4>Família e tarefas</h4>
+      <p><a href="https://www.pointwisesystem.com/blog/best-chore-apps-for-kids-2026">Melhores apps de tarefa em 2026</a> · <a href="https://getsense.ai/blog/posts/best-ourhome-alternatives-2025">Alternativas ao OurHome</a> · <a href="https://www.creditdonkey.com/greenlight_busykid.html">Greenlight vs BusyKid</a> · <a href="https://www.pontuei.app.br">Pontuei</a> · <a href="https://parensup.com/pt">ParensUP</a> · <a href="https://www.rotinadivertida.com.br/">Rotina Divertida</a> · <a href="https://www.techtudo.com.br/listas/2023/08/quer-organizar-a-rotina-da-familia-esses-5-apps-podem-ajudar-edapps.ghtml">Apps de rotina familiar no Brasil — TechTudo</a> · <a href="https://www.nestifyapp.org/blog/why-chore-apps-fail-proactive-ai-solution">Por que apps de tarefa falham</a> · <a href="https://www.frontiersin.org/journals/sociology/articles/10.3389/fsoc.2025.1683261/full">A carga invisível das mães — Frontiers</a> · <a href="https://www.tasksnchores.com/reward-systems-for-kids-stars-points-screen-time-or-money/">Sistemas de recompensa: estrelas, pontos, tela ou dinheiro</a></p>
+
+      <h4>Psicologia</h4>
+      <p><a href="https://yukaichou.com/gamification-analysis/self-determination-theory-guide-to-ryan-and-decis-motivation-framework/">Teoria da Autodeterminação — guia Deci &amp; Ryan</a> · <a href="https://www.nngroup.com/articles/autonomy-relatedness-competence/">Autonomia, vínculo e competência em UX — NN/g</a> · <a href="https://www.sciencedirect.com/science/article/pii/S074756321630855X">Gamificação e satisfação de necessidades psicológicas</a> · <a href="https://en.wikipedia.org/wiki/Overjustification_effect">Efeito de sobrejustificação</a> · <a href="https://ceo.usc.edu/wp-content/uploads/2013/02/2013-05-G13-05-624-Negative_Effects_of_Extrinsic_Rewards.pdf">Efeitos negativos de recompensas extrínsecas — USC</a> · <a href="https://www.apexaba.com/blog/token-economy">Economia de fichas em ABA</a> · <a href="https://www.easyhabits.io/blog/tiny-habits-bj-fogg">Tiny Habits e o modelo de Fogg</a> · <a href="https://www.positivediscipline.com/about-positive-discipline/">Disciplina positiva</a> · <a href="https://www.sciencedirect.com/science/article/abs/pii/S0022096524001723">Elogio e persistência em crianças</a> · <a href="https://www.coglode.com/research/goal-gradient-effect">Efeito de gradiente de meta</a> · <a href="https://yukaichou.com/gamification-examples/octalysis-gamification-framework/">Octalysis</a></p>
+
+      <h4>Crianças, UX e ética</h4>
+      <p><a href="https://www.nngroup.com/reports/children-on-the-web/">UX para crianças de 3 a 12 — NN/g</a> · <a href="https://www.nngroup.com/articles/children-ux-physical-development/">Design por estágio de desenvolvimento físico — NN/g</a> · <a href="https://www.nngroup.com/articles/kids-cognition/">Considerações cognitivas — NN/g</a> · <a href="https://www.biermanautism.com/resources/blog/visualschedules/">Cronogramas visuais</a> · <a href="https://getgoally.com/goally-therapy-suite/visual-schedule-app/">Goally</a> · <a href="https://health.clevelandclinic.org/sibling-rivalry">Rivalidade entre irmãos — Cleveland Clinic</a> · <a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8097522/">Princípios de design de leaderboard</a> · <a href="https://dl.acm.org/doi/fullHtml/10.1145/3585088.3589370">AADC e design centrado na criança — ACM</a> · <a href="https://www.loeb.com/en/insights/publications/2026/06/childrens-online-privacy-2026-state-app-store-design-code-and-social-media-laws">Privacidade infantil em 2026 — Loeb &amp; Loeb</a> · <a href="https://www.unicef.org/documents/when-ai-becomes-friend-child-rights-risks">UNICEF — Quando a IA vira amiga</a> · <a href="https://programminginsider.com/loot-boxes-regulation-and-where-the-line-sits-in-2026/">Loot boxes e regulação em 2026</a> · <a href="https://health.choc.org/updated-aap-recommendations-for-screen-time/">AAP — recomendações de tela em 2026</a> · <a href="https://www.designthegame.com/learning/tutorial/how-tactile-interactions-game-juice-drive-player-engagement">Game feel e juice</a></p>
+    </div>
+
+    <footer>
+      Dossiê Taskmon · 30 rodadas de benchmarking · agosto de 2026
+    </footer>
+  </div>
+</section>
