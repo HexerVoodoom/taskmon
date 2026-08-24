@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { type ActivityCategory } from '../types/attributes';
-import { MAX_HP_BY_FORM, getStageLevel, FORM_REQUIREMENTS, LEGACY_EGG_TYPE, PET_TYPES, stageForLevel, type PetType, type EvolutionStage } from '../types/progression';
+import { MAX_HP_BY_FORM, getStageLevel, FORM_REQUIREMENTS, petForProfile, getPetOfStage, stageForLevel, type PetType, type EvolutionStage } from '../types/progression';
 import { STORAGE_KEYS, getActiveProfile } from '../utils/storageKeys';
 import { cloudSave } from '../utils/cloudSave';
 import { buildHubCloudPayload } from '../utils/profiles';
@@ -135,15 +135,13 @@ export function getMaxHPForStage(stage: GameState['evolutionStage']): number {
 const NEW_STAGE_RE = /^(egg|(vix|momo|kiwi)-[123])$/;
 const REMOVED_ITEM_EMOJIS = ['🦠', '💾', '💉', '🌞', '🌩️', '🔥', '🐺', '🐣', '🐞', '🍃', '🌺'];
 
-function migrateEggType(raw: string | null | undefined): PetType {
-  if (raw === 'vix' || raw === 'momo' || raw === 'kiwi') return raw;
-  return LEGACY_EGG_TYPE[raw ?? ''] ?? 'vix';
-}
-
 function migrateLoadedState(loaded: Partial<GameState> & Record<string, unknown>): Partial<GameState> {
-  const eggType = migrateEggType(loaded.eggType as string | undefined);
+  // O bichinho pertence ao HABITAT (casinha), não é escolha do save: perfil 0
+  // gótico → Vix, 1 Grécia → Momo, 2 Mad Max → Kiwi. Saves antigos (onboarding
+  // do ovo / DigiApp) são realinhados aqui preservando o NÍVEL da forma.
+  const eggType = petForProfile(getActiveProfile());
   let stage = (loaded.evolutionStage as string | undefined) ?? 'egg';
-  if (!NEW_STAGE_RE.test(stage)) {
+  if (!NEW_STAGE_RE.test(stage) || getPetOfStage(stage, eggType) !== eggType) {
     stage = stageForLevel(eggType, getStageLevel(stage));
   }
   // unlockedEvolutions: reconstrói a trilha linear até a forma atual.
@@ -216,9 +214,8 @@ export function GameStateProvider({ children }: { children: ReactNode }) {
     // o comportamento anterior (ovo).
     const savedEggType = localStorage.getItem(STORAGE_KEYS.EGG_TYPE);
     const isFreshProfile = savedEggType === null;
-    const eggType = isFreshProfile
-      ? (PET_TYPES[getActiveProfile()] ?? 'vix')
-      : migrateEggType(savedEggType);
+    // O pet vem sempre do habitat da casinha — nunca de uma escolha salva.
+    const eggType = petForProfile(getActiveProfile());
     const startStage = isFreshProfile ? stageForLevel(eggType, 'fase-1') : 'egg';
     return {
       activities: [],

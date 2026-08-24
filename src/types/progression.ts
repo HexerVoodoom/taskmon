@@ -68,6 +68,12 @@ export const PETS: Record<PetType, PetInfo> = {
 
 export const PET_TYPES = Object.keys(PETS) as PetType[];
 
+/** Pet canônico de cada habitat/casinha: 0 gótico → Vix, 1 Grécia → Momo,
+ * 2 Mad Max → Kiwi. O bichinho NÃO é escolhível — ele pertence ao habitat. */
+export function petForProfile(profileIndex: number): PetType {
+  return PET_TYPES[profileIndex] ?? 'vix';
+}
+
 // ── Migração de saves do DigiApp (formas Digimon antigas → fase equivalente) ──
 // Só o NÍVEL importa: baby → fase 1, rookie/champion → fase 2, ultimate+ → fase 3.
 const LEGACY_LEVEL: Record<string, EvolutionStage> = {};

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Language } from '../utils/i18n';
 import { SPECIAL_ITEMS, HEART_HEAL } from '../utils/shop';
-import { PETS, PET_TYPES, type PetType } from '../types/progression';
+import { PETS, petForProfile } from '../types/progression';
 import { keyForProfile, getActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
 import { getSpriteForStage } from '../utils/sprites';
 import { PROFILE_COLORS } from './Header';
@@ -23,16 +23,15 @@ function giftTargets(): { index: number; name: string; sprite: string }[] {
   const out: { index: number; name: string; sprite: string }[] = [];
   for (let i = 0; i < PROFILE_COUNT; i++) {
     if (i === active) continue;
-    let eggType: string | undefined;
     let stage: string | undefined;
     try {
       const raw = localStorage.getItem(keyForProfile('GAME_STATE', i));
       if (!raw) continue;
       const save = JSON.parse(raw);
-      eggType = save?.eggType;
       stage = save?.evolutionStage;
     } catch { continue; }
-    const pet = (eggType ?? PET_TYPES[i] ?? 'vix') as PetType;
+    // O pet é o da casinha — o save não escolhe mais o bichinho.
+    const pet = petForProfile(i);
     out.push({
       index: i,
       name: PETS[pet].name,

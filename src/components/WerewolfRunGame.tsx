@@ -14,6 +14,7 @@ import bushPlainImg from '../assets/werewolf/bush-plain.png';
 import cloudBigImg from '../assets/werewolf/cloud-big.png';
 import cloudMedImg from '../assets/werewolf/cloud-med.png';
 import cloudSmallImg from '../assets/werewolf/cloud-small.png';
+import deerImg from '../assets/werewolf/deer.png';
 
 const SCENERY_SRCS = [treeRoundImg, treePineImg, treeLayeredImg, bushFlowerImg, bushPlainImg];
 const CLOUD_SRCS = [cloudBigImg, cloudMedImg, cloudSmallImg];
@@ -21,23 +22,28 @@ const CLOUD_SRCS = [cloudBigImg, cloudMedImg, cloudSmallImg];
 /**
  * Werewolf Run — night drive starring all 3 pets together in the car (the
  * "todos os 3 aparecem sempre" ask: it's not a per-profile pet, the trio
- * rides together always). Werewolves lunge out of 1 of 3 lanes on a
+ * rides together always). Werewolves lunge out of 1 of 5 lanes on a wide
  * pseudo-3D road; steer the car left/right to line up and run them over.
- * Chill, no-penalty minigame (same spirit as Bubble Pop/Flower Catch): a
- * missed werewolf just vanishes past the car, no cost. Timed round.
- * Scoring: 🪙 +1 Bit per werewolf hit.
+ * 5 lanes (não 3): parado no centro o carro NÃO pega quase todo mundo —
+ * precisa mesmo caçar a faixa certa.
+ * 🦌 Cervos são obstáculos: atropelar um custa pontos (DEER_PENALTY) — é o
+ * único jeito de perder na rodada; coração real nunca é cobrado.
+ * Scoring: +1 ponto por lobisomem, −3 por cervo (nunca abaixo de 0). Os Bits
+ * são creditados no fim da rodada com o placar final, pra penalidade doer.
  */
 const ROUND_SECONDS = 40;
 const HIT_POINTS = 1;
+const DEER_PENALTY = 3;
 const APPROACH_S = 2.3; // seconds for a werewolf to go from the horizon to the car
 const MIN_SPAWN_S = 0.55;
 const MAX_SPAWN_S = 1.15;
 const HIT_T_MIN = 0.85; // must be this close before it counts as a hit
-const LANES = [-1, 0, 1] as const;
+const LANES = [-2, -1, 0, 1, 2] as const;
+const DEER_CHANCE = 0.3; // fração dos spawns que sai cervo em vez de lobisomem
 
-interface Wolf { id: number; lane: number; t: number; speed: number; hit: boolean; hitT: number }
+interface Wolf { id: number; lane: number; t: number; speed: number; hit: boolean; hitT: number; deer: boolean }
 interface Tree { id: number; side: -1 | 1; t: number; jitter: number; kind: number; speed: number }
-interface ImpactFx { id: number; x: number; y: number; t: number }
+interface ImpactFx { id: number; x: number; y: number; t: number; bad: boolean }
 
 let nextWolfId = 0;
 let nextTreeId = 0;
@@ -58,6 +64,7 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
   const timeElRef = useRef<HTMLSpanElement>(null);
   const carImgRef = useRef<HTMLImageElement | null>(null);
   const wolfImgRef = useRef<HTMLImageElement | null>(null);
+  const deerImgRef = useRef<HTMLImageElement | null>(null);
   const moonImgRef = useRef<HTMLImageElement | null>(null);
   const sceneryImgsRef = useRef<HTMLImageElement[]>([]);
   const cloudImgsRef = useRef<HTMLImageElement[]>([]);
@@ -66,13 +73,14 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
   const [finalScore, setFinalScore] = useState(0);
+  const [finalDeerHits, setFinalDeerHits] = useState(0);
   const [best, setBest] = useState(() => Number(localStorage.getItem(STORAGE_KEYS.WEREWOLF_BEST)) || 0);
 
   // Physics/game state lives in a ref — the loop never re-renders React.
   const g = useRef({
     t: 0,
     timeLeft: ROUND_SECONDS,
-    carLane: 0, // -1, 0, 1
+    carLane: 0, // -2..2
     carX: 0,    // smoothed screen-space x, set once we know canvas width
     wolves: [] as Wolf[],
     trees: [] as Tree[],
@@ -80,13 +88,16 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
     spawnIn: 0.6,
     treeSpawnIn: 0,
     score: 0,
+    deerHits: 0,
     shake: 0,
+    penaltyFlash: 0,
     cloudPhase: 0,
   });
 
   useEffect(() => {
     const car = new Image(); car.src = carPetsImg; carImgRef.current = car;
     const wolf = new Image(); wolf.src = werewolfImg; wolfImgRef.current = wolf;
+    const deer = new Image(); deer.src = deerImg; deerImgRef.current = deer;
     const moon = new Image(); moon.src = moonImg; moonImgRef.current = moon;
     sceneryImgsRef.current = SCENERY_SRCS.map(src => { const img = new Image(); img.src = src; return img; });
     cloudImgsRef.current = CLOUD_SRCS.map(src => { const img = new Image(); img.src = src; return img; });
@@ -95,14 +106,15 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
   const setLane = useCallback((dir: -1 | 1) => {
     if (phaseRef.current !== 'playing') return;
     const s = g.current;
-    s.carLane = Math.max(-1, Math.min(1, s.carLane + dir));
+    s.carLane = Math.max(LANES[0], Math.min(LANES[LANES.length - 1], s.carLane + dir));
     try { navigator.vibrate?.(10); } catch { /* noop */ }
   }, []);
 
   const start = () => {
     g.current = {
       t: 0, timeLeft: ROUND_SECONDS, carLane: 0, carX: g.current.carX,
-      wolves: [], trees: [], fx: [], spawnIn: 0.5, treeSpawnIn: 0, score: 0, shake: 0, cloudPhase: 0,
+      wolves: [], trees: [], fx: [], spawnIn: 0.5, treeSpawnIn: 0, score: 0, deerHits: 0,
+      shake: 0, penaltyFlash: 0, cloudPhase: 0,
     };
     setPhase('playing');
   };
@@ -123,7 +135,7 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
     ctx.imageSmoothingEnabled = false;
     const W = canvas.width, H = canvas.height;
     const HORIZON_Y = H * 0.34;
-    const ROAD_HALF_MAX = W * 0.46;
+    const ROAD_HALF_MAX = W * 0.5; // estrada larga: 5 faixas cabem de verdade
     const CENTER_X = W / 2;
     const s = g.current;
     if (!s.carX) s.carX = CENTER_X;
@@ -131,7 +143,8 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
     let last = performance.now();
 
     const roadHalfAt = (z: number) => ROAD_HALF_MAX * z;
-    const laneX = (lane: number, z: number) => CENTER_X + lane * roadHalfAt(z) * 0.6;
+    // 5 faixas dentro da pista: a faixa extrema (±2) fica em 0.8 da meia-largura.
+    const laneX = (lane: number, z: number) => CENTER_X + lane * roadHalfAt(z) * 0.34;
     const depthY = (z: number) => HORIZON_Y + (H - HORIZON_Y) * z;
 
     const tick = (now: number) => {
@@ -140,6 +153,7 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
       s.t += dt;
       s.cloudPhase += dt;
       s.shake = Math.max(0, s.shake - dt * 3.2);
+      s.penaltyFlash = Math.max(0, s.penaltyFlash - dt * 2.2);
 
       // Countdown
       s.timeLeft = Math.max(0, s.timeLeft - dt);
@@ -153,7 +167,12 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
       s.spawnIn -= dt;
       if (s.spawnIn <= 0 && s.timeLeft > 0.5) {
         const lane = LANES[Math.floor(Math.random() * LANES.length)];
-        s.wolves.push({ id: nextWolfId++, lane, t: 0, speed: 1 / (APPROACH_S * (0.85 + Math.random() * 0.3)), hit: false, hitT: 0 });
+        const deer = Math.random() < DEER_CHANCE;
+        s.wolves.push({
+          id: nextWolfId++, lane, t: 0,
+          speed: 1 / (APPROACH_S * (0.85 + Math.random() * 0.3)),
+          hit: false, hitT: 0, deer,
+        });
         s.spawnIn = (MIN_SPAWN_S + Math.random() * (MAX_SPAWN_S - MIN_SPAWN_S)) * spawnScale;
       }
 
@@ -172,14 +191,22 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
         w.t += dt * w.speed;
         if (w.t >= HIT_T_MIN && w.lane === s.carLane) {
           w.hit = true; w.hitT = 0;
-          s.score += HIT_POINTS;
-          onEarnPoints(HIT_POINTS);
-          onKill();
-          playImpact();
-          try { navigator.vibrate?.(25); } catch { /* noop */ }
-          s.shake = 1;
           const z = w.t * w.t;
-          s.fx.push({ id: nextFxId++, x: laneX(w.lane, z), y: depthY(z), t: 0 });
+          if (w.deer) {
+            // 🦌 Cervo é amigo: atropelar custa pontos (e Bits, creditados no fim).
+            s.score = Math.max(0, s.score - DEER_PENALTY);
+            s.deerHits += 1;
+            s.penaltyFlash = 1;
+            playImpact();
+            try { navigator.vibrate?.([40, 60, 40]); } catch { /* noop */ }
+          } else {
+            s.score += HIT_POINTS;
+            onKill();
+            playImpact();
+            try { navigator.vibrate?.(25); } catch { /* noop */ }
+          }
+          s.shake = 1;
+          s.fx.push({ id: nextFxId++, x: laneX(w.lane, z), y: depthY(z), t: 0, bad: w.deer });
         }
       }
       s.wolves = s.wolves.filter(w => w.hit ? w.hitT < 0.35 : w.t < 1.05);
@@ -257,7 +284,7 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
       ctx.strokeStyle = 'rgba(250,210,60,0.85)';
       const dashCount = 10;
       const scroll = (s.t * 0.55) % (1 / dashCount);
-      for (const laneEdge of [-0.5, 0.5]) {
+      for (const laneEdge of [-1.5, -0.5, 0.5, 1.5]) {
         for (let i = 0; i < dashCount; i++) {
           const z0 = i / dashCount + scroll;
           const z1 = z0 + 0.045;
@@ -265,8 +292,8 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
           const zc0 = Math.min(1, z0), zc1 = Math.min(1, z1);
           ctx.lineWidth = 1 + zc0 * 3;
           ctx.beginPath();
-          ctx.moveTo(laneX(laneEdge * 2, zc0), depthY(zc0));
-          ctx.lineTo(laneX(laneEdge * 2, zc1), depthY(zc1));
+          ctx.moveTo(laneX(laneEdge, zc0), depthY(zc0));
+          ctx.lineTo(laneX(laneEdge, zc1), depthY(zc1));
           ctx.stroke();
         }
       }
@@ -278,7 +305,9 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
         const img = scenery[tr.kind % Math.max(1, scenery.length)];
         if (!img?.complete || !img.naturalWidth) continue;
         const z = tr.t * tr.t;
-        const x = laneX(tr.side * (1.85 + tr.jitter), z);
+        // Acostamento: com a pista larga (laneX × 0.34) a árvore só fica fora
+        // do asfalto a partir de ~2.95 "faixas" do centro.
+        const x = laneX(tr.side * (3.25 + tr.jitter * 1.6), z);
         const y = depthY(z);
         const h = 12 + z * 130;
         const w = h * (img.naturalWidth / img.naturalHeight);
@@ -286,13 +315,15 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
       }
 
       // Werewolves — farthest first so nearer ones draw on top
-      const wolfImg = wolfImgRef.current;
       const sortedWolves = [...s.wolves].sort((a, b) => a.t - b.t);
       for (const w of sortedWolves) {
+        const wolfImg = w.deer ? deerImgRef.current : wolfImgRef.current;
         const z = Math.min(1, w.t) * Math.min(1, w.t);
         const x = laneX(w.lane, z);
         const y = depthY(z) + Math.sin(w.t * 22) * 2 * z;
-        const size = 16 + z * 150;
+        // Menor que na versão de 3 faixas: com 5 faixas o sprite precisa
+        // caber na sua faixa, senão parece que está no acostamento.
+        const size = (14 + z * 108) * (w.deer ? 0.95 : 1);
         const alpha = w.hit ? Math.max(0, 1 - w.hitT / 0.35) : 1;
         if (wolfImg?.complete) {
           ctx.save();
@@ -310,16 +341,27 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
         ctx.globalAlpha = 1 - p;
         ctx.font = `${18 + p * 20}px sans-serif`;
         ctx.textAlign = 'center';
-        ctx.fillText('💥', f.x, f.y - p * 18);
+        ctx.fillText(f.bad ? '🦌💔' : '💥', f.x, f.y - p * 18);
+        if (f.bad) {
+          ctx.fillStyle = '#fca5a5';
+          ctx.font = `bold ${14 + p * 10}px monospace`;
+          ctx.fillText(`-${DEER_PENALTY}`, f.x, f.y - 30 - p * 26);
+        }
         ctx.restore();
       }
 
       // Car (all 3 pets, always)
       const car = carImgRef.current;
       if (car?.complete && car.naturalWidth) {
-        const carW = W * 0.5;
+        const carW = W * 0.26; // carro estreito: ocupa 1 faixa, não a estrada toda
         const carH = carW * (car.naturalHeight / car.naturalWidth);
         ctx.drawImage(car, s.carX - carW / 2, H - carH * 0.94, carW, carH);
+      }
+
+      // Flash vermelho: deixa ÓBVIO que atropelar cervo é ruim.
+      if (s.penaltyFlash > 0) {
+        ctx.fillStyle = `rgba(220,38,38,${0.28 * s.penaltyFlash})`;
+        ctx.fillRect(0, 0, W, H);
       }
 
       ctx.restore();
@@ -330,7 +372,10 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
 
       // Round over
       const score = s.score;
+      // Bits só no fim: assim o −3 do cervo realmente tira Bits do placar.
+      if (score > 0) onEarnPoints(score * HIT_POINTS);
       setFinalScore(score);
+      setFinalDeerHits(s.deerHits);
       setBest(prev => {
         const nb = Math.max(prev, score);
         localStorage.setItem(STORAGE_KEYS.WEREWOLF_BEST, String(nb));
@@ -367,8 +412,13 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
         <span>🐺 {isPt ? 'Total' : 'Total'}: {killsTotal}</span>
       </div>
       <div style={{ ...mono, display: 'flex', justifyContent: 'space-between', padding: '0 20px 6px', fontSize: '0.8rem', color: 'var(--tk-muted)' }}>
-        <span>{isPt ? 'Atropelados' : 'Squashed'}: <span ref={scoreElRef}>0</span></span>
+        <span>{isPt ? 'Pontos' : 'Score'}: <span ref={scoreElRef}>0</span></span>
         <span>{isPt ? 'Tempo' : 'Time'}: <span ref={timeElRef}>{ROUND_SECONDS}</span>s</span>
+      </div>
+      <div style={{ ...mono, padding: '0 20px 6px', fontSize: '0.72rem', color: '#f87171', textAlign: 'center' }}>
+        {isPt
+          ? `🦌 Desvie dos cervos! Atropelar um cervo custa −${DEER_PENALTY} pontos`
+          : `🦌 Dodge the deer! Hitting one costs −${DEER_PENALTY} points`}
       </div>
 
       <div style={{ margin: '0 16px', borderRadius: 12, border: '1px solid var(--tk-border)', overflow: 'hidden', position: 'relative' }}>
@@ -382,15 +432,22 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
               <>
                 <p style={{ ...mono, fontWeight: 800, fontSize: '1.05rem', color: '#fff' }}>🐺 {isPt ? 'Alcateia dispersada!' : 'Pack scattered!'}</p>
                 <p style={{ ...mono, fontSize: '0.85rem', color: '#e2e8f0' }}>
-                  {isPt ? 'Lobisomens atropelados' : 'Werewolves squashed'}: {finalScore} · +{finalScore * HIT_POINTS} Bits
+                  {isPt ? 'Pontos' : 'Score'}: {finalScore} · +{finalScore * HIT_POINTS} Bits
                 </p>
+                {finalDeerHits > 0 && (
+                  <p style={{ ...mono, fontSize: '0.8rem', color: '#f87171' }}>
+                    🦌 {isPt
+                      ? `${finalDeerHits} cervo(s) atropelado(s): −${finalDeerHits * DEER_PENALTY} pontos`
+                      : `${finalDeerHits} deer hit: −${finalDeerHits * DEER_PENALTY} points`}
+                  </p>
+                )}
               </>
             )}
             {phase === 'ready' && (
               <p style={{ ...mono, fontSize: '0.8rem', color: '#e2e8f0', padding: '0 20px', textAlign: 'center' }}>
                 {isPt
-                  ? 'Os 3 pets saem pra um passeio noturno! Mude de faixa pra atropelar os lobisomens perto do carro. 40 segundos, sem custo de coração.'
-                  : 'All 3 pets go for a night drive! Switch lanes to run over the werewolves near the car. 40 seconds, no heart cost.'}
+                  ? `Os 3 pets saem pra um passeio noturno! São 5 faixas: mude de faixa pra atropelar os lobisomens 🐺 e DESVIE dos cervos 🦌 — cada cervo atropelado tira ${DEER_PENALTY} pontos (e Bits). 40 segundos, sem custo de coração.`
+                  : `All 3 pets go for a night drive! 5 lanes: switch lanes to run over the werewolves 🐺 and DODGE the deer 🦌 — each deer you hit costs ${DEER_PENALTY} points (and Bits). 40 seconds, no heart cost.`}
               </p>
             )}
             <button onClick={start}
