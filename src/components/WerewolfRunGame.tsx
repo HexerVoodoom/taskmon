@@ -280,22 +280,21 @@ export function WerewolfRunGame({ language, onEarnPoints, onKill, killsTotal, on
       ctx.moveTo(CENTER_X + 3, HORIZON_Y); ctx.lineTo(CENTER_X + ROAD_HALF_MAX, H);
       ctx.stroke();
 
-      // Dashed lane dividers (between the 3 lanes), scrolling toward viewer
+      // UMA faixa tracejada só, no centro da estrada (as 5 faixas de
+      // jogabilidade continuam existindo, mas sem riscar o asfalto todo).
       ctx.strokeStyle = 'rgba(250,210,60,0.85)';
       const dashCount = 10;
       const scroll = (s.t * 0.55) % (1 / dashCount);
-      for (const laneEdge of [-1.5, -0.5, 0.5, 1.5]) {
-        for (let i = 0; i < dashCount; i++) {
-          const z0 = i / dashCount + scroll;
-          const z1 = z0 + 0.045;
-          if (z0 > 1) continue;
-          const zc0 = Math.min(1, z0), zc1 = Math.min(1, z1);
-          ctx.lineWidth = 1 + zc0 * 3;
-          ctx.beginPath();
-          ctx.moveTo(laneX(laneEdge, zc0), depthY(zc0));
-          ctx.lineTo(laneX(laneEdge, zc1), depthY(zc1));
-          ctx.stroke();
-        }
+      for (let i = 0; i < dashCount; i++) {
+        const z0 = i / dashCount + scroll;
+        const z1 = z0 + 0.045;
+        if (z0 > 1) continue;
+        const zc0 = Math.min(1, z0), zc1 = Math.min(1, z1);
+        ctx.lineWidth = 1 + zc0 * 3;
+        ctx.beginPath();
+        ctx.moveTo(laneX(0, zc0), depthY(zc0));
+        ctx.lineTo(laneX(0, zc1), depthY(zc1));
+        ctx.stroke();
       }
 
       // Roadside trees/bushes (parallax scenery) — real sprites
