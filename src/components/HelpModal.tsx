@@ -44,8 +44,8 @@ const SECTIONS = [
         icon: '🏠',
         labelEn: '3 profiles (houses)',
         labelPt: '3 perfis (casinhas)',
-        descEn: 'The 3 houses at the top are 3 separate saves, each with its own pet (Vix, Momo or Kiwi) and its own colors. Tap a house to switch; tap the active one to go home.',
-        descPt: 'As 3 casinhas lá em cima são 3 saves separados, cada um com seu próprio pet (Vix, Momo ou Kiwi) e suas próprias cores. Toque numa casinha para trocar; toque na ativa para ir pra home.',
+        descEn: 'The 3 houses at the top are 3 separate saves. The pet is fixed per habitat (not chosen): Gothic → Vix, Ancient Greece → Momo, Mad Max → Kiwi, each with its own colors. Tap a house to switch; tap the active one to go home.',
+        descPt: 'As 3 casinhas lá em cima são 3 saves separados. O pet é fixo por habitat (não se escolhe): Gótico → Vix, Grécia Antiga → Momo, Mad Max → Kiwi, cada um com suas cores. Toque numa casinha para trocar; toque na ativa para ir pra home.',
       },
       {
         icon: '🔒',

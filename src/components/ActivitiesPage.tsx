@@ -101,8 +101,8 @@ export function ActivitiesPage({ evolutionStage, eggType, language, theme = 'def
       key: 'werewolf', icon: '🐺', sprite: werewolfIcon,
       badgeBg: 'linear-gradient(160deg, #4b5563, #111827)',
       title: isPt ? 'Atropela Lobisomem' : 'Werewolf Run',
-      desc: isPt ? 'Os 3 pets saem pra um passeio noturno — mude de faixa e atropele os lobisomens! 40 segundos.' : 'All 3 pets go for a night drive — switch lanes and run over the werewolves! 40 seconds.',
-      pts: isPt ? '1 Bit por lobisomem' : '1 Bit per werewolf',
+      desc: isPt ? 'Os 3 pets saem pra um passeio noturno — 5 faixas: atropele os lobisomens 🐺 e desvie dos cervos 🦌! 40 segundos.' : 'All 3 pets go for a night drive — 5 lanes: run over the werewolves 🐺 and dodge the deer 🦌! 40 seconds.',
+      pts: isPt ? '1 Bit por lobisomem · −3 por cervo' : '1 Bit per werewolf · −3 per deer',
     },
     {
       key: 'feirinha', icon: '🧺',

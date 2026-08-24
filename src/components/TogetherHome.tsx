@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { getSpriteForStage, getExpressionSprite } from '../utils/sprites';
 import { keyForProfile, getActiveProfile, PROFILE_COUNT } from '../utils/storageKeys';
-import { getStageLevel, PETS, PET_TYPES, type PetType } from '../types/progression';
+import { getStageLevel, stageForLevel, petForProfile, PETS } from '../types/progression';
 import type { GameState } from '../contexts/GameStateContext';
 import { PROFILE_COLORS } from './Header';
 import type { Language } from '../utils/i18n';
@@ -187,9 +187,9 @@ export function TogetherHome({ language, background, onChangeBackground, onClaim
             soma de equipe, nunca ranking (dossiê R29). */}
         <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
           {Array.from({ length: PROFILE_COUNT }, (_, i) => {
-            // Identidade do pet vem da casinha (PET_TYPES[i]); o save só
-            // sobrescreve se o perfil escolheu outro bichinho no ovo.
-            const pet = PETS[(saves[i]?.eggType ?? PET_TYPES[i] ?? 'vix') as PetType];
+            // Identidade do pet vem SEMPRE da casinha (habitat) — não é
+            // escolhível pelo save.
+            const pet = PETS[petForProfile(i)];
             return (
               <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontFamily: 'monospace', fontSize: '0.62rem', color: '#fff' }}>
                 <span style={{ width: 7, height: 7, borderRadius: 999, background: PROFILE_COLORS[i], display: 'inline-block' }} />
@@ -481,10 +481,13 @@ function TogetherPet({
     );
   }
 
-  const pet = (gameState.eggType ?? 'vix') as PetType;
-  const stage = gameState.evolutionStage || 'egg';
+  // O bichinho é o do habitat da casinha — saves antigos com outro pet são
+  // remapeados pro pet certo mantendo o nível da forma.
+  const pet = petForProfile(profileIndex);
+  const rawStage = gameState.evolutionStage || 'egg';
+  const stage = stageForLevel(pet, getStageLevel(rawStage));
   const isEgg = getStageLevel(stage) === 'egg';
-  const sprite = isRubbing ? getExpressionSprite(stage, 'happy') : getSpriteForStage(stage, gameState.eggType);
+  const sprite = isRubbing ? getExpressionSprite(stage, 'happy') : getSpriteForStage(stage, pet);
   const petName = PETS[pet]?.name ?? pet;
   const color = PROFILE_COLORS[profileIndex] ?? '#fff';
   const canHeal = gameState.healthPoints < gameState.maxHealthPoints;

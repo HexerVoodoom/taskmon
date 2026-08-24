@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { PETS, PET_TYPES, type PetType } from '../types/progression';
+import { PETS, petForProfile, type PetType } from '../types/progression';
 import { getSpriteForStage } from '../utils/sprites';
 import { ActivityCategory } from '../types/attributes';
+import { getActiveProfile } from '../utils/storageKeys';
 
 interface InitialActivity {
   name: string;
@@ -102,7 +103,9 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [step, setStep] = useState<'name' | 'egg' | 'intro' | 'goals'>('name');
   const [introIndex, setIntroIndex] = useState(0);
   const [userName, setUserName] = useState('');
-  const [selectedEgg, setSelectedEgg] = useState<PetType | null>(null);
+  // O bichinho NÃO é escolhível: cada habitat (casinha) tem o seu —
+  // 0 gótico → Vix, 1 Grécia Antiga → Momo, 2 Mad Max → Kiwi.
+  const selectedEgg: PetType = petForProfile(getActiveProfile());
 
   const [selectedChallenges, setSelectedChallenges] = useState<Set<string>>(new Set());
   const [selectedActivities, setSelectedActivities] = useState<Set<string>>(new Set());
@@ -110,10 +113,10 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const [isInputReadOnly, setIsInputReadOnly] = useState(true);
   const [randomName] = useState(`obs-${Math.random().toString(36).substring(7)}`);
 
-  const accent = selectedEgg ? PETS[selectedEgg].accent : '#22c55e';
+  const accent = PETS[selectedEgg].accent;
 
   const handleNameSubmit = () => { if (userName.trim()) setStep('egg'); };
-  const handleEggConfirm = () => { if (selectedEgg) setStep('intro'); };
+  const handleEggConfirm = () => setStep('intro');
   const handleIntroNext = () => {
     if (introIndex < INTRO_TEXTS.length - 1) setIntroIndex(introIndex + 1);
     else setStep('goals');
@@ -169,7 +172,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
     // Require at least one selection
     if (activities.length === 0) return;
 
-    onComplete({ userName, eggType: selectedEgg as PetType, initialActivities: activities });
+    onComplete({ userName, eggType: selectedEgg, initialActivities: activities });
   };
 
   // ── Estilo Duolingo: cartões arredondados, botão "3D" com sombra dura ─────
@@ -250,72 +253,41 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
             </div>
           )}
 
-          {/* Step: egg — 3 pets, um por cor */}
+          {/* Step: egg — o pet do habitat, sem escolha */}
           {step === 'egg' && (
             <div className="w-full max-w-[340px] space-y-5">
               <div className="text-center space-y-1">
                 <h2 className="font-extrabold" style={{ fontSize: '1.25rem', color: '#111827' }}>
-                  {ispt ? 'Escolha seu ovo' : 'Choose your egg'}
+                  {ispt ? 'Seu ovo chegou!' : 'Your egg has arrived!'}
                 </h2>
                 <p className="text-xs" style={{ color: '#9ca3af' }}>
-                  {ispt ? 'Essa escolha é permanente' : 'This choice is permanent'}
+                  {ispt
+                    ? 'Cada casinha tem o seu bichinho — esse é o desta casinha'
+                    : 'Each house has its own pet — this one is yours'}
                 </p>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {PET_TYPES.map(petId => {
-                  const pet = PETS[petId];
-                  const isSelected = selectedEgg === petId;
-                  return (
-                    <button
-                      key={petId}
-                      onClick={() => setSelectedEgg(petId)}
-                      className="relative p-3 transition-all active:scale-95"
-                      style={{
-                        ...card,
-                        border: isSelected ? `2.5px solid ${pet.accent}` : '2px solid #e5e7eb',
-                        boxShadow: isSelected ? `0 3px 0 ${pet.accent}` : '0 2px 0 #e5e7eb',
-                        backgroundColor: isSelected ? `${pet.accent}0f` : '#fff',
-                      }}
-                    >
-                      {isSelected && (
-                        <span
-                          className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow"
-                          style={{ backgroundColor: pet.accent }}
-                        >
-                          ✓
-                        </span>
-                      )}
-                      <img
-                        src={getSpriteForStage('egg', petId)}
-                        alt={ispt ? pet.eggNamePt : pet.eggNameEn}
-                        className="w-16 h-16 mx-auto object-contain"
-                      />
-                      <p className="text-xs font-extrabold mt-2" style={{ color: pet.accent }}>
-                        {ispt ? pet.eggNamePt.replace('Ovo ', '') : pet.eggNameEn.replace(' Egg', '')}
-                      </p>
-                      <p className="text-[10px]" style={{ color: '#9ca3af' }}>
-                        {ispt ? `Vira: ${pet.name}` : `Becomes: ${pet.name}`}
-                      </p>
-                    </button>
-                  );
-                })}
+              <div style={card} className="p-5 flex flex-col items-center gap-2">
+                <img
+                  src={getSpriteForStage('egg', selectedEgg)}
+                  alt={ispt ? PETS[selectedEgg].eggNamePt : PETS[selectedEgg].eggNameEn}
+                  className="w-24 h-24 object-contain"
+                />
+                <p className="text-sm font-extrabold" style={{ color: accent }}>
+                  {ispt ? PETS[selectedEgg].eggNamePt : PETS[selectedEgg].eggNameEn}
+                </p>
               </div>
-              {/* Preview do pet escolhido */}
-              {selectedEgg && (
-                <div style={card} className="p-4 flex items-center gap-3">
-                  <img src={getSpriteForStage(PETS[selectedEgg].phases[1])} alt={PETS[selectedEgg].name} className="w-14 h-14 object-contain" />
-                  <div>
-                    <p className="text-sm font-extrabold" style={{ color: '#111827' }}>{PETS[selectedEgg].name}</p>
-                    <p className="text-xs" style={{ color: '#6b7280' }}>
-                      {ispt
-                        ? `${PETS[selectedEgg].phaseNames[0]} → ${PETS[selectedEgg].phaseNames[1]} → ${PETS[selectedEgg].phaseNames[2]}`
-                        : `${PETS[selectedEgg].phaseNames[0]} → ${PETS[selectedEgg].phaseNames[1]} → ${PETS[selectedEgg].phaseNames[2]}`}
-                    </p>
-                  </div>
+              {/* Preview do pet do habitat */}
+              <div style={card} className="p-4 flex items-center gap-3">
+                <img src={getSpriteForStage(PETS[selectedEgg].phases[1])} alt={PETS[selectedEgg].name} className="w-14 h-14 object-contain" />
+                <div>
+                  <p className="text-sm font-extrabold" style={{ color: '#111827' }}>{PETS[selectedEgg].name}</p>
+                  <p className="text-xs" style={{ color: '#6b7280' }}>
+                    {`${PETS[selectedEgg].phaseNames[0]} → ${PETS[selectedEgg].phaseNames[1]} → ${PETS[selectedEgg].phaseNames[2]}`}
+                  </p>
                 </div>
-              )}
-              <button onClick={handleEggConfirm} disabled={!selectedEgg} style={primaryBtn(!selectedEgg)}>
-                {ispt ? 'confirmar' : 'confirm'}
+              </div>
+              <button onClick={handleEggConfirm} style={primaryBtn()}>
+                {ispt ? 'continuar' : 'continue'}
               </button>
             </div>
           )}
@@ -324,9 +296,7 @@ export function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
           {step === 'intro' && (
             <div className="w-full space-y-5 max-w-[320px]">
               <div style={card} className="px-6 py-8 min-h-[180px] flex flex-col items-center justify-center gap-4">
-                {selectedEgg && (
-                  <img src={getSpriteForStage('egg', selectedEgg)} alt="" className="w-16 h-16 object-contain" />
-                )}
+                <img src={getSpriteForStage('egg', selectedEgg)} alt="" className="w-16 h-16 object-contain" />
                 <p className="text-center text-sm" style={{ color: '#374151', lineHeight: 1.6 }}>
                   {INTRO_TEXTS[introIndex]}
                 </p>

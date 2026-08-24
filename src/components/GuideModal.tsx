@@ -68,8 +68,9 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
             </p>
             <p className="mb-2">
               Each pet has a single, linear line of <strong>3 phases</strong>:
-              Egg → Phase 1 → Phase 2 → Phase 3 (final form). There are 3 pets, one per egg:
-              <strong> Vix</strong> (purple), <strong>Momo</strong> (pink) and <strong>Kiwi</strong> (green).
+              Egg → Phase 1 → Phase 2 → Phase 3 (final form). The pet is <strong>not chosen</strong>:
+              each habitat (house) has its own — <strong>Vix</strong> (purple, Gothic),
+              <strong> Momo</strong> (pink, Ancient Greece) and <strong>Kiwi</strong> (green, Mad Max).
             </p>
             <p>
               Don't want to evolve yet? On the <strong>Evolution page</strong>, tap your
@@ -191,7 +192,9 @@ export function GuideModal({ isOpen, onClose, theme = 'default' }: GuideModalPro
               The Activities page has minigames (Dungeon, Dino Runner, Roof Run,
               Rock-Paper-Scissors, Bubble Pop, Flower Catch, Werewolf Run) that award <strong>Bits</strong> — spend them in the shop on
               <strong> food</strong> for your pet. The Dungeon is free to play —
-              losing costs no real heart.
+              losing costs no real heart. In <strong>Werewolf Run</strong> the road has
+              <strong> 5 lanes</strong>: run over the werewolves 🐺, but <strong>dodge the deer 🦌</strong> —
+              hitting one costs 3 points (and the Bits that come with them).
             </p>
           </section>
 

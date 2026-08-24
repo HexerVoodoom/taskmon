@@ -2,7 +2,25 @@ import { describe, it, expect } from 'vitest';
 import {
   getStageLevel, canSelectWeekdays, getPetOfStage, stageForLevel,
   getMaxEnergyForStage, FORM_REQUIREMENTS, MAX_HP_BY_FORM, PETS,
+  petForProfile, PET_TYPES,
 } from './progression';
+
+describe('petForProfile', () => {
+  it('amarra cada habitat/casinha ao seu pet (não é escolhível)', () => {
+    expect(petForProfile(0)).toBe('vix');   // gótico
+    expect(petForProfile(1)).toBe('momo');  // Grécia Antiga
+    expect(petForProfile(2)).toBe('kiwi');  // Mad Max
+  });
+
+  it('segue a ordem canônica de PET_TYPES', () => {
+    PET_TYPES.forEach((pet, i) => expect(petForProfile(i)).toBe(pet));
+  });
+
+  it('cai no vix para índice inválido', () => {
+    expect(petForProfile(9)).toBe('vix');
+    expect(petForProfile(-1)).toBe('vix');
+  });
+});
 
 describe('getStageLevel', () => {
   it('maps egg to egg', () => {
